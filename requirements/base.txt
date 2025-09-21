@@ -3,5 +3,5 @@ uvicorn[standard]>=0.30
 sqlalchemy>=2.0
 asyncpg>=0.29
 pydantic>=2.7
-pyjwt>=4.1
-bcrypt>=2.8
+pyjwt
+bcrypt
