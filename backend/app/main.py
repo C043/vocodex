@@ -9,6 +9,8 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy import text
 
+from app.models.user import Base
+
 from .db import get_session
 
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -25,9 +27,11 @@ async def lifespan(app: FastAPI):
         pool_recycle=1800,
         echo=True,
     )
-    app.state.engint = engine
+    app.state.engine = engine
     app.state.sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
     try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
         yield
     finally:
         await engine.dispose()
@@ -37,6 +41,11 @@ app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
 )
+
+# Routers
+from .routers import auth
+
+app.include_router(auth.router)
 
 
 @app.get("/health")
