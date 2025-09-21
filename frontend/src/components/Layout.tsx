@@ -5,8 +5,8 @@ const Layout = () => {
     isActive ? "font-semibold mr-4" : "mr-4"
 
   return (
-    <div className="min-h-screen">
-      <nav className="p-4 border-b">
+    <div className="flex flex-col min-h-screen min-w-screen">
+      <nav className="p-4 border-b flex justify-center">
         <NavLink to="/" className={link}>
           Home
         </NavLink>
@@ -17,7 +17,7 @@ const Layout = () => {
           Register
         </NavLink>
       </nav>
-      <main className="p-6">
+      <main className="flex flex-col flex-1 items-center justify-center p-6">
         <Outlet />
       </main>
     </div>
