@@ -14,7 +14,6 @@ class LoginIn(BaseModel):
 class UserOut(BaseModel):
     id: int
     username: str
-    username: str
 
 
 class TokenOut(BaseModel):
