@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..db import get_session
-from ..models import User
+from ..models.user import User
 from ..schemas import RegisterIn, LoginIn, UserOut, TokenOut
 from ..security import hash_password, verify_password, create_access_token
 from ..deps import get_current_user
@@ -18,7 +18,7 @@ async def register(data: RegisterIn, session: AsyncSession = Depends(get_session
     ).scalar_one_or_none()
     if exists:
         raise HTTPException(status_code=409, detail="Username already present")
-    user = User(username=data.username, password_hash=hash_password(data.password))
+    user = User(username=data.username, hashed_password=hash_password(data.password))
     session.add(user)
     try:
         await session.commit()
@@ -34,7 +34,7 @@ async def login(data: LoginIn, session: AsyncSession = Depends(get_session)):
     user = (
         await session.execute(select(User).where(User.username == data.username))
     ).scalar_one_or_none()
-    if not user or not verify_password(data.password, user.password_hash):
+    if not user or not verify_password(data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_access_token(user.id)

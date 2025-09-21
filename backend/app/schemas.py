@@ -19,4 +19,4 @@ class UserOut(BaseModel):
 
 class TokenOut(BaseModel):
     token: str
-    token_type: str = "Bearer"
+    token_type: str = "bearer"

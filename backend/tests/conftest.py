@@ -1,4 +1,6 @@
 import pytest
+
+pytest_plugins = "auth_fixtures"
 from httpx import AsyncClient, ASGITransport
 from asgi_lifespan import LifespanManager
 

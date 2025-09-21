@@ -3,7 +3,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from .db import get_session
-from .models import User
+from .models.user import User
 from .security import decode_access_token
 
 bearer = HTTPBearer(auto_error=False)
@@ -13,7 +13,7 @@ async def get_current_user(
     creds: HTTPAuthorizationCredentials | None = Depends(bearer),
     session: AsyncSession = Depends(get_session),
 ) -> User:
-    if not creds or creds.scheme.lower() != "Bearer":
+    if not creds or creds.scheme.lower() != "bearer":
         raise HTTPException(status_code=401, detail="Missing token")
     try:
         payload = decode_access_token(creds.credentials)

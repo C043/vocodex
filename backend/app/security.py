@@ -10,7 +10,7 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(password: str, hashed: str) -> bool:
-    return bcrypt.chechpw(password.encode(), hashed.encode())
+    return bcrypt.checkpw(password.encode(), hashed.encode())
 
 
 def create_access_token(user_id: int) -> str:
@@ -20,4 +20,4 @@ def create_access_token(user_id: int) -> str:
 
 
 def decode_access_token(token: str) -> dict:
-    return jwt.decode(token, JWT_SECRET, algorithm=[ALGO])
+    return jwt.decode(token, JWT_SECRET, algorithms=[ALGO])
