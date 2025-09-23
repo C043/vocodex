@@ -2,8 +2,8 @@ from pydantic import BaseModel, Field
 
 
 class RegisterIn(BaseModel):
-    password: str = Field(min_length=8)
     username: str
+    password: str = Field(min_length=4)
 
 
 class LoginIn(BaseModel):
