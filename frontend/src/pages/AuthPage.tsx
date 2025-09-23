@@ -1,6 +1,7 @@
 import { jwtDecode } from "jwt-decode"
 import { FormEvent, useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { checkAuthentication } from "../utils/authUtils"
 
 type Mode = "login" | "register"
 
@@ -110,21 +111,8 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
 
   useEffect(() => {
     const token = window.localStorage.getItem("vocodex-jwt")
-    if (!token) return false
-
-    try {
-      const { exp } = jwtDecode(token)
-      const now = Date.now() / 1000
-      if (exp) {
-        if (exp > now === true) {
-          navigate("/")
-        }
-      } else {
-        throw new Error("Failed to decode jwt.")
-      }
-    } catch {
-      return false
-    }
+    const isAuthenticated = checkAuthentication(token)
+    if (isAuthenticated) navigate("/")
   }, [])
 
   useEffect(() => {
