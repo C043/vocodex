@@ -1,7 +1,11 @@
-import { jwtDecode } from "jwt-decode"
 import { FormEvent, useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { checkAuthentication } from "../utils/authUtils"
+import { useDispatch } from "react-redux"
+import {
+  setIsLoggedInTrue,
+  setIsLoggedInFalse
+} from "../redux/reducer/authSlice"
 
 type Mode = "login" | "register"
 
@@ -13,6 +17,7 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
   const [isLoading, setLoading] = useState(false)
 
   const navigate = useNavigate()
+  const dispatch = useDispatch()
 
   const [loginUsername, setLoginUsername] = useState("")
   const [loginPassword, setLoginPassword] = useState("")
@@ -112,7 +117,12 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
   useEffect(() => {
     const token = window.localStorage.getItem("vocodex-jwt")
     const isAuthenticated = checkAuthentication(token)
-    if (isAuthenticated) navigate("/")
+    if (isAuthenticated) {
+      dispatch(setIsLoggedInTrue())
+      navigate("/")
+    } else {
+      dispatch(setIsLoggedInFalse())
+    }
   }, [])
 
   useEffect(() => {
