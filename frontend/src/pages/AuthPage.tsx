@@ -1,4 +1,6 @@
+import { jwtDecode } from "jwt-decode"
 import { FormEvent, useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 
 type Mode = "login" | "register"
 
@@ -9,6 +11,8 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
   const [hasError, setError] = useState(false)
   const [isLoading, setLoading] = useState(false)
 
+  const navigate = useNavigate()
+
   const [loginUsername, setLoginUsername] = useState("")
   const [loginPassword, setLoginPassword] = useState("")
 
@@ -16,8 +20,41 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
   const [registerPassword, setRegisterPassword] = useState("")
   const [registerRepeatPassword, setRegisterRepeatPassword] = useState("")
 
-  const handleLoginRequest = (ev: FormEvent<HTMLFormElement>) => {
+  const handleLoginRequest = async (ev: FormEvent<HTMLFormElement>) => {
     ev.preventDefault()
+    try {
+      setLoading(true)
+      setError(false)
+
+      const url = `${env.VITE_API_URL}/auth/login`
+      const headers = {
+        "Content-Type": "application/json"
+      }
+      const body = {
+        username: loginUsername,
+        password: loginPassword
+      }
+      const resp = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body)
+      })
+
+      if (!resp.ok) {
+        throw new Error(`There was an error: ${resp.status}`)
+      }
+
+      const data = await resp.json()
+      const token = data.token
+
+      window.localStorage.setItem("vocodex-jwt", token)
+      navigate("/")
+    } catch (err) {
+      setError(true)
+      console.log(err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const checkPasswords = (target: HTMLInputElement) => {
@@ -60,6 +97,9 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
   }
 
   const refreshData = () => {
+    setLoading(false)
+    setError(false)
+
     setLoginUsername("")
     setLoginPassword("")
 
@@ -67,6 +107,25 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
     setRegisterPassword("")
     setRegisterRepeatPassword("")
   }
+
+  useEffect(() => {
+    const token = window.localStorage.getItem("vocodex-jwt")
+    if (!token) return false
+
+    try {
+      const { exp } = jwtDecode(token)
+      const now = Date.now() / 1000
+      if (exp) {
+        if (exp > now === true) {
+          navigate("/")
+        }
+      } else {
+        throw new Error("Failed to decode jwt.")
+      }
+    } catch {
+      return false
+    }
+  }, [])
 
   useEffect(() => {
     refreshData()
