@@ -3,7 +3,11 @@ import { FormEvent, useEffect, useState } from "react"
 type Mode = "login" | "register"
 
 const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
+  const env = import.meta.env
+
   const [isLogin, setLogin] = useState<Mode>(mode)
+  const [hasError, setError] = useState(false)
+  const [isLoading, setLoading] = useState(false)
 
   const [loginUsername, setLoginUsername] = useState("")
   const [loginPassword, setLoginPassword] = useState("")
@@ -16,8 +20,43 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
     ev.preventDefault()
   }
 
-  const handleRegisterRequest = (ev: FormEvent<HTMLFormElement>) => {
+  const checkPasswords = (target: HTMLInputElement) => {
+    if (registerPassword !== target.value) {
+      target.setCustomValidity("Password Must be Matching")
+    } else if (registerPassword === target.value) {
+      target.setCustomValidity("")
+    }
+  }
+  const handleRegisterRequest = async (ev: FormEvent<HTMLFormElement>) => {
     ev.preventDefault()
+
+    try {
+      setLoading(true)
+      setError(false)
+      const url = `${env.VITE_API_URL}/auth/register`
+      const headers = {
+        "Content-Type": "application/json"
+      }
+      const body = {
+        username: registerUsername,
+        password: registerPassword
+      }
+      const resp = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body)
+      })
+      if (!resp.ok) {
+        throw new Error(`There was an error: ${resp.status}`)
+      }
+      const data = await resp.json()
+      setLogin("login")
+    } catch (err) {
+      console.log(err)
+      setError(true)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const refreshData = () => {
@@ -37,51 +76,80 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
     <div>
       {isLogin === "login" ? (
         <div className="flex flex-col">
-          <h1 className="text-2xl font-bold">Login</h1>
-          <form onSubmit={handleLoginRequest}>
-            <input
-              type="text"
-              placeholder="Username"
-              value={loginUsername}
-              onChange={ev => setLoginUsername(ev.target.value)}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={loginPassword}
-              onChange={ev => setLoginPassword(ev.target.value)}
-              required
-            />
-            <button type="submit">Login!</button>
-          </form>
+          <h1 className="text-2xl font-bold mb-5">Login</h1>
+          {hasError ? <div>There was an error...</div> : <></>}
+          {isLoading ? (
+            <p>Loading...</p>
+          ) : (
+            <form
+              className="flex flex-col gap-5 mb-5"
+              onSubmit={handleLoginRequest}
+            >
+              <input
+                type="text"
+                className="border rounded-xl p-2"
+                placeholder="Username"
+                value={loginUsername}
+                minLength={4}
+                onChange={ev => setLoginUsername(ev.target.value)}
+                required
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                className="border rounded-xl p-2"
+                minLength={4}
+                value={loginPassword}
+                onChange={ev => setLoginPassword(ev.target.value)}
+                required
+              />
+              <button type="submit">Login!</button>
+            </form>
+          )}
           <button onClick={() => setLogin("register")}>Need an account?</button>
         </div>
       ) : (
         <div className="flex flex-col">
-          <h1 className="text-2xl font-bold">Register</h1>
-          <form onSubmit={handleRegisterRequest}>
-            <input
-              type="text"
-              placeholder="Username"
-              value={registerUsername}
-              onChange={ev => setRegisterUsername(ev.target.value)}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={registerPassword}
-              onChange={ev => setRegisterPassword(ev.target.value)}
-            />
-            <input
-              type="password"
-              placeholder="Repeat Password"
-              value={registerRepeatPassword}
-              onChange={ev => setRegisterRepeatPassword(ev.target.value)}
-            />
-            <button type="submit">Register!</button>
-          </form>
+          <h1 className="text-2xl font-bold mb-5">Register</h1>
+          {hasError ? <div>There was an error...</div> : <></>}
+          {isLoading ? (
+            <p>Loading...</p>
+          ) : (
+            <form
+              className="flex flex-col gap-5 mb-5"
+              onSubmit={handleRegisterRequest}
+            >
+              <input
+                type="text"
+                placeholder="Username"
+                className="border rounded-xl p-2"
+                minLength={4}
+                value={registerUsername}
+                onChange={ev => setRegisterUsername(ev.target.value)}
+                required
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                className="border rounded-xl p-2"
+                minLength={4}
+                value={registerPassword}
+                onChange={ev => setRegisterPassword(ev.target.value)}
+              />
+              <input
+                type="password"
+                placeholder="Repeat Password"
+                className="border rounded-xl p-2"
+                minLength={4}
+                value={registerRepeatPassword}
+                onChange={ev => {
+                  setRegisterRepeatPassword(ev.target.value)
+                  checkPasswords(ev.target)
+                }}
+              />
+              <button type="submit">Register!</button>
+            </form>
+          )}
           <button onClick={() => setLogin("login")}>
             Already have an account?
           </button>
