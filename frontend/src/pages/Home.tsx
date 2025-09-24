@@ -2,10 +2,7 @@ import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { checkAuthentication } from "../utils/authUtils"
 import { useDispatch } from "react-redux"
-import {
-  setIsLoggedInTrue,
-  setIsLoggedInFalse
-} from "../redux/reducer/authSlice"
+import { setIsLoggedIn } from "../redux/reducer/authSlice"
 
 const Home = () => {
   const navigate = useNavigate()
@@ -15,10 +12,10 @@ const Home = () => {
     const token = window.localStorage.getItem("vocodex-jwt")
     const isAuthenticated = checkAuthentication(token)
     if (!isAuthenticated) {
-      dispatch(setIsLoggedInFalse())
+      dispatch(setIsLoggedIn(false))
       navigate("/login")
     } else {
-      dispatch(setIsLoggedInTrue())
+      dispatch(setIsLoggedIn(true))
     }
   }, [])
 

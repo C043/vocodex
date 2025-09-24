@@ -2,11 +2,12 @@ import { FormEvent, useEffect, useState } from "react"
 import { Form, Input, Spinner } from "@heroui/react"
 import { addToast, Button } from "@heroui/react"
 import { useNavigate } from "react-router-dom"
-import { checkAuthentication } from "../utils/authUtils"
+import { checkAuthentication, parseJwt } from "../utils/authUtils"
 import { useDispatch } from "react-redux"
 import {
-  setIsLoggedInTrue,
-  setIsLoggedInFalse
+  setIsLoggedIn,
+  setUserId,
+  setUsername
 } from "../redux/reducer/authSlice"
 
 type Mode = "login" | "register"
@@ -55,6 +56,11 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
 
       const data = await resp.json()
       const token = data.token
+
+      const { sub, username } = parseJwt(token)
+
+      dispatch(setUserId(sub))
+      dispatch(setUsername(username))
 
       window.localStorage.setItem("vocodex-jwt", token)
       navigate("/")
@@ -142,11 +148,14 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
   useEffect(() => {
     const token = window.localStorage.getItem("vocodex-jwt")
     const isAuthenticated = checkAuthentication(token)
-    if (isAuthenticated) {
-      dispatch(setIsLoggedInTrue())
+    if (isAuthenticated && token) {
+      const { sub, username } = parseJwt(token)
+      dispatch(setUsername(username))
+      dispatch(setUserId(sub))
+      dispatch(setIsLoggedIn(true))
       navigate("/")
     } else {
-      dispatch(setIsLoggedInFalse())
+      dispatch(setIsLoggedIn(false))
     }
   }, [])
 

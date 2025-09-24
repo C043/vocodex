@@ -3,12 +3,14 @@ import { Outlet, NavLink, useNavigate } from "react-router-dom"
 import { checkAuthentication } from "../utils/authUtils"
 import { useDispatch, useSelector } from "react-redux"
 import {
-  setIsLoggedInFalse,
-  setIsLoggedInTrue
+  setIsLoggedIn,
+  setUserId,
+  setUsername
 } from "../redux/reducer/authSlice"
 
 const Layout = () => {
-  const isLoggedIn = useSelector(state => state.isLoggedIn.value)
+  const isLoggedIn = useSelector(state => state.user.isLoggedIn)
+  const username = useSelector(state => state.user.username)
   const dispatch = useDispatch()
 
   const link = ({ isActive }: { isActive: boolean }) =>
@@ -18,7 +20,9 @@ const Layout = () => {
 
   const handleLogout = () => {
     window.localStorage.removeItem("vocodex-jwt")
-    dispatch(setIsLoggedInFalse())
+    dispatch(setIsLoggedIn(false))
+    dispatch(setUserId(-1))
+    dispatch(setUsername(""))
     navigate("/login")
   }
 
@@ -26,9 +30,9 @@ const Layout = () => {
     const token = window.localStorage.getItem("vocodex-jwt")
     const isAuthenticated = checkAuthentication(token)
     if (isAuthenticated) {
-      dispatch(setIsLoggedInTrue())
+      dispatch(setIsLoggedIn(true))
     } else {
-      dispatch(setIsLoggedInFalse())
+      dispatch(setIsLoggedIn(false))
     }
   }, [])
 
@@ -38,6 +42,7 @@ const Layout = () => {
         <NavLink to="/" className={link}>
           VOCODEX
         </NavLink>
+        <a className="me-4 cursor-pointer">{username}</a>
         {isLoggedIn ? (
           <a className="cursor-pointer" onClick={handleLogout}>
             Logout
