@@ -10,6 +10,13 @@ import {
 import { setDarkMode } from "../redux/reducer/themeModeSlice"
 import { MoonIcon, SunIcon } from "@heroicons/react/24/solid"
 import { motion, AnimatePresence } from "framer-motion"
+import {
+  Avatar,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger
+} from "@heroui/react"
 
 const Layout = () => {
   const isLoggedIn = useSelector(state => state.user.isLoggedIn)
@@ -60,51 +67,64 @@ const Layout = () => {
 
   return (
     <div className="flex flex-col min-h-screen min-w-screen">
-      <nav className="p-4 border-b flex justify-center">
+      <nav className="p-4 border-b flex justify-between items-center">
         <NavLink to="/" className={link}>
           VOCODEX
         </NavLink>
-        <a className="me-4 cursor-pointer">{username}</a>
-        {isLoggedIn ? (
-          <a className="cursor-pointer" onClick={handleLogout}>
-            Logout
-          </a>
-        ) : (
-          <></>
-        )}
 
-        <div className="w-6 h-6 overflow-hidden cursor-pointer">
-          <AnimatePresence mode="popLayout">
-            {isDarkMode ? (
-              <motion.div
-                key="moon"
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 10, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                onClick={() => {
-                  dispatch(setDarkMode(false))
-                  window.localStorage.setItem("dark-mode", "false")
-                }}
-              >
-                <MoonIcon className="size-6" />
-              </motion.div>
-            ) : (
-              <motion.div
-                key={"sun"}
-                initial={{ y: -10, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 10, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                onClick={() => {
-                  dispatch(setDarkMode(true))
-                  window.localStorage.setItem("dark-mode", "true")
-                }}
-              >
-                <SunIcon className="size-6 cursor-pointer text-gray-500" />
-              </motion.div>
-            )}
-          </AnimatePresence>
+        <div className="flex items-center gap-5">
+          <div className="w-6 h-6 overflow-hidden cursor-pointer">
+            <AnimatePresence mode="popLayout">
+              {isDarkMode ? (
+                <motion.div
+                  key="moon"
+                  initial={{ y: -10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: 10, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={() => {
+                    dispatch(setDarkMode(false))
+                    window.localStorage.setItem("dark-mode", "false")
+                  }}
+                >
+                  <MoonIcon className="size-6" />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key={"sun"}
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: 10, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={() => {
+                    dispatch(setDarkMode(true))
+                    window.localStorage.setItem("dark-mode", "true")
+                  }}
+                >
+                  <SunIcon className="size-6 cursor-pointer text-gray-500" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {isLoggedIn ? (
+            <>
+              <Dropdown>
+                <DropdownTrigger className="cursor-pointer">
+                  <Avatar
+                    src={`https://ui-avatars.com/api/?name=${username}`}
+                  />
+                </DropdownTrigger>
+                <DropdownMenu>
+                  <DropdownItem key={"logout"} onClick={handleLogout}>
+                    <a className="cursor-pointer">Logout</a>
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+            </>
+          ) : (
+            <></>
+          )}
         </div>
       </nav>
       <main className="flex flex-col flex-1 items-center justify-center p-6">
