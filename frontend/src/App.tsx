@@ -1,4 +1,6 @@
 import "./App.css"
+import { HeroUIProvider } from "@heroui/react"
+import { ToastProvider } from "@heroui/toast"
 import { Navigate, Route, Routes } from "react-router-dom"
 import Layout from "./components/Layout"
 import Home from "./pages/Home"
@@ -7,14 +9,17 @@ import NotFound from "./pages/NotFound"
 
 function App() {
   return (
-    <Routes>
-      <Route element={<Layout />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<AuthPage mode={"login"} />} />
-        <Route path="/404" element={<NotFound />} />
-        <Route path="*" element={<Navigate to="/404" replace />} />
-      </Route>
-    </Routes>
+    <HeroUIProvider>
+      <ToastProvider />
+      <Routes>
+        <Route element={<Layout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<AuthPage mode={"login"} />} />
+          <Route path="/404" element={<NotFound />} />
+          <Route path="*" element={<Navigate to="/404" replace />} />
+        </Route>
+      </Routes>
+    </HeroUIProvider>
   )
 }
 

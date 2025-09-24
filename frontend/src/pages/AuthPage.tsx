@@ -1,4 +1,6 @@
 import { FormEvent, useEffect, useState } from "react"
+import { Spinner } from "@heroui/react"
+import { addToast, Button } from "@heroui/react"
 import { useNavigate } from "react-router-dom"
 import { checkAuthentication } from "../utils/authUtils"
 import { useDispatch } from "react-redux"
@@ -57,6 +59,12 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
       navigate("/")
     } catch (err) {
       setError(true)
+      addToast({
+        title: "There was an error.",
+        description: "Check the credentials and try again.",
+        color: "danger"
+      })
+      refreshData()
       console.log(err)
     } finally {
       setLoading(false)
@@ -92,11 +100,16 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
       if (!resp.ok) {
         throw new Error(`There was an error: ${resp.status}`)
       }
-      const data = await resp.json()
+      await resp.json()
       setLogin("login")
     } catch (err) {
-      console.log(err)
       setError(true)
+      addToast({
+        title: "There was an error.",
+        description: "Please try again later.",
+        color: "danger"
+      })
+      console.log(err)
     } finally {
       setLoading(false)
     }
@@ -130,13 +143,14 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
   }, [isLogin])
 
   return (
-    <div>
+    <div className="bg-gray-600 p-10 rounded-2xl">
       {isLogin === "login" ? (
         <div className="flex flex-col">
           <h1 className="text-2xl font-bold mb-5">Login</h1>
-          {hasError ? <div>There was an error...</div> : <></>}
           {isLoading ? (
-            <p>Loading...</p>
+            <div className="flex justify-center mb-5">
+              <Spinner color="default" size="lg" />
+            </div>
           ) : (
             <form
               className="flex flex-col gap-5 mb-5"
@@ -168,9 +182,10 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
       ) : (
         <div className="flex flex-col">
           <h1 className="text-2xl font-bold mb-5">Register</h1>
-          {hasError ? <div>There was an error...</div> : <></>}
           {isLoading ? (
-            <p>Loading...</p>
+            <div className="flex justify-center mb-5">
+              <Spinner color="default" size="lg" />
+            </div>
           ) : (
             <form
               className="flex flex-col gap-5 mb-5"
