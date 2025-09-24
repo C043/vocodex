@@ -9,6 +9,7 @@ import {
 } from "../redux/reducer/authSlice"
 import { setDarkMode } from "../redux/reducer/themeModeSlice"
 import { MoonIcon, SunIcon } from "@heroicons/react/24/solid"
+import { motion, AnimatePresence } from "framer-motion"
 
 const Layout = () => {
   const isLoggedIn = useSelector(state => state.user.isLoggedIn)
@@ -71,23 +72,40 @@ const Layout = () => {
         ) : (
           <></>
         )}
-        {isDarkMode ? (
-          <MoonIcon
-            className="size-6 cursor-pointer"
-            onClick={() => {
-              dispatch(setDarkMode(false))
-              window.localStorage.setItem("dark-mode", "false")
-            }}
-          />
-        ) : (
-          <SunIcon
-            className="size-6 cursor-pointer text-gray-500"
-            onClick={() => {
-              dispatch(setDarkMode(true))
-              window.localStorage.setItem("dark-mode", "true")
-            }}
-          />
-        )}
+
+        <div className="w-6 h-6 overflow-hidden cursor-pointer">
+          <AnimatePresence mode="popLayout">
+            {isDarkMode ? (
+              <motion.div
+                key="moon"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 10, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => {
+                  dispatch(setDarkMode(false))
+                  window.localStorage.setItem("dark-mode", "false")
+                }}
+              >
+                <MoonIcon className="size-6" />
+              </motion.div>
+            ) : (
+              <motion.div
+                key={"sun"}
+                initial={{ y: -10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 10, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => {
+                  dispatch(setDarkMode(true))
+                  window.localStorage.setItem("dark-mode", "true")
+                }}
+              >
+                <SunIcon className="size-6 cursor-pointer text-gray-500" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </nav>
       <main className="flex flex-col flex-1 items-center justify-center p-6">
         <Outlet />
