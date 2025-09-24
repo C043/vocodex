@@ -167,101 +167,108 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
     <div className="bg-gray-600 border border-white p-10 rounded-2xl">
       {isLogin === "login" ? (
         <div className="flex flex-col">
-          <h1 className="text-2xl font-bold mb-5">Login</h1>
           {isLoading ? (
-            <div className="flex justify-center mb-5">
+            <div className="flex justify-center">
               <Spinner color="default" size="lg" />
             </div>
           ) : (
-            <Form onSubmit={handleLoginRequest}>
-              <Input
-                label="Username"
-                placeholder="Enter your username"
-                name="loginUsername"
-                value={loginUsername}
-                minLength={4}
-                onChange={ev => setLoginUsername(ev.target.value)}
-                isRequired
-              />
-              <Input
-                label="Password"
-                type="password"
-                name="loginPassword"
-                placeholder="Enter your password"
-                minLength={4}
-                value={loginPassword}
-                onChange={ev => setLoginPassword(ev.target.value)}
-                isRequired
-              />
-              <div>
-                <Button className="me-5" type="submit">
-                  Login!
-                </Button>
-                <a
-                  className="cursor-pointer"
-                  onClick={() => setLogin("register")}
-                >
-                  Need an account?
-                </a>
-              </div>
-            </Form>
+            <>
+              <h1 className="text-5xl font-bold mb-5">Login</h1>
+              <Form onSubmit={handleLoginRequest}>
+                <Input
+                  label="Username"
+                  placeholder="Enter your username"
+                  name="loginUsername"
+                  value={loginUsername}
+                  minLength={4}
+                  onChange={ev => setLoginUsername(ev.target.value)}
+                  isRequired
+                />
+                <Input
+                  label="Password"
+                  type="password"
+                  name="loginPassword"
+                  placeholder="Enter your password"
+                  minLength={4}
+                  value={loginPassword}
+                  onChange={ev => setLoginPassword(ev.target.value)}
+                  isRequired
+                />
+                <div>
+                  <Button className="me-5" type="submit">
+                    Login!
+                  </Button>
+                  <a
+                    className="cursor-pointer"
+                    onClick={() => setLogin("register")}
+                  >
+                    Need an account?
+                  </a>
+                </div>
+              </Form>
+            </>
           )}
         </div>
       ) : (
         <div className="flex flex-col">
-          <h1 className="text-2xl font-bold mb-5">Register</h1>
           {isLoading ? (
-            <div className="flex justify-center mb-5">
+            <div className="flex justify-center">
               <Spinner color="default" size="lg" />
             </div>
           ) : (
-            <Form
-              validationErrors={validationErrors}
-              onSubmit={handleRegisterRequest}
-            >
-              <Input
-                label="Username"
-                labelPlacement="inside"
-                name="username"
-                placeholder="Enter your username"
-                minLength={4}
-                value={registerUsername}
-                onChange={ev => setRegisterUsername(ev.target.value)}
-                isRequired
-              />
-              <Input
-                label="Password"
-                labelPlacement="inside"
-                name="password"
-                type="password"
-                placeholder="Enter your password"
-                minLength={4}
-                value={registerPassword}
-                onChange={ev => setRegisterPassword(ev.target.value)}
-                isRequired
-              />
-              <Input
-                label="Repeat Password"
-                labelPlacement="inside"
-                name="repeatPassword"
-                type="password"
-                placeholder="Repeat Password"
-                minLength={4}
-                value={registerRepeatPassword}
-                onChange={ev => {
-                  setRegisterRepeatPassword(ev.target.value)
-                }}
-                isRequired
-              />
-              <div>
-                <Button className="me-5" type="submit">
-                  Register!
-                </Button>
-                <a className="cursor-pointer" onClick={() => setLogin("login")}>
-                  Already have an account?
-                </a>
-              </div>
-            </Form>
+            <>
+              <h1 className="text-5xl font-bold mb-5">Register</h1>
+              <Form
+                validationErrors={validationErrors}
+                onSubmit={handleRegisterRequest}
+              >
+                <Input
+                  label="Username"
+                  labelPlacement="inside"
+                  name="username"
+                  placeholder="Enter your username"
+                  minLength={4}
+                  value={registerUsername}
+                  onChange={ev => setRegisterUsername(ev.target.value)}
+                  isRequired
+                />
+                <Input
+                  label="Password"
+                  labelPlacement="inside"
+                  name="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  minLength={4}
+                  value={registerPassword}
+                  onChange={ev => setRegisterPassword(ev.target.value)}
+                  isRequired
+                />
+                <Input
+                  label="Repeat Password"
+                  labelPlacement="inside"
+                  name="repeatPassword"
+                  type="password"
+                  placeholder="Repeat Password"
+                  minLength={4}
+                  value={registerRepeatPassword}
+                  onChange={ev => {
+                    setRegisterRepeatPassword(ev.target.value)
+                  }}
+                  isRequired
+                />
+                <div>
+                  <Button className="me-5" type="submit">
+                    Register!
+                  </Button>
+                  <a
+                    className="cursor-pointer"
+                    onClick={() => setLogin("login")}
+                  >
+                    Already have an account?
+                  </a>
+                </div>
+              </Form>
+            </>
           )}
         </div>
       )}
