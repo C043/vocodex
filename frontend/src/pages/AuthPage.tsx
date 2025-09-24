@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react"
-import { Spinner } from "@heroui/react"
+import { Form, Input, Spinner } from "@heroui/react"
 import { addToast, Button } from "@heroui/react"
 import { useNavigate } from "react-router-dom"
 import { checkAuthentication } from "../utils/authUtils"
@@ -16,6 +16,7 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
 
   const [isLogin, setLogin] = useState<Mode>(mode)
   const [hasError, setError] = useState(false)
+  const [validationErrors, setValidationErrors] = useState({})
   const [isLoading, setLoading] = useState(false)
 
   const navigate = useNavigate()
@@ -71,15 +72,15 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
     }
   }
 
-  const checkPasswords = (target: HTMLInputElement) => {
-    if (registerPassword !== target.value) {
-      target.setCustomValidity("Password Must be Matching")
-    } else if (registerPassword === target.value) {
-      target.setCustomValidity("")
-    }
-  }
   const handleRegisterRequest = async (ev: FormEvent<HTMLFormElement>) => {
     ev.preventDefault()
+
+    const data = Object.fromEntries(new FormData(ev.currentTarget))
+
+    if (data.password !== data.repeatPassword) {
+      setValidationErrors({ repeatPassword: "Passwords must match" })
+      return
+    }
 
     try {
       setLoading(true)
@@ -98,12 +99,23 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
         body: JSON.stringify(body)
       })
       if (!resp.ok) {
-        throw new Error(`There was an error: ${resp.status}`)
+        const data = await resp.json().catch(() => null)
+        const detail = data?.detail ?? `HTTP ${resp.status}`
+        const error = new Error(detail)
+        ;(error as any).status = resp.status
+        throw error
       }
       await resp.json()
       setLogin("login")
     } catch (err) {
       setError(true)
+      let errors = {}
+      if (err.status === 409) {
+        errors = {
+          username: "Sorry, this username is already taken."
+        }
+      }
+      setValidationErrors(errors)
       addToast({
         title: "There was an error.",
         description: "Please try again later.",
@@ -143,7 +155,7 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
   }, [isLogin])
 
   return (
-    <div className="bg-gray-600 p-10 rounded-2xl">
+    <div className="bg-gray-600 border border-white p-10 rounded-2xl">
       {isLogin === "login" ? (
         <div className="flex flex-col">
           <h1 className="text-2xl font-bold mb-5">Login</h1>
@@ -152,32 +164,39 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
               <Spinner color="default" size="lg" />
             </div>
           ) : (
-            <form
-              className="flex flex-col gap-5 mb-5"
-              onSubmit={handleLoginRequest}
-            >
-              <input
-                type="text"
-                className="border rounded-xl p-2"
-                placeholder="Username"
+            <Form onSubmit={handleLoginRequest}>
+              <Input
+                label="Username"
+                placeholder="Enter your username"
+                name="loginUsername"
                 value={loginUsername}
                 minLength={4}
                 onChange={ev => setLoginUsername(ev.target.value)}
-                required
+                isRequired
               />
-              <input
+              <Input
+                label="Password"
                 type="password"
-                placeholder="Password"
-                className="border rounded-xl p-2"
+                name="loginPassword"
+                placeholder="Enter your password"
                 minLength={4}
                 value={loginPassword}
                 onChange={ev => setLoginPassword(ev.target.value)}
-                required
+                isRequired
               />
-              <button type="submit">Login!</button>
-            </form>
+              <div>
+                <Button className="me-5" type="submit">
+                  Login!
+                </Button>
+                <a
+                  className="cursor-pointer"
+                  onClick={() => setLogin("register")}
+                >
+                  Need an account?
+                </a>
+              </div>
+            </Form>
           )}
-          <button onClick={() => setLogin("register")}>Need an account?</button>
         </div>
       ) : (
         <div className="flex flex-col">
@@ -187,44 +206,54 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
               <Spinner color="default" size="lg" />
             </div>
           ) : (
-            <form
-              className="flex flex-col gap-5 mb-5"
+            <Form
+              validationErrors={validationErrors}
               onSubmit={handleRegisterRequest}
             >
-              <input
-                type="text"
-                placeholder="Username"
-                className="border rounded-xl p-2"
+              <Input
+                label="Username"
+                labelPlacement="inside"
+                name="username"
+                placeholder="Enter your username"
                 minLength={4}
                 value={registerUsername}
                 onChange={ev => setRegisterUsername(ev.target.value)}
-                required
+                isRequired
               />
-              <input
+              <Input
+                label="Password"
+                labelPlacement="inside"
+                name="password"
                 type="password"
-                placeholder="Password"
-                className="border rounded-xl p-2"
+                placeholder="Enter your password"
                 minLength={4}
                 value={registerPassword}
                 onChange={ev => setRegisterPassword(ev.target.value)}
+                isRequired
               />
-              <input
+              <Input
+                label="Repeat Password"
+                labelPlacement="inside"
+                name="repeatPassword"
                 type="password"
                 placeholder="Repeat Password"
-                className="border rounded-xl p-2"
                 minLength={4}
                 value={registerRepeatPassword}
                 onChange={ev => {
                   setRegisterRepeatPassword(ev.target.value)
-                  checkPasswords(ev.target)
                 }}
+                isRequired
               />
-              <button type="submit">Register!</button>
-            </form>
+              <div>
+                <Button className="me-5" type="submit">
+                  Register!
+                </Button>
+                <a className="cursor-pointer" onClick={() => setLogin("login")}>
+                  Already have an account?
+                </a>
+              </div>
+            </Form>
           )}
-          <button onClick={() => setLogin("login")}>
-            Already have an account?
-          </button>
         </div>
       )}
     </div>
