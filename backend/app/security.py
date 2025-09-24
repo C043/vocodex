@@ -13,9 +13,14 @@ def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode(), hashed.encode())
 
 
-def create_access_token(user_id: int) -> str:
+def create_access_token(user_id: int, username: str) -> str:
     now = int(time.time())
-    payload = {"sub": str(user_id), "iat": now, "exp": now + JWT_EXPIRES}
+    payload = {
+        "sub": str(user_id),
+        "username": username,
+        "iat": now,
+        "exp": now + JWT_EXPIRES,
+    }
     return jwt.encode(payload, JWT_SECRET, algorithm=ALGO)
 
 

@@ -37,8 +37,11 @@ async def login(data: LoginIn, session: AsyncSession = Depends(get_session)):
     if not user or not verify_password(data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    token = create_access_token(user.id)
-    return TokenOut(token=token)
+    if user.username and user.id:
+        token = create_access_token(user.id, user.username)
+        return TokenOut(token=token)
+    else:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
 
 @router.get("/me", response_model=UserOut)
