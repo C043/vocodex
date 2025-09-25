@@ -24,6 +24,18 @@ const Layout = () => {
   const isDarkMode = useSelector(state => state.darkMode.value)
   const dispatch = useDispatch()
 
+  const darkBg = `
+  radial-gradient(circle at 50% 100%, rgba(70,85,110,.5) 0%, transparent 60%),
+  radial-gradient(circle at 50% 100%, rgba(99,102,241,.4) 0%, transparent 70%),
+  radial-gradient(circle at 50% 100%, rgba(181,184,208,.3) 0%, transparent 80%)
+  `
+
+  const lightBg = `
+  radial-gradient(circle at 50% 100%, rgba(253,224,71,.4) 0%, transparent 60%),
+  radial-gradient(circle at 50% 100%, rgba(251,191,36,.4) 0%, transparent 70%),
+  radial-gradient(circle at 50% 100%, rgba(244,114,182,.5) 0%, transparent 80%)
+  `
+
   const link = ({ isActive }: { isActive: boolean }) =>
     isActive ? "font-semibold mr-4" : "mr-4"
 
@@ -66,7 +78,7 @@ const Layout = () => {
   }, [isDarkMode])
 
   return (
-    <div className="flex flex-col min-h-screen min-w-screen">
+    <div className="min-h-screen flex flex-col">
       <nav className="p-4 border-b flex justify-between items-center">
         <NavLink to="/" className={link}>
           VOCODEX
@@ -127,8 +139,18 @@ const Layout = () => {
           )}
         </div>
       </nav>
-      <main className="flex flex-col flex-1 items-center justify-center p-6">
-        <Outlet />
+      <main className="flex flex-1">
+        <div
+          className="min-w-screen relative"
+          style={{
+            backgroundImage: isDarkMode ? darkBg : lightBg,
+            backgroundRepeat: "no-repeat"
+          }}
+        >
+          <div className="flex flex-col flex-1 items-center justify-center p-6">
+            <Outlet />
+          </div>
+        </div>
       </main>
     </div>
   )
