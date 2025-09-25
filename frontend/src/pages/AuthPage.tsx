@@ -164,7 +164,7 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
   }, [isLogin])
 
   return (
-    <div className="bg-gray-600 border border-white p-10 rounded-2xl">
+    <div className="dark:bg-gray-600 border border-white p-10 rounded-2xl">
       {isLogin === "login" ? (
         <div className="flex flex-col">
           {isLoading ? (
