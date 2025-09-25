@@ -79,64 +79,66 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <nav className="p-4 border-b flex justify-between items-center">
-        <NavLink to="/" className={link}>
-          VOCODEX
-        </NavLink>
+      <nav className="p-4 border-b">
+        <div className="flex justify-between items-center container mx-auto">
+          <NavLink to="/" className={link}>
+            VOCODEX
+          </NavLink>
 
-        <div className="flex items-center gap-5">
-          <div className="w-6 h-6 overflow-hidden cursor-pointer">
-            <AnimatePresence mode="popLayout">
-              {isDarkMode ? (
-                <motion.div
-                  key="moon"
-                  initial={{ y: -10, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: -10, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  onClick={() => {
-                    dispatch(setDarkMode(false))
-                    window.localStorage.setItem("dark-mode", "false")
-                  }}
-                >
-                  <MoonIcon className="size-6" />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key={"sun"}
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: 20, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  onClick={() => {
-                    dispatch(setDarkMode(true))
-                    window.localStorage.setItem("dark-mode", "true")
-                  }}
-                >
-                  <SunIcon className="size-6 cursor-pointer text-gray-500" />
-                </motion.div>
-              )}
-            </AnimatePresence>
+          <div className="flex items-center gap-5">
+            <div className="w-6 h-6 overflow-hidden cursor-pointer">
+              <AnimatePresence mode="popLayout">
+                {isDarkMode ? (
+                  <motion.div
+                    key="moon"
+                    initial={{ y: -10, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -10, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    onClick={() => {
+                      dispatch(setDarkMode(false))
+                      window.localStorage.setItem("dark-mode", "false")
+                    }}
+                  >
+                    <MoonIcon className="size-6" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key={"sun"}
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 20, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    onClick={() => {
+                      dispatch(setDarkMode(true))
+                      window.localStorage.setItem("dark-mode", "true")
+                    }}
+                  >
+                    <SunIcon className="size-6 cursor-pointer text-gray-500" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {isLoggedIn ? (
+              <>
+                <Dropdown>
+                  <DropdownTrigger className="cursor-pointer">
+                    <Avatar
+                      src={`https://ui-avatars.com/api/?name=${username}`}
+                    />
+                  </DropdownTrigger>
+                  <DropdownMenu>
+                    <DropdownItem key={"logout"} onClick={handleLogout}>
+                      <a className="cursor-pointer">Logout</a>
+                    </DropdownItem>
+                  </DropdownMenu>
+                </Dropdown>
+              </>
+            ) : (
+              <></>
+            )}
           </div>
-
-          {isLoggedIn ? (
-            <>
-              <Dropdown>
-                <DropdownTrigger className="cursor-pointer">
-                  <Avatar
-                    src={`https://ui-avatars.com/api/?name=${username}`}
-                  />
-                </DropdownTrigger>
-                <DropdownMenu>
-                  <DropdownItem key={"logout"} onClick={handleLogout}>
-                    <a className="cursor-pointer">Logout</a>
-                  </DropdownItem>
-                </DropdownMenu>
-              </Dropdown>
-            </>
-          ) : (
-            <></>
-          )}
         </div>
       </nav>
       <main className="flex flex-1">
@@ -147,7 +149,7 @@ const Layout = () => {
             backgroundRepeat: "no-repeat"
           }}
         >
-          <div className="flex flex-col flex-1 items-center justify-center p-6">
+          <div className="flex flex-col flex-1 items-center justify-center p-6 container mx-auto">
             <Outlet />
           </div>
         </div>
