@@ -119,7 +119,7 @@ async def test_protected_requires_auth(client):
     assert resp.status_code == 401
 
 async def test_protected_with_token(client):
-    headers = {"Authorization": "Bearer testtoken"}
+    headers = {"Authorization": "bearer testtoken"}
     resp = await client.get("/me", headers = headers)
     assert resp.status_code == 200
 ```
