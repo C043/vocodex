@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..db import get_session
 from ..models.user import Users
-from ..schemas import RegisterIn, LoginIn, UserOut, TokenOut
+from ..schemas.authSchemas import RegisterIn, LoginIn, UserOut, TokenOut
 from ..security import hash_password, verify_password, create_access_token
 from ..deps import get_current_user
 

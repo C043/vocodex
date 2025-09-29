@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from app.db import get_session
 from app.models.entry import Entries
-from ..schemas import UploadTextIn, UploadTextOut
+from ..schemas.uploadSchemas import UploadTextIn, UploadTextOut
 
 router = APIRouter(prefix="/uploads", tags=["uploads"])
 
