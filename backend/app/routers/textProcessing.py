@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from app.db import get_session
 from app.models.entry import Entries
+from app.schemas.entriesSchemas import ListEntriesIn, ListEntriesOut
 from ..schemas.uploadSchemas import UploadTextIn, UploadTextOut
 
 router = APIRouter(prefix="/uploads", tags=["uploads"])
@@ -22,3 +24,19 @@ async def uploadText(data: UploadTextIn, session: AsyncSession = Depends(get_ses
 
     # Return new id
     return UploadTextOut(id=entry.id)
+
+
+@router.get("/list", status_code=200)
+async def listEntries(
+    data: ListEntriesIn, session: AsyncSession = Depends(get_session)
+) -> ListEntriesOut:
+    user_id = data.user_id
+    try:
+        entries = (
+            await session.execute(
+                select(Entries.id, Entries.title).where(Entries.user_id == user_id)
+            )
+        ).all()
+        return ListEntriesOut(entries=entries)
+    except Exception:
+        raise
