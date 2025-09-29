@@ -47,7 +47,7 @@ registerExceptionHandlers(app)
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
 )
-app.add_middleware(AuthMiddleware, protected_paths=("/upload"))
+app.add_middleware(AuthMiddleware, protected_paths=("/upload",))
 
 # Routers
 from .routers import auth

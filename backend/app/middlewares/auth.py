@@ -40,4 +40,4 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 raise AuthError(404, "User not found")
 
             request.state.user = user
-            return await call_next
+            return await call_next(request)
