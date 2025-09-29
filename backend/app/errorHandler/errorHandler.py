@@ -37,7 +37,7 @@ def registerExceptionHandlers(app: FastAPI) -> None:
     async def _unauthorized(_: Request, exc: AuthError):
         logger.exception("Unauthorized error")
         return JSONResponse(
-            status_code=exc.status_code, content={"detail": "Unauthorized"}
+            status_code=exc.status_code, content={"detail": exc.message}
         )
 
     @app.exception_handler(Exception)

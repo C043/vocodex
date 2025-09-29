@@ -11,7 +11,7 @@ async def test_protected_route_require_token(client):
 
     resp = await client.post("/upload/some-resource", json={})
     assert resp.status_code == 401
-    assert resp.json()["message"] == "Missing token"
+    assert resp.json()["detail"] == "Missing token"
 
 
 @pytest.mark.asyncio
@@ -26,7 +26,7 @@ async def test_protected_route_rejects_malformed_header(client):
     )
 
     assert resp.status_code == 401
-    assert resp.json()["message"] == "Missing token"
+    assert resp.json()["detail"] == "Missing token"
 
 
 @pytest.mark.asyncio
@@ -40,7 +40,7 @@ async def test_protected_route_rejects_invalid_token(client):
         json={},
     )
     assert resp.status_code == 401
-    assert resp.json()["message"] == "Invalid or expired token"
+    assert resp.json()["detail"] == "Invalid or expired token"
 
 
 @pytest.mark.asyncio
@@ -67,7 +67,7 @@ async def test_protected_route_missing_user(client, db_session, user_cleanup):
     )
 
     assert resp.status_code == 404
-    assert resp.json()["message"] == "User not found"
+    assert resp.json()["detail"] == "User not found"
 
 
 @pytest.mark.asyncio
