@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy import text
 
-from app.models.user import Base
+from app.models.base import Base
 
 from .db import get_session
 

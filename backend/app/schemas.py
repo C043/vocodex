@@ -19,3 +19,8 @@ class UserOut(BaseModel):
 class TokenOut(BaseModel):
     token: str
     token_type: str = "bearer"
+
+
+class UploadTextIn(BaseModel):
+    title: str
+    content: str
