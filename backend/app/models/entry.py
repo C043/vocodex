@@ -17,7 +17,7 @@ class Entries(Base):
         ForeignKey("users.id"), nullable=False, index=True
     )
     title: Mapped[str] = mapped_column(String(120))
-    text_content: Mapped[str] = mapped_column(String(1000), nullable=False)
+    content: Mapped[str] = mapped_column(String(1000), nullable=False)
     created_at: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
