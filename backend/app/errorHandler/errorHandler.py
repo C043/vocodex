@@ -7,6 +7,7 @@ from sqlalchemy.exc import (
     OperationalError,
     TimeoutError as SATimeoutError,
 )
+from .authError import AuthError
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -31,6 +32,13 @@ def registerExceptionHandlers(app: FastAPI) -> None:
     async def _timeout(_: Request, exc: SATimeoutError):
         logger.exception("DB Timeout")
         return JSONResponse(status_code=503, content={"detail": "Database timeout"})
+
+    @app.exception_handler(AuthError)
+    async def _unauthorized(_: Request, exc: AuthError):
+        logger.exception("Unauthorized error")
+        return JSONResponse(
+            status_code=exc.status_code, content={"detail": "Unauthorized"}
+        )
 
     @app.exception_handler(Exception)
     async def _unhandled(_: Request, exc: Exception):

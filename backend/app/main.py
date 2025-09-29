@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy import text
 
 from app.models.base import Base
+from app.middlewares.auth import AuthMiddleware
 
 from .db import get_session
 
@@ -39,13 +40,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-from app.errors import registerExceptionHandlers
+from app.errorHandler.errorHandler import registerExceptionHandlers
 
 registerExceptionHandlers(app)
 
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
 )
+app.add_middleware(AuthMiddleware, protected_paths=("/upload"))
 
 # Routers
 from .routers import auth
