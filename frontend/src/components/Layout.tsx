@@ -1,6 +1,6 @@
 import { useEffect } from "react"
 import { Outlet, NavLink, useNavigate } from "react-router-dom"
-import { checkAuthentication } from "../utils/authUtils"
+import { checkAuthentication, parseJwt } from "../utils/authUtils"
 import { useDispatch, useSelector } from "react-redux"
 import {
   setIsLoggedIn,
@@ -56,8 +56,10 @@ const Layout = () => {
   useEffect(() => {
     const token = window.localStorage.getItem("vocodex-jwt")
     const isAuthenticated = checkAuthentication(token)
-    if (isAuthenticated) {
+    if (isAuthenticated && token) {
+      const { sub, username } = parseJwt(token)
       dispatch(setIsLoggedIn(true))
+      dispatch(setUsername(username))
     } else {
       dispatch(setIsLoggedIn(false))
     }
