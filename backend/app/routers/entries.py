@@ -29,6 +29,9 @@ async def getEntryById(entry_id: int, session: AsyncSession = Depends(get_sessio
 
 @router.post("/text", status_code=201)
 async def uploadText(data: UploadTextIn, session: AsyncSession = Depends(get_session)):
+    if data.title == "":
+        data.title = " ".join(data.content.split()[:3])
+
     # Take the title and text content and save it on database in the correct table with the correct user
     entry = Entries(title=data.title, content=data.content, user_id=data.user_id)
 
