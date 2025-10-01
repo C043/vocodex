@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy import select
+from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from app.db import get_session
@@ -12,7 +12,19 @@ from app.schemas.entriesSchemas import (
     UploadTextOut,
 )
 
-router = APIRouter(prefix="/uploads", tags=["uploads"])
+router = APIRouter(prefix="/entries", tags=["entries"])
+
+
+@router.get("/{entry_id}", status_code=200)
+async def getEntryById(entry_id: int, session: AsyncSession = Depends(get_session)):
+    try:
+        entry = (
+            await session.execute(Select(Entries).where(Entries.id == entry_id))
+        ).scalar_one_or_none()
+
+        return entry
+    except Exception:
+        raise
 
 
 @router.post("/text", status_code=201)
