@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react"
+import { FormEvent, useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { checkAuthentication } from "../utils/authUtils"
 import { useDispatch, useSelector } from "react-redux"
@@ -17,14 +17,54 @@ import {
 } from "@heroui/react"
 
 const Home = () => {
+  const env = import.meta.env
+
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const username = useSelector(state => state.user.username)
   const [textTitle, setTextTitle] = useState("")
   const [textContent, setTextContent] = useState("")
 
-  const handleUpload = (ev: FormEvent<HTMLFormElement>) => {
+  const formRef = useRef<HTMLFormElement>(null)
+  const triggerSubmit = () => {
+    formRef.current?.requestSubmit()
+  }
+
+  const handleUpload = async (ev: FormEvent<HTMLFormElement>) => {
     ev.preventDefault()
+
+    try {
+      const token = window.localStorage.getItem("vocodex-jwt")
+      const url = `${env.VITE_API_URL}/entries/text`
+      const headers = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      }
+
+      const body = {
+        title: textTitle,
+        content: textContent
+      }
+
+      const resp = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body)
+      })
+
+      if (!resp.ok) {
+        throw new Error(`There was an error: ${resp.status}`)
+      }
+
+      const data = await resp.json()
+
+      console.log(data)
+    } catch (err) {
+      console.log(err)
+    } finally {
+      setTextTitle("")
+      setTextContent("")
+    }
   }
 
   useEffect(() => {
@@ -59,7 +99,7 @@ const Home = () => {
               </ModalHeader>
               <ModalBody>
                 <p>Text</p>
-                <Form onSubmit={handleUpload}>
+                <Form ref={formRef} onSubmit={handleUpload}>
                   <Input
                     label="Title"
                     type="text"
@@ -81,7 +121,13 @@ const Home = () => {
                 </Form>
               </ModalBody>
               <ModalFooter>
-                <Button color="primary" onPress={onClose}>
+                <Button
+                  color="primary"
+                  onPress={() => {
+                    triggerSubmit()
+                    onClose()
+                  }}
+                >
                   Upload
                 </Button>
               </ModalFooter>
