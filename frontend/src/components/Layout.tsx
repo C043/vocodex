@@ -57,7 +57,7 @@ const Layout = () => {
     const token = window.localStorage.getItem("vocodex-jwt")
     const isAuthenticated = checkAuthentication(token)
     if (isAuthenticated && token) {
-      const { sub, username } = parseJwt(token)
+      const { username } = parseJwt(token)
       dispatch(setIsLoggedIn(true))
       dispatch(setUsername(username))
     } else {

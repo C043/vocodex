@@ -67,6 +67,14 @@ const Home = () => {
     }
   }
 
+  // TODO - Get user entries
+  const getUserEntries = () => {
+    try {
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
   useEffect(() => {
     const token = window.localStorage.getItem("vocodex-jwt")
     const isAuthenticated = checkAuthentication(token)
@@ -85,6 +93,7 @@ const Home = () => {
       <Button className="max-w-fit" color="primary" onPress={onOpen}>
         Upload Text
       </Button>
+
       <Modal
         isOpen={isOpen}
         size="3xl"
