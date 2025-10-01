@@ -6,7 +6,6 @@ from app.db import get_session
 from app.models.entry import Entries
 from app.schemas.entriesSchemas import (
     EntrySummary,
-    ListEntriesIn,
     ListEntriesOut,
     UploadTextIn,
     UploadTextOut,
@@ -46,11 +45,10 @@ async def uploadText(data: UploadTextIn, session: AsyncSession = Depends(get_ses
     return UploadTextOut(id=entry.id)
 
 
-@router.get("/list", status_code=200)
+@router.get("/list/{user_id}", status_code=200)
 async def listEntries(
-    data: ListEntriesIn, session: AsyncSession = Depends(get_session)
+    user_id: int, session: AsyncSession = Depends(get_session)
 ) -> ListEntriesOut:
-    user_id = data.user_id
     try:
         rows = (
             await session.execute(

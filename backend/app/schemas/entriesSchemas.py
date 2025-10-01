@@ -15,10 +15,6 @@ class UploadTextOut(BaseModel):
     id: int
 
 
-class ListEntriesIn(BaseModel):
-    user_id: int
-
-
 class EntrySummary(BaseModel):
     id: int
     title: str

@@ -1,11 +1,15 @@
 import os, pytest
+from typing import List
+
+from app.schemas.entriesSchemas import EntrySummary, ListEntriesOut
 
 
 @pytest.mark.asyncio
-async def test_entry_saving(client, entry_cleanup, auth_header):
+async def test_entries(client, entry_cleanup, auth_header):
     if "DATABASE_URL" not in os.environ:
         pytest.skip("DATABASE_URL not set; skipping entries tests")
 
+    # Save entry test
     title = "TestTitle"
     content = "TestContent"
     headers, user = auth_header
@@ -22,28 +26,23 @@ async def test_entry_saving(client, entry_cleanup, auth_header):
     assert entryId
     entry_cleanup(entryId)
 
-    getResp = await client.get(
+    # Get entry test
+    resp = await client.get(
         f"/entries/{entryId}",
         headers=headers,
     )
 
-    assert getResp.status_code == 200
-    getData = getResp.json()
+    assert resp.status_code == 200
+    getData = resp.json()
 
     getTitle = getData["title"]
     getContent = getData["content"]
     assert getTitle == "TestTitle"
     assert getContent == "TestContent"
 
-
-@pytest.mark.asyncio
-async def test_entry_title_empty(client, entry_cleanup, auth_header):
-    if "DATABASE_URL" not in os.environ:
-        pytest.skip("DATABASE_URL not set; skipping entries tests")
-
+    # Title parsing test
     title = ""
     content = "Testing things out"
-    headers, user = auth_header
 
     resp = await client.post(
         "/entries/text",
@@ -57,15 +56,26 @@ async def test_entry_title_empty(client, entry_cleanup, auth_header):
     assert entryId
     entry_cleanup(entryId)
 
-    getResp = await client.get(
+    resp = await client.get(
         f"/entries/{entryId}",
         headers=headers,
     )
 
-    assert getResp.status_code == 200
-    getData = getResp.json()
+    assert resp.status_code == 200
+    getData = resp.json()
 
     getTitle = getData["title"]
     getContent = getData["content"]
     assert getTitle == "Testing things out"
     assert getContent == "Testing things out"
+
+    resp = await client.get(
+        f"/entries/list/{user.id}",
+        headers=headers,
+    )
+
+    assert resp.status_code == 200
+    payload = resp.json()
+    print(payload)
+    entries = payload["entries"]
+    assert len(entries) == 2
