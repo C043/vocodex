@@ -69,8 +69,9 @@ async def test_entries(client, entry_cleanup, auth_header):
     assert getTitle == "Testing things out"
     assert getContent == "Testing things out"
 
+    # List current user entries
     resp = await client.get(
-        f"/entries/list/{user.id}",
+        f"/entries/list/me",
         headers=headers,
     )
 
@@ -79,3 +80,8 @@ async def test_entries(client, entry_cleanup, auth_header):
     print(payload)
     entries = payload["entries"]
     assert len(entries) == 2
+
+    # Delete entry test
+    resp = await client.delete(f"/entries/{entryId}", headers=headers)
+
+    assert resp.status_code == 204

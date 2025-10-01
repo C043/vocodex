@@ -8,7 +8,6 @@ from app.models.entry import Entries
 class UploadTextIn(BaseModel):
     title: str = Field(max_length=120)
     content: str = Field(min_length=3, max_length=1000)
-    user_id: int
 
 
 class UploadTextOut(BaseModel):
