@@ -11,6 +11,7 @@ from sqlalchemy import text
 
 from app.models.base import Base
 from app.middlewares.auth import AuthMiddleware
+from app.routers import textProcessing
 
 from .db import get_session
 
@@ -53,6 +54,7 @@ app.add_middleware(AuthMiddleware, protected_paths=("/upload",))
 from .routers import auth
 
 app.include_router(auth.router)
+app.include_router(textProcessing.router)
 
 
 @app.get("/health")

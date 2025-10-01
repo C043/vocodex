@@ -14,7 +14,9 @@ class Entries(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"), nullable=False, index=True
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     title: Mapped[str] = mapped_column(String(120))
     content: Mapped[str] = mapped_column(String(1000), nullable=False)
@@ -22,4 +24,4 @@ class Entries(Base):
         DateTime(timezone=True), server_default=func.now()
     )
 
-    user: Mapped["Users"] = relationship(back_populates="entries")
+    user: Mapped["Users"] = relationship(back_populates="entries", passive_deletes=True)

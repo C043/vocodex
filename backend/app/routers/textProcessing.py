@@ -4,8 +4,13 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from app.db import get_session
 from app.models.entry import Entries
-from app.schemas.entriesSchemas import ListEntriesIn, ListEntriesOut
-from ..schemas.uploadSchemas import UploadTextIn, UploadTextOut
+from app.schemas.entriesSchemas import (
+    EntrySummary,
+    ListEntriesIn,
+    ListEntriesOut,
+    UploadTextIn,
+    UploadTextOut,
+)
 
 router = APIRouter(prefix="/uploads", tags=["uploads"])
 
@@ -32,11 +37,14 @@ async def listEntries(
 ) -> ListEntriesOut:
     user_id = data.user_id
     try:
-        entries = (
+        rows = (
             await session.execute(
                 select(Entries.id, Entries.title).where(Entries.user_id == user_id)
             )
         ).all()
+
+        entries = [EntrySummary(id=row.id, title=row.title) for row in rows]
+
         return ListEntriesOut(entries=entries)
     except Exception:
         raise
