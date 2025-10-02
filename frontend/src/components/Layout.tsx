@@ -85,7 +85,7 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen bg-[#E4F4F8] dark:bg-black flex flex-col">
-      <nav className="p-4 border-b">
+      <nav className="p-4 border-b h-[75px] flex">
         <div className="flex justify-between items-center container mx-auto">
           <NavLink to="/" className={link}>
             VOCODEX
