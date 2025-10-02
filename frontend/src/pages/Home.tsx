@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useRef, useState } from "react"
+import { FormEvent, Key, useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { checkAuthentication } from "../utils/authUtils"
 import { useDispatch, useSelector } from "react-redux"
@@ -6,24 +6,52 @@ import { setIsLoggedIn } from "../redux/reducer/authSlice"
 import {
   Button,
   Form,
+  getKeyValue,
   Input,
   Modal,
   ModalBody,
   ModalContent,
   ModalFooter,
   ModalHeader,
+  Table,
+  TableBody,
+  TableCell,
+  TableColumn,
+  TableHeader,
+  TableRow,
   Textarea,
   useDisclosure
 } from "@heroui/react"
+
+type Entry = {
+  id: number
+  title: String
+}
+
+type State = {
+  user: {
+    username: String
+  }
+}
+
+type Column = {
+  key: Key
+  label: String
+}
 
 const Home = () => {
   const env = import.meta.env
 
   const navigate = useNavigate()
   const dispatch = useDispatch()
-  const username = useSelector(state => state.user.username)
+
+  const username = useSelector((state: State) => state.user.username)
+  const token = window.localStorage.getItem("vocodex-jwt")
+
   const [textTitle, setTextTitle] = useState("")
   const [textContent, setTextContent] = useState("")
+
+  const [entries, setEntries] = useState<Entry[]>([])
 
   const formRef = useRef<HTMLFormElement>(null)
   const triggerSubmit = () => {
@@ -67,9 +95,24 @@ const Home = () => {
     }
   }
 
-  // TODO - Get user entries
-  const getUserEntries = () => {
+  const getUserEntries = async () => {
     try {
+      console.log("are we running this function?")
+      const url = `${env.VITE_API_URL}/entries/list/me`
+      const headers = {
+        Authorization: `Bearer ${token}`
+      }
+      const resp = await fetch(url, { headers })
+
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => null)
+        const detail = data?.detail ?? `HTTP ${resp.status}`
+        throw new Error(detail)
+      }
+
+      const data = await resp.json()
+      console.log(data)
+      setEntries(data.entries)
     } catch (err) {
       console.log(err)
     }
@@ -83,16 +126,49 @@ const Home = () => {
       navigate("/login")
     } else {
       dispatch(setIsLoggedIn(true))
+      ;(async () => {
+        await getUserEntries()
+      })().catch(console.error)
     }
   }, [])
 
   const { isOpen, onOpen, onOpenChange } = useDisclosure()
+
+  const columns: Column[] = [
+    {
+      key: "title",
+      label: "Title"
+    }
+  ]
   return (
     <>
       <h1 className="text-2xl font-bold mb-5">Welcome, {username}</h1>
-      <Button className="max-w-fit" color="primary" onPress={onOpen}>
+      <Button className="max-w-fit mb-5" color="primary" onPress={onOpen}>
         Upload Text
       </Button>
+
+      {entries.length > 0 ? (
+        <div className="flex flex-col items-stretch">
+          <Table aria-label="entries table" className="w-full">
+            <TableHeader columns={columns}>
+              {column => (
+                <TableColumn key={column.key}>{column.label}</TableColumn>
+              )}
+            </TableHeader>
+            <TableBody items={entries}>
+              {item => (
+                <TableRow key={item.id}>
+                  {columnKey => (
+                    <TableCell>{getKeyValue(item, columnKey)}</TableCell>
+                  )}
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      ) : (
+        <></>
+      )}
 
       <Modal
         isOpen={isOpen}

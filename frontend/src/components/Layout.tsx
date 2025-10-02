@@ -155,7 +155,7 @@ const Layout = () => {
             backgroundRepeat: "no-repeat"
           }}
         >
-          <div className="flex flex-col flex-1 items-center justify-center p-6 container mx-auto">
+          <div className="pt-6 container mx-auto">
             <Outlet />
           </div>
         </div>
