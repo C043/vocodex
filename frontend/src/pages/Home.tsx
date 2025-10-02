@@ -86,7 +86,7 @@ const Home = () => {
 
       await getUserEntries()
     } catch (err) {
-      console.log(err)
+      console.error(err)
     } finally {
       setTextTitle("")
       setTextContent("")
@@ -95,7 +95,6 @@ const Home = () => {
 
   const getUserEntries = async () => {
     try {
-      console.log("are we running this function?")
       const url = `${env.VITE_API_URL}/entries/list/me`
       const headers = {
         Authorization: `Bearer ${token}`
@@ -109,10 +108,9 @@ const Home = () => {
       }
 
       const data = await resp.json()
-      console.log(data)
       setEntries(data.entries)
     } catch (err) {
-      console.log(err)
+      console.error(err)
     }
   }
 
@@ -136,7 +134,8 @@ const Home = () => {
     {
       key: "title",
       label: "Title"
-    }
+    },
+    { key: "settings", label: "Settings" }
   ]
   return (
     <>
