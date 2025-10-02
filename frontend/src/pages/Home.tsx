@@ -84,9 +84,7 @@ const Home = () => {
         throw new Error(`There was an error: ${resp.status}`)
       }
 
-      const data = await resp.json()
-
-      console.log(data)
+      await getUserEntries()
     } catch (err) {
       console.log(err)
     } finally {
@@ -148,24 +146,22 @@ const Home = () => {
       </Button>
 
       {entries.length > 0 ? (
-        <div className="flex flex-col items-stretch">
-          <Table aria-label="entries table" className="w-full">
-            <TableHeader columns={columns}>
-              {column => (
-                <TableColumn key={column.key}>{column.label}</TableColumn>
-              )}
-            </TableHeader>
-            <TableBody items={entries}>
-              {item => (
-                <TableRow key={item.id}>
-                  {columnKey => (
-                    <TableCell>{getKeyValue(item, columnKey)}</TableCell>
-                  )}
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+        <Table aria-label="entries table" className="w-full">
+          <TableHeader columns={columns}>
+            {column => (
+              <TableColumn key={column.key}>{column.label}</TableColumn>
+            )}
+          </TableHeader>
+          <TableBody items={entries}>
+            {item => (
+              <TableRow key={item.id}>
+                {columnKey => (
+                  <TableCell>{getKeyValue(item, columnKey)}</TableCell>
+                )}
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       ) : (
         <></>
       )}
