@@ -1,4 +1,4 @@
-import { FormEvent, Key, useEffect, useRef, useState } from "react"
+import React, { FormEvent, Key, useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { checkAuthentication } from "../utils/authUtils"
 import { useDispatch, useSelector } from "react-redux"
@@ -20,8 +20,10 @@ import {
   TableHeader,
   TableRow,
   Textarea,
+  Tooltip,
   useDisclosure
 } from "@heroui/react"
+import { TrashIcon } from "@heroicons/react/24/solid"
 
 type Entry = {
   id: number
@@ -93,6 +95,30 @@ const Home = () => {
     }
   }
 
+  const handleDelete = async (entryId: number) => {
+    try {
+      const url = `${env.VITE_API_URL}/entries/${entryId}`
+      const headers = {
+        Authorization: `Bearer ${token}`
+      }
+      const method = "DELETE"
+      const resp = await fetch(url, {
+        method,
+        headers
+      })
+
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => null)
+        const detail = data?.detail ?? `HTTP ${resp.status}`
+        throw new Error(detail)
+      }
+
+      await getUserEntries()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   const getUserEntries = async () => {
     try {
       const url = `${env.VITE_API_URL}/entries/list/me`
@@ -135,8 +161,33 @@ const Home = () => {
       key: "title",
       label: "Title"
     },
-    { key: "settings", label: "Settings" }
+    { key: "actions", label: "Actions" }
   ]
+
+  const renderCell = React.useCallback((entry: Entry, columnKey: React.Key) => {
+    const cellValue = entry[columnKey as keyof Entry]
+
+    switch (columnKey) {
+      case "title":
+        return <p>{entry.title}</p>
+      case "actions":
+        return (
+          <div className="relative flex justify-end items-center gap-2">
+            <Tooltip color="danger" content="Delete">
+              <span
+                className="text-danger cursor-pointer active:opacity-50"
+                onClick={ev => handleDelete(entry.id)}
+              >
+                <TrashIcon className="size-6 text-danger" />
+              </span>
+            </Tooltip>
+          </div>
+        )
+      default:
+        return cellValue
+    }
+  }, [])
+
   return (
     <>
       <h1 className="text-2xl font-bold mb-5">Welcome, {username}</h1>
@@ -145,17 +196,27 @@ const Home = () => {
       </Button>
 
       {entries.length > 0 ? (
-        <Table aria-label="entries table" className="w-full">
+        <Table
+          aria-label="entries table"
+          className="w-full"
+          color="default"
+          selectionMode="single"
+        >
           <TableHeader columns={columns}>
             {column => (
-              <TableColumn key={column.key}>{column.label}</TableColumn>
+              <TableColumn
+                key={column.key}
+                align={column.key === "actions" ? "end" : "start"}
+              >
+                {column.label}
+              </TableColumn>
             )}
           </TableHeader>
           <TableBody items={entries}>
             {item => (
-              <TableRow key={item.id}>
+              <TableRow key={item.id} className="cursor-pointer">
                 {columnKey => (
-                  <TableCell>{getKeyValue(item, columnKey)}</TableCell>
+                  <TableCell>{renderCell(item, columnKey)}</TableCell>
                 )}
               </TableRow>
             )}
