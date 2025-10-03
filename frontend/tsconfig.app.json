@@ -31,5 +31,5 @@
   },
   "include": [
     "src"
-  ]
+, "tests/Home.test.tsx", "tests/test-utils.tsx", "tests/vitest-setup.ts"  ]
 }

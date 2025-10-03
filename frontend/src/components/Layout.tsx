@@ -1,6 +1,6 @@
 import { useEffect } from "react"
 import { Outlet, NavLink, useNavigate } from "react-router-dom"
-import { checkAuthentication } from "../utils/authUtils"
+import { checkAuthentication, parseJwt } from "../utils/authUtils"
 import { useDispatch, useSelector } from "react-redux"
 import {
   setIsLoggedIn,
@@ -56,8 +56,10 @@ const Layout = () => {
   useEffect(() => {
     const token = window.localStorage.getItem("vocodex-jwt")
     const isAuthenticated = checkAuthentication(token)
-    if (isAuthenticated) {
+    if (isAuthenticated && token) {
+      const { username } = parseJwt(token)
       dispatch(setIsLoggedIn(true))
+      dispatch(setUsername(username))
     } else {
       dispatch(setIsLoggedIn(false))
     }
@@ -83,7 +85,7 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen bg-[#E4F4F8] dark:bg-black flex flex-col">
-      <nav className="p-4 border-b">
+      <nav className="p-4 border-b h-[75px] flex">
         <div className="flex justify-between items-center container mx-auto">
           <NavLink to="/" className={link}>
             VOCODEX
@@ -153,7 +155,7 @@ const Layout = () => {
             backgroundRepeat: "no-repeat"
           }}
         >
-          <div className="flex flex-col flex-1 items-center justify-center p-6 container mx-auto">
+          <div className="pt-6 container mx-auto">
             <Outlet />
           </div>
         </div>
