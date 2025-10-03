@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { render, screen } from "../src/test-utils"
+import { render, screen } from "./test-utils"
 import Home from "../src/pages/Home"
 import { configureStore } from "@reduxjs/toolkit"
 import authReducer from "../src/redux/reducer/authSlice"

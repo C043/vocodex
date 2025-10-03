@@ -4,8 +4,8 @@ import { Provider } from "react-redux"
 import { BrowserRouter } from "react-router-dom"
 import { HeroUIProvider } from "@heroui/react"
 import { configureStore } from "@reduxjs/toolkit"
-import authReducer from "./redux/reducer/authSlice"
-import themeModeSlice from "./redux/reducer/themeModeSlice"
+import authReducer from "../src/redux/reducer/authSlice"
+import themeModeSlice from "../src/redux/reducer/themeModeSlice"
 
 function createTestStore() {
   return configureStore({
@@ -28,9 +28,7 @@ function customRender(
     return (
       <Provider store={store}>
         <BrowserRouter>
-          <HeroUIProvider>
-            {children}
-          </HeroUIProvider>
+          <HeroUIProvider>{children}</HeroUIProvider>
         </BrowserRouter>
       </Provider>
     )
