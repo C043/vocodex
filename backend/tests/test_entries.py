@@ -85,3 +85,13 @@ async def test_entries(client, entry_cleanup, auth_header):
     resp = await client.delete(f"/entries/{entryId}", headers=headers)
 
     assert resp.status_code == 204
+
+    resp = await client.get(
+        f"/entries/list/me",
+        headers=headers,
+    )
+
+    payload = resp.json()
+    print(payload)
+    entries = payload["entries"]
+    assert len(entries) == 1

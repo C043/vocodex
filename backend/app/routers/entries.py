@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import Delete, Select, select
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
@@ -79,10 +79,14 @@ async def deleteEntryById(
     session: AsyncSession = Depends(get_session),
 ):
     try:
-        await session.execute(
+        result = await session.execute(
             Delete(Entries).where(
                 Entries.id == entry_id, Entries.user_id == current_user.id
             )
         )
+        await session.commit()
+        if result.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Entry not found")
     except Exception:
+        await session.rollback()
         raise
