@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
+import "@testing-library/jest-dom"
 import { render, screen } from "./test-utils"
 import Home from "../src/pages/Home"
 import AuthPage from "../src/pages/AuthPage"
@@ -47,6 +48,40 @@ describe("User not authenticated", () => {
     render(<Home />, { store: testStore })
 
     expect(mockNavigate).toHaveBeenCalledWith("/login")
+  })
+
+  it("should not navigate to home page when failed login", async () => {
+    const { userEvent } = await import("@testing-library/user-event")
+    const { waitFor } = await import("@testing-library/react")
+
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: false,
+        status: 401,
+        json: () => Promise.resolve({})
+      })
+    ) as any
+
+    render(<AuthPage mode="login" />)
+
+    await userEvent.type(screen.getByLabelText(/username/i), "testuser")
+    await userEvent.type(screen.getByLabelText(/password/i), "password123")
+    await userEvent.click(screen.getByRole("button", { name: /login/i }))
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/auth/login"),
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          username: "testuser",
+          password: "password123"
+        })
+      })
+    )
+
+    await waitFor(() => {
+      expect(mockNavigate).not.toHaveBeenCalledWith("/")
+    })
   })
 })
 
