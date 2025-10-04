@@ -64,6 +64,36 @@ describe("Authenticated user", () => {
     mockNavigate.mockReset()
   })
 
+  it("should call the right api endpoint when logging in", async () => {
+    const { userEvent } = await import("@testing-library/user-event")
+
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ token: "fake-token" })
+      })
+    ) as any
+
+    render(<AuthPage mode="login" />)
+
+    await userEvent.type(screen.getByLabelText(/username/i), "testuser")
+    await userEvent.type(screen.getByLabelText(/password/i), "password123")
+    await userEvent.click(screen.getByRole("button", { name: /login/i }))
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/auth/login"),
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          username: "testuser",
+          password: "password123"
+        })
+      })
+    )
+
+    expect(mockNavigate).toHaveBeenCalledWith("/")
+  })
+
   it("should already be redirected to home page if jwt is present", () => {
     const testStore = configureStore({
       reducer: {
