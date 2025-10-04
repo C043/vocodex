@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen } from "./test-utils"
+import "@testing-library/jest-dom"
 import Home from "../src/pages/Home"
 import { configureStore } from "@reduxjs/toolkit"
 import authReducer from "../src/redux/reducer/authSlice"
@@ -86,6 +87,72 @@ describe("Upload text", () => {
           title: "title",
           content: "content"
         })
+      })
+    )
+  })
+})
+
+describe("Entries", () => {
+  beforeEach(() => {
+    vi.mocked(checkAuthentication).mockReturnValue(true)
+    global.fetch = vi.fn()
+  })
+
+  it("should render one row", async () => {
+    const { waitFor } = await import("@testing-library/react")
+
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ entries: [{ id: 1, title: "title" }] })
+      })
+    ) as any
+
+    const testStore = configureStore({
+      reducer: { user: authReducer, darkMode: themeModeSlice },
+      preloadedState: {
+        user: { isLoggedIn: true, userId: 1, username: "testuser" }
+      }
+    })
+
+    render(<Home />, { store: testStore })
+
+    await waitFor(() => {
+      expect(screen.getByText("title")).toBeInTheDocument()
+    })
+  })
+
+  it("should call delete api when delete button is clicked", async () => {
+    const { userEvent } = await import("@testing-library/user-event")
+    const { waitFor } = await import("@testing-library/react")
+
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ entries: [{ id: 1, title: "title" }] })
+      })
+    ) as any
+
+    const testStore = configureStore({
+      reducer: { user: authReducer, darkMode: themeModeSlice },
+      preloadedState: {
+        user: { isLoggedIn: true, userId: 1, username: "testuser" }
+      }
+    })
+
+    render(<Home />, { store: testStore })
+
+    await waitFor(() => {
+      expect(screen.getByText("title")).toBeInTheDocument()
+    })
+
+    const deleteIcon = screen.getByTestId("delete-entry-1")
+    await userEvent.click(deleteIcon)
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/entries/1"),
+      expect.objectContaining({
+        method: "DELETE"
       })
     )
   })

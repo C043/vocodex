@@ -177,6 +177,7 @@ const Home = () => {
               <span
                 className="text-danger cursor-pointer active:opacity-50"
                 onClick={ev => handleDelete(entry.id)}
+                data-testid={`delete-entry-${entry.id}`}
               >
                 <TrashIcon className="size-6 text-danger" />
               </span>
