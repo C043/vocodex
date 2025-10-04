@@ -148,3 +148,42 @@ describe("Authenticated user", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/")
   })
 })
+
+describe("Registration", () => {
+  beforeEach(() => {
+    global.fetch = vi.fn()
+    mockNavigate.mockReset()
+  })
+
+  it("should call the right api", async () => {
+    const { userEvent } = await import("@testing-library/user-event")
+
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({})
+      })
+    ) as any
+
+    render(<AuthPage mode="register" />)
+
+    await userEvent.type(screen.getByLabelText(/Username/i), "testuser")
+    await userEvent.type(screen.getByLabelText("Password"), "password123")
+    await userEvent.type(
+      screen.getByLabelText("Repeat Password"),
+      "password123"
+    )
+    await userEvent.click(screen.getByRole("button", { name: /Register!/i }))
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/auth/register"),
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          username: "testuser",
+          password: "password123"
+        })
+      })
+    )
+  })
+})
