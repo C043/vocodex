@@ -17,11 +17,19 @@ router = APIRouter(prefix="/entries", tags=["entries"])
 
 
 @router.get("/{entry_id}", status_code=200)
-async def getEntryById(entry_id: int, session: AsyncSession = Depends(get_session)):
+async def getEntryById(
+    entry_id: int,
+    current_user: Users = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
     try:
         entry = (
-            await session.execute(Select(Entries).where(Entries.id == entry_id))
-        ).scalar_one_or_none()
+            await session.execute(
+                Select(Entries)
+                .where(Entries.id == entry_id)
+                .where(Entries.user_id == current_user.id)
+            )
+        ).scalar_one()
 
         return entry
     except Exception:
