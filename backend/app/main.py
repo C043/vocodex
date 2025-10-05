@@ -11,7 +11,7 @@ from sqlalchemy import text
 
 from app.models.base import Base
 from app.middlewares.auth import AuthMiddleware
-from app.routers import entries
+from app.routers import entries, synthesis
 
 from .db import get_session
 
@@ -55,6 +55,7 @@ from .routers import auth
 
 app.include_router(auth.router)
 app.include_router(entries.router)
+app.include_router(synthesis.router)
 
 
 @app.get("/health")

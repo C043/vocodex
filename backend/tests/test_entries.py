@@ -1,7 +1,4 @@
 import os, pytest
-from typing import List
-
-from app.schemas.entriesSchemas import EntrySummary, ListEntriesOut
 
 
 @pytest.mark.asyncio
