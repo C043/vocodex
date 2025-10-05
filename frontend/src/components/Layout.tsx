@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { Outlet, NavLink, useNavigate } from "react-router-dom"
+import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom"
 import { checkAuthentication, parseJwt } from "../utils/authUtils"
 import { useDispatch, useSelector } from "react-redux"
 import {
@@ -8,7 +8,7 @@ import {
   setUsername
 } from "../redux/reducer/authSlice"
 import { setDarkMode } from "../redux/reducer/themeModeSlice"
-import { MoonIcon, SunIcon } from "@heroicons/react/24/solid"
+import { ArrowLeftIcon, MoonIcon, SunIcon } from "@heroicons/react/24/solid"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Avatar,
@@ -18,10 +18,20 @@ import {
   DropdownTrigger
 } from "@heroui/react"
 
+type State = {
+  user: {
+    isLoggedIn: boolean
+    username: String
+  }
+  darkMode: {
+    value: boolean
+  }
+}
+
 const Layout = () => {
-  const isLoggedIn = useSelector(state => state.user.isLoggedIn)
-  const username = useSelector(state => state.user.username)
-  const isDarkMode = useSelector(state => state.darkMode.value)
+  const isLoggedIn = useSelector((state: State) => state.user.isLoggedIn)
+  const username = useSelector((state: State) => state.user.username)
+  const isDarkMode = useSelector((state: State) => state.darkMode.value)
   const dispatch = useDispatch()
 
   const darkBg = `
@@ -31,11 +41,6 @@ const Layout = () => {
     radial-gradient(ellipse at 40% 80%, rgba(34, 197, 94, 0.2) 0%, transparent 65%)
   `
 
-  // const lightBg = `
-  // radial-gradient(circle at 50% 100%, rgba(253,224,71,.4) 0%, transparent 60%),
-  // radial-gradient(circle at 50% 100%, rgba(251,191,36,.4) 0%, transparent 70%),
-  // radial-gradient(circle at 50% 100%, rgba(244,114,182,.5) 0%, transparent 80%)
-  // `
   const lightBg = `
     linear-gradient(135deg, #F8BBD9 0%, #FDD5B4 25%, #FFF2CC 50%, #E1F5FE 75%, #BBDEFB 100%)
   `
@@ -44,6 +49,8 @@ const Layout = () => {
     isActive ? "font-semibold mr-4" : "mr-4"
 
   const navigate = useNavigate()
+  const location = useLocation()
+  const isPlayer = location.pathname.includes("/player/")
 
   const handleLogout = () => {
     window.localStorage.removeItem("vocodex-jwt")
@@ -88,7 +95,14 @@ const Layout = () => {
       <nav className="p-4 border-b h-[75px] flex">
         <div className="flex justify-between items-center container mx-auto">
           <NavLink to="/" className={link}>
-            VOCODEX
+            <div className="flex gap-2">
+              {isPlayer ? (
+                <ArrowLeftIcon className="size-6 cursor-pointer" />
+              ) : (
+                ""
+              )}
+              VOCODEX
+            </div>
           </NavLink>
 
           <div className="flex items-center gap-5">

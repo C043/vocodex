@@ -6,7 +6,6 @@ import { setIsLoggedIn } from "../redux/reducer/authSlice"
 import {
   Button,
   Form,
-  getKeyValue,
   Input,
   Modal,
   ModalBody,
@@ -95,25 +94,32 @@ const Home = () => {
     }
   }
 
-  const handleDelete = async (entryId: number) => {
+  const handleDelete = async (ev: React.MouseEvent, entryId: number) => {
     try {
-      const url = `${env.VITE_API_URL}/entries/${entryId}`
-      const headers = {
-        Authorization: `Bearer ${token}`
-      }
-      const method = "DELETE"
-      const resp = await fetch(url, {
-        method,
-        headers
-      })
+      ev.stopPropagation()
+      const confirmed = window.confirm(
+        "Are you sure you want to delete this entry?"
+      )
 
-      if (!resp.ok) {
-        const data = await resp.json().catch(() => null)
-        const detail = data?.detail ?? `HTTP ${resp.status}`
-        throw new Error(detail)
-      }
+      if (confirmed) {
+        const url = `${env.VITE_API_URL}/entries/${entryId}`
+        const headers = {
+          Authorization: `Bearer ${token}`
+        }
+        const method = "DELETE"
+        const resp = await fetch(url, {
+          method,
+          headers
+        })
 
-      await getUserEntries()
+        if (!resp.ok) {
+          const data = await resp.json().catch(() => null)
+          const detail = data?.detail ?? `HTTP ${resp.status}`
+          throw new Error(detail)
+        }
+
+        await getUserEntries()
+      }
     } catch (err) {
       console.error(err)
     }
@@ -176,7 +182,7 @@ const Home = () => {
             <Tooltip color="danger" content="Delete">
               <span
                 className="text-danger cursor-pointer active:opacity-50"
-                onClick={ev => handleDelete(entry.id)}
+                onClick={(ev: React.MouseEvent) => handleDelete(ev, entry.id)}
                 data-testid={`delete-entry-${entry.id}`}
               >
                 <TrashIcon className="size-6 text-danger" />
@@ -215,7 +221,13 @@ const Home = () => {
           </TableHeader>
           <TableBody items={entries}>
             {item => (
-              <TableRow key={item.id} className="cursor-pointer">
+              <TableRow
+                onClick={() => {
+                  navigate("/player/" + item.id)
+                }}
+                key={item.id}
+                className="cursor-pointer"
+              >
                 {columnKey => (
                   <TableCell>{renderCell(item, columnKey)}</TableCell>
                 )}
