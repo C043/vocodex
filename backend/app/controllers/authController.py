@@ -8,9 +8,7 @@ from ..schemas.authSchemas import RegisterIn, LoginIn
 from ..security import hash_password, verify_password, create_access_token
 
 
-async def register(
-    data: RegisterIn, session: AsyncSession = Depends(get_session)
-) -> Users:
+async def register(data: RegisterIn, session: AsyncSession) -> Users:
     exists = (
         await session.execute(select(Users).where(Users.username == data.username))
     ).scalar_one_or_none()
@@ -29,7 +27,7 @@ async def register(
         raise HTTPException(status_code=409, detail="Username already in use")
 
 
-async def login(data: LoginIn, session: AsyncSession = Depends(get_session)):
+async def login(data: LoginIn, session: AsyncSession):
     user = (
         await session.execute(select(Users).where(Users.username == data.username))
     ).scalar_one_or_none()

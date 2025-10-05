@@ -13,6 +13,8 @@ from app.schemas.entriesSchemas import (
     UploadTextOut,
 )
 
+from app.controllers import entriesController
+
 router = APIRouter(prefix="/entries", tags=["entries"])
 
 
@@ -23,14 +25,7 @@ async def getEntryById(
     session: AsyncSession = Depends(get_session),
 ):
     try:
-        entry = (
-            await session.execute(
-                Select(Entries)
-                .where(Entries.id == entry_id)
-                .where(Entries.user_id == current_user.id)
-            )
-        ).scalar_one()
-
+        entry = await entriesController.getEntryById(entry_id, current_user, session)
         return entry
     except Exception:
         raise
@@ -42,21 +37,12 @@ async def uploadText(
     current_user: Users = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
-    if data.title == "":
-        data.title = " ".join(data.content.split()[:3])
-
-    # Take the title and text content and save it on database in the correct table with the correct user
-    entry = Entries(title=data.title, user_id=current_user.id, content=data.content)
-
-    session.add(entry)
     try:
-        await session.commit()
+        entry = await entriesController.uploadText(data, current_user, session)
+        # Return new id
+        return UploadTextOut(id=entry.id)
     except Exception:
-        await session.rollback()
         raise
-
-    # Return new id
-    return UploadTextOut(id=entry.id)
 
 
 @router.get("/list/me", status_code=200)
@@ -65,16 +51,7 @@ async def listEntries(
     session: AsyncSession = Depends(get_session),
 ) -> ListEntriesOut:
     try:
-        rows = (
-            await session.execute(
-                select(Entries.id, Entries.title).where(
-                    Entries.user_id == current_user.id
-                )
-            )
-        ).all()
-
-        entries = [EntrySummary(id=row.id, title=row.title) for row in rows]
-
+        entries = await entriesController.listEntries(current_user, session)
         return ListEntriesOut(entries=entries)
     except Exception:
         raise
@@ -87,14 +64,6 @@ async def deleteEntryById(
     session: AsyncSession = Depends(get_session),
 ):
     try:
-        result = await session.execute(
-            Delete(Entries).where(
-                Entries.id == entry_id, Entries.user_id == current_user.id
-            )
-        )
-        await session.commit()
-        if result.rowcount == 0:
-            raise HTTPException(status_code=404, detail="Entry not found")
+        await entriesController.deleteEntryById(entry_id, current_user, session)
     except Exception:
-        await session.rollback()
         raise
