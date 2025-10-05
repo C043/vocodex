@@ -5,3 +5,4 @@ asyncpg>=0.29
 pydantic>=2.7
 pyjwt
 bcrypt
+edge-tts
