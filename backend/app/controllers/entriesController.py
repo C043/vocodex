@@ -1,16 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import HTTPException
 from sqlalchemy import Delete, Select, select
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
-from app.db import get_session
-from app.deps import get_current_user
 from app.models.entry import Entries
 from app.models.user import Users
 from app.schemas.entriesSchemas import (
     EntrySummary,
-    ListEntriesOut,
     UploadTextIn,
-    UploadTextOut,
 )
 
 
