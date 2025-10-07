@@ -159,7 +159,6 @@ const Player = () => {
   }
 
   const handleForward = async () => {
-    setCurrentIndex(currentIndex + 1)
     const nextIndex = currentIndex + 1
     if (sentencesMap.has(nextIndex)) {
       let url = sentencesMap.get(nextIndex)?.audio.url
@@ -183,6 +182,34 @@ const Player = () => {
 
         // Prefetch the next 3 sentences from the new current index
         prefetchNextSentences(nextIndex, 3)
+      }
+    }
+  }
+
+  const handleBackwards = async () => {
+    const prevIndex = currentIndex - 1
+    if (sentencesMap.has(prevIndex)) {
+      let url = sentencesMap.get(prevIndex)?.audio.url
+
+      // Retry mechanism: poll for audio URL if not ready
+      if (!url) {
+        const maxRetries = 10
+        const retryDelay = 500 // ms
+
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+          await new Promise(resolve => setTimeout(resolve, retryDelay))
+          url = sentencesMap.get(prevIndex)?.audio.url
+          if (url) break
+        }
+      }
+      if (audioRef.current && url) {
+        setCurrentIndex(prevIndex)
+        audioRef.current.src = url
+        audioRef.current?.play()
+        setIsPlaying(true)
+
+        // Prefetch the next 3 sentences from the new current index
+        prefetchNextSentences(prevIndex, 3)
       }
     }
   }
@@ -326,7 +353,7 @@ const Player = () => {
         >
           <p>Voice</p>
           <div className="cursor-pointer">
-            <BackwardIcon className="size-10" />
+            <BackwardIcon onClick={handleBackwards} className="size-10" />
           </div>
           <div className="cursor-pointer">
             {isPlaying ? (
