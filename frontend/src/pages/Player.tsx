@@ -3,7 +3,12 @@ import { useNavigate, useParams } from "react-router-dom"
 import { checkAuthentication } from "../utils/authUtils"
 import { useDispatch } from "react-redux"
 import { setIsLoggedIn } from "../redux/reducer/authSlice"
-import { BackwardIcon, ForwardIcon, PlayIcon } from "@heroicons/react/24/solid"
+import {
+  BackwardIcon,
+  ForwardIcon,
+  PauseIcon,
+  PlayIcon
+} from "@heroicons/react/24/solid"
 
 type sentenceObj = {
   id: number
@@ -31,6 +36,8 @@ const Player = () => {
     new Map()
   )
   const [title, setTitle] = useState("")
+
+  const [isPlaying, setIsPlaying] = useState(false)
 
   const audioRef = useRef<HTMLAudioElement>(null)
 
@@ -118,6 +125,7 @@ const Player = () => {
     // We start the first sentence
     audioRef.current.src = firstAudioUrl
     audioRef.current.play()
+    setIsPlaying(true)
     setCurrentIndex(0)
 
     if (firstAudioUrl) {
@@ -133,6 +141,20 @@ const Player = () => {
 
       // Prefetch the next 3 sentences
       prefetchNextSentences(0, 3)
+    }
+  }
+
+  const handlePause = () => {
+    if (isPlaying) {
+      audioRef.current.pause()
+      setIsPlaying(false)
+    }
+  }
+
+  const handlePlay = () => {
+    if (!isPlaying) {
+      audioRef.current.play()
+      setIsPlaying(true)
     }
   }
 
@@ -212,6 +234,7 @@ const Player = () => {
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.onended = async () => {
+        setIsPlaying(false)
         const nextIndex = currentIndex + 1
         if (sentencesMap.has(nextIndex)) {
           let url = sentencesMap.get(nextIndex)?.audio.url
@@ -231,6 +254,7 @@ const Player = () => {
             setCurrentIndex(nextIndex)
             audioRef.current.src = url
             audioRef.current?.play()
+            setIsPlaying(true)
 
             // Prefetch the next 3 sentences from the new current index
             prefetchNextSentences(nextIndex, 3)
@@ -299,7 +323,11 @@ const Player = () => {
             <BackwardIcon className="size-10" />
           </div>
           <div className="cursor-pointer">
-            <PlayIcon className="size-10" />
+            {isPlaying ? (
+              <PauseIcon onClick={handlePause} className="size-10" />
+            ) : (
+              <PlayIcon onClick={handlePlay} className="size-10" />
+            )}
           </div>
           <div className="cursor-pointer">
             <ForwardIcon className="size-10" />
