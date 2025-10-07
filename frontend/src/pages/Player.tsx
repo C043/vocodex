@@ -25,6 +25,7 @@ const Player = () => {
 
   const dispatch = useDispatch()
 
+  const [currentIndex, setCurrentIndex] = useState(0)
   const [sentencesMap, setSentencesMap] = useState<Map<number, sentenceObj>>(
     new Map()
   )
@@ -52,6 +53,7 @@ const Player = () => {
       }
 
       const data = await resp.json()
+
       splitIntoSentences(data.content)
       setTitle(data.title)
     } catch (err) {
@@ -112,8 +114,11 @@ const Player = () => {
       "+0%"
     )
 
+    // We start the first sentence
     audioRef.current.src = firstAudioUrl
     audioRef.current.play()
+    setCurrentIndex(0)
+
     if (firstAudioUrl) {
       setSentencesMap(prev => {
         const updated = new Map(prev)
@@ -124,6 +129,9 @@ const Player = () => {
         }
         return updated
       })
+
+      // Prefetch the next 3 sentences
+      prefetchNextSentences(0, 3)
     }
   }
 
@@ -162,17 +170,70 @@ const Player = () => {
     }
   }
 
-  const [currentIndex, setCurrentIndex] = useState(0)
+  const prefetchNextSentences = async (
+    fromIndex: number,
+    count: number = 3
+  ) => {
+    const promises: Promise<void>[] = []
+
+    for (let i = 1; i <= count; i++) {
+      const targetIndex = fromIndex + i
+      const sentence = sentencesMap.get(targetIndex)
+
+      if (sentence && !sentence.audio.url) {
+        const promise = (async () => {
+          const audioUrl = await fetchSentenceAudio(
+            sentence.text,
+            "en-GB-AdaMultilingualNeural",
+            "+0%"
+          )
+
+          if (audioUrl) {
+            setSentencesMap(prev => {
+              const updated = new Map(prev)
+              const target = updated.get(targetIndex)
+              if (target) {
+                target.audio.url = audioUrl
+                updated.set(targetIndex, target)
+              }
+              return updated
+            })
+          }
+        })()
+
+        promises.push(promise)
+      }
+    }
+
+    await Promise.all(promises)
+  }
+
   useEffect(() => {
     if (audioRef.current) {
-      audioRef.current.onended = () => {
+      audioRef.current.onended = async () => {
         const nextIndex = currentIndex + 1
         if (sentencesMap.has(nextIndex)) {
-          const url = sentencesMap.get(nextIndex)?.audio.url
+          let url = sentencesMap.get(nextIndex)?.audio.url
+
+          // Retry mechanism: poll for audio URL if not ready
+          if (!url) {
+            const maxRetries = 10
+            const retryDelay = 500 // ms
+
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+              await new Promise(resolve => setTimeout(resolve, retryDelay))
+              url = sentencesMap.get(nextIndex)?.audio.url
+              if (url) break
+            }
+          }
           if (audioRef.current && url) {
             setCurrentIndex(nextIndex)
             audioRef.current.src = url
             audioRef.current?.play()
+
+            // Prefetch the next 3 sentences from the new current index
+            prefetchNextSentences(nextIndex, 3)
+          } else {
           }
         }
       }
@@ -194,17 +255,15 @@ const Player = () => {
   }, [])
 
   useEffect(() => {
-    // This runs when component mounts or sentencesMap changes
-
+    // Cleanup only on component unmount
     return () => {
-      // This runs BEFORE next effect OR when component unmounts
       sentencesMap.forEach(sentence => {
         if (sentence.audio.url) {
           URL.revokeObjectURL(sentence.audio.url)
         }
       })
     }
-  }, [sentencesMap])
+  }, [])
 
   return (
     <div>
