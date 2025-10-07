@@ -58,6 +58,13 @@ const Player = () => {
     { key: "+0%", label: "1x" }
   ]
 
+  const voiceOptions = [
+    { key: "en-GB-LibbyNeural", label: "Libby" },
+    { key: "en-GB-AdaMultilingualNeural", label: "Ada" },
+    { key: "en-GB-OllieMultilingualNeural", label: "Ollie" },
+    { key: "en-GB-RyanNeural", label: "Ryan" }
+  ]
+
   const audioRef = useRef<HTMLAudioElement>(null)
 
   const fetchEntry = async () => {
@@ -467,7 +474,18 @@ const Player = () => {
           border-black
           "
         >
-          <p>Voice</p>
+          <Select
+            className="w-25"
+            items={voiceOptions}
+            defaultSelectedKeys={["en-GB-AdaMultilingualNeural"]}
+            aria-label="Select Voice"
+            onSelectionChange={keys => {
+              const selected = Array.from(keys)[0] as string
+              setVoice(selected)
+            }}
+          >
+            {voice => <SelectItem>{voice.label}</SelectItem>}
+          </Select>
           <div className="cursor-pointer">
             <BackwardIcon onClick={handleBackwards} className="size-10" />
           </div>
