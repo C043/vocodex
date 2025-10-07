@@ -327,6 +327,37 @@ const Player = () => {
     }
   }, [])
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      switch (event.key) {
+        case "Enter":
+        case " ": // spacebar
+          event.preventDefault()
+          if (isPlaying) {
+            handlePause()
+          } else {
+            handlePlay()
+          }
+          break
+        case "ArrowRight":
+          event.preventDefault()
+          handleForward()
+          break
+        case "ArrowLeft":
+          event.preventDefault()
+          handleBackwards()
+          break
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+
+    // Cleanup: remove listener when component unmounts
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [isPlaying, currentIndex]) // dependencies for the handlers
+
   return (
     <div>
       <h1 className="text-9xl mb-10">{title}</h1>
