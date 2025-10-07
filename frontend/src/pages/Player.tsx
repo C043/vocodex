@@ -10,6 +10,7 @@ import {
   PlayIcon
 } from "@heroicons/react/24/solid"
 import { Spinner } from "@heroui/react"
+import { Select, SelectItem } from "@heroui/react"
 
 type sentenceObj = {
   id: number
@@ -48,6 +49,14 @@ const Player = () => {
 
   const [isPlaying, setIsPlaying] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [currentSpeed, setSpeed] = useState("+0%")
+  const [currentVoice, setVoice] = useState("en-GB-AdaMultilingualNeural")
+
+  const speedOptions = [
+    { key: "+100%", label: "2x" },
+    { key: "+50%", label: "1.5x" },
+    { key: "+0%", label: "1x" }
+  ]
 
   const audioRef = useRef<HTMLAudioElement>(null)
 
@@ -128,8 +137,8 @@ const Player = () => {
     // At the end of splitIntoSentences, after setSentencesMap(newMap):
     const firstAudioUrl = await fetchSentenceAudio(
       chunks[0],
-      "en-GB-AdaMultilingualNeural",
-      "+0%"
+      currentVoice,
+      currentSpeed
     )
 
     // We start the first sentence
@@ -140,15 +149,7 @@ const Player = () => {
 
     if (firstAudioUrl) {
       setIsLoading(false)
-      setSentencesMap(prev => {
-        const updated = new Map(prev)
-        const first = updated.get(0)
-        if (first) {
-          first.audio.url = firstAudioUrl
-          updated.set(0, first)
-        }
-        return updated
-      })
+      updateSentence(firstAudioUrl, currentVoice, currentSpeed, 0)
 
       // Prefetch the next 3 sentences
       prefetchNextSentences(0, 3)
@@ -170,8 +171,10 @@ const Player = () => {
   }
 
   const handleForward = async () => {
+    if (isLoading) return
     const nextIndex = currentIndex + 1
     if (sentencesMap.has(nextIndex)) {
+      audioRef.current.pause()
       let url = sentencesMap.get(nextIndex)?.audio.url
 
       // Retry mechanism: poll for audio URL if not ready
@@ -201,8 +204,10 @@ const Player = () => {
   }
 
   const handleBackwards = async () => {
+    if (isLoading) return
     const prevIndex = currentIndex - 1
     if (sentencesMap.has(prevIndex)) {
+      audioRef.current.pause()
       let url = sentencesMap.get(prevIndex)?.audio.url
 
       // Retry mechanism: poll for audio URL if not ready
@@ -231,7 +236,7 @@ const Player = () => {
   const fetchSentenceAudio = async (
     text: string,
     voice: string,
-    speed: string
+    speed: string = currentSpeed
   ) => {
     try {
       const url = `${env.VITE_API_URL}/synthesis/GET`
@@ -257,10 +262,30 @@ const Player = () => {
 
       const blob = await resp.blob()
       const audioUrl = URL.createObjectURL(blob)
+
       return audioUrl
     } catch (err) {
       console.error(err)
     }
+  }
+
+  const updateSentence = (
+    audioUrl: string,
+    voice: string,
+    speed: string,
+    targetIndex: number
+  ) => {
+    setSentencesMap(prev => {
+      const updated = new Map(prev)
+      const target = updated.get(targetIndex)
+      if (target) {
+        target.audio.url = audioUrl
+        target.audio.voice = voice
+        target.audio.speed = speed
+        updated.set(targetIndex, target)
+      }
+      return updated
+    })
   }
 
   const prefetchNextSentences = async (
@@ -271,23 +296,19 @@ const Player = () => {
       const targetIndex = fromIndex + i
       const sentence = sentencesMap.get(targetIndex)
 
-      if (sentence && !sentence.audio.url) {
+      if (
+        (sentence && !sentence.audio.url) ||
+        (sentence && sentence.audio.speed !== currentSpeed) ||
+        (sentence && sentence.audio.voice !== currentVoice)
+      ) {
         const audioUrl = await fetchSentenceAudio(
           sentence.text,
-          "en-GB-AdaMultilingualNeural",
-          "+0%"
+          currentVoice,
+          currentSpeed
         )
 
         if (audioUrl) {
-          setSentencesMap(prev => {
-            const updated = new Map(prev)
-            const target = updated.get(targetIndex)
-            if (target) {
-              target.audio.url = audioUrl
-              updated.set(targetIndex, target)
-            }
-            return updated
-          })
+          updateSentence(audioUrl, currentVoice, currentSpeed, targetIndex)
         }
       }
     }
@@ -358,6 +379,64 @@ const Player = () => {
     }
   }, [isPlaying, currentIndex]) // dependencies for the handlers
 
+  useEffect(() => {
+    if (sentencesMap.size === 0) return // Don't run before sentences are loaded
+
+    const currentSentence = sentencesMap.get(currentIndex)
+
+    audioRef.current.pause()
+
+    // Invalidate all cached audio that doesn't match current settings
+    setSentencesMap(prev => {
+      const updated = new Map(prev)
+      updated.forEach((sentence, index) => {
+        if (
+          sentence.audio.speed !== currentSpeed ||
+          sentence.audio.voice !== currentVoice
+        ) {
+          if (sentence.audio.url) {
+            URL.revokeObjectURL(sentence.audio.url) // Free memory
+          }
+          sentence.audio.url = null
+          sentence.audio.speed = null
+          sentence.audio.voice = null
+          updated.set(index, sentence)
+        }
+      })
+      return updated
+    })
+
+    // Refetch current sentence if speed/voice changed
+    if (
+      currentSentence &&
+      (currentSentence.audio.speed !== currentSpeed ||
+        currentSentence.audio.voice !== currentVoice)
+    ) {
+      setIsLoading(true)
+      ;(async () => {
+        setIsPlaying(false)
+        const audioUrl = await fetchSentenceAudio(
+          currentSentence.text,
+          currentVoice,
+          currentSpeed
+        )
+
+        if (audioUrl && audioRef.current) {
+          updateSentence(audioUrl, currentVoice, currentSpeed, currentIndex)
+          audioRef.current.src = audioUrl
+          if (isPlaying) {
+            audioRef.current.play()
+            setIsPlaying(true)
+          }
+          setIsLoading(false)
+        }
+      })()
+    }
+
+    // Refetch next 3 sentences
+    prefetchNextSentences(currentIndex, 3)
+  }, [currentSpeed, currentVoice])
+
   return (
     <div>
       <h1 className="text-9xl mb-10">{title}</h1>
@@ -406,7 +485,18 @@ const Player = () => {
           <div className="cursor-pointer">
             <ForwardIcon onClick={handleForward} className="size-10" />
           </div>
-          <p>1x</p>
+          <Select
+            className="w-20"
+            items={speedOptions}
+            defaultSelectedKeys={["+0%"]}
+            aria-label="Select Speed"
+            onSelectionChange={keys => {
+              const selected = Array.from(keys)[0] as string
+              setSpeed(selected)
+            }}
+          >
+            {speed => <SelectItem>{speed.label}</SelectItem>}
+          </Select>
         </div>
       </div>
     </div>
