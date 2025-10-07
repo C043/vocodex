@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { checkAuthentication } from "../utils/authUtils"
-import { useDispatch } from "react-redux"
+import { useDispatch, useSelector } from "react-redux"
 import { setIsLoggedIn } from "../redux/reducer/authSlice"
 import {
   BackwardIcon,
@@ -9,6 +9,7 @@ import {
   PauseIcon,
   PlayIcon
 } from "@heroicons/react/24/solid"
+import { Spinner } from "@heroui/react"
 
 type sentenceObj = {
   id: number
@@ -22,9 +23,17 @@ type sentenceObj = {
   next: string | null
 }
 
+type State = {
+  darkMode: {
+    value: boolean
+  }
+}
+
 const Player = () => {
   const env = import.meta.env
   const token = window.localStorage.getItem("vocodex-jwt")
+
+  const isDarkMode = useSelector((state: State) => state.darkMode.value)
 
   const { id } = useParams()
   const navigate = useNavigate()
@@ -38,6 +47,7 @@ const Player = () => {
   const [title, setTitle] = useState("")
 
   const [isPlaying, setIsPlaying] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   const audioRef = useRef<HTMLAudioElement>(null)
 
@@ -129,6 +139,7 @@ const Player = () => {
     setCurrentIndex(0)
 
     if (firstAudioUrl) {
+      setIsLoading(false)
       setSentencesMap(prev => {
         const updated = new Map(prev)
         const first = updated.get(0)
@@ -165,19 +176,22 @@ const Player = () => {
 
       // Retry mechanism: poll for audio URL if not ready
       if (!url) {
-        const maxRetries = 10
+        const maxRetries = 50
         const retryDelay = 500 // ms
 
         for (let attempt = 0; attempt < maxRetries; attempt++) {
+          setIsLoading(true)
           await new Promise(resolve => setTimeout(resolve, retryDelay))
           url = sentencesMap.get(nextIndex)?.audio.url
           if (url) break
         }
+        setIsLoading(false)
       }
       if (audioRef.current && url) {
         setCurrentIndex(nextIndex)
         audioRef.current.src = url
         audioRef.current?.play()
+        setIsLoading(false)
         setIsPlaying(true)
 
         // Prefetch the next 3 sentences from the new current index
@@ -355,13 +369,17 @@ const Player = () => {
           <div className="cursor-pointer">
             <BackwardIcon onClick={handleBackwards} className="size-10" />
           </div>
-          <div className="cursor-pointer">
-            {isPlaying ? (
-              <PauseIcon onClick={handlePause} className="size-10" />
-            ) : (
-              <PlayIcon onClick={handlePlay} className="size-10" />
-            )}
-          </div>
+          {isLoading ? (
+            <Spinner size="md" color={isDarkMode ? "white" : "warning"} />
+          ) : (
+            <div className="cursor-pointer">
+              {isPlaying ? (
+                <PauseIcon onClick={handlePause} className="size-10" />
+              ) : (
+                <PlayIcon onClick={handlePlay} className="size-10" />
+              )}
+            </div>
+          )}
           <div className="cursor-pointer">
             <ForwardIcon onClick={handleForward} className="size-10" />
           </div>
