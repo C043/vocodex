@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom"
 import { checkAuthentication } from "../utils/authUtils"
 import { useDispatch } from "react-redux"
 import { setIsLoggedIn } from "../redux/reducer/authSlice"
+import { BackwardIcon, ForwardIcon, PlayIcon } from "@heroicons/react/24/solid"
 
 type sentenceObj = {
   id: number
@@ -274,6 +275,38 @@ const Player = () => {
           {sentence.text}
         </p>
       ))}
+
+      <div className="left-1/2 -translate-x-1/2 fixed bottom-0 mb-5">
+        <div
+          className="
+          flex
+          justify-center
+          items-center
+          gap-5
+          p-10
+          rounded-4xl
+          backdrop-blur-md
+          shadow-lg
+          dark:bg-black/30
+          bg-white/30
+          border
+          dark:border-white/30
+          border-black
+          "
+        >
+          <p>Voice</p>
+          <div className="cursor-pointer">
+            <BackwardIcon className="size-10" />
+          </div>
+          <div className="cursor-pointer">
+            <PlayIcon className="size-10" />
+          </div>
+          <div className="cursor-pointer">
+            <ForwardIcon className="size-10" />
+          </div>
+          <p>1x</p>
+        </div>
+      </div>
     </div>
   )
 }
