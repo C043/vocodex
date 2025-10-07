@@ -158,6 +158,35 @@ const Player = () => {
     }
   }
 
+  const handleForward = async () => {
+    setCurrentIndex(currentIndex + 1)
+    const nextIndex = currentIndex + 1
+    if (sentencesMap.has(nextIndex)) {
+      let url = sentencesMap.get(nextIndex)?.audio.url
+
+      // Retry mechanism: poll for audio URL if not ready
+      if (!url) {
+        const maxRetries = 10
+        const retryDelay = 500 // ms
+
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+          await new Promise(resolve => setTimeout(resolve, retryDelay))
+          url = sentencesMap.get(nextIndex)?.audio.url
+          if (url) break
+        }
+      }
+      if (audioRef.current && url) {
+        setCurrentIndex(nextIndex)
+        audioRef.current.src = url
+        audioRef.current?.play()
+        setIsPlaying(true)
+
+        // Prefetch the next 3 sentences from the new current index
+        prefetchNextSentences(nextIndex, 3)
+      }
+    }
+  }
+
   const fetchSentenceAudio = async (
     text: string,
     voice: string,
@@ -235,32 +264,7 @@ const Player = () => {
     if (audioRef.current) {
       audioRef.current.onended = async () => {
         setIsPlaying(false)
-        const nextIndex = currentIndex + 1
-        if (sentencesMap.has(nextIndex)) {
-          let url = sentencesMap.get(nextIndex)?.audio.url
-
-          // Retry mechanism: poll for audio URL if not ready
-          if (!url) {
-            const maxRetries = 10
-            const retryDelay = 500 // ms
-
-            for (let attempt = 0; attempt < maxRetries; attempt++) {
-              await new Promise(resolve => setTimeout(resolve, retryDelay))
-              url = sentencesMap.get(nextIndex)?.audio.url
-              if (url) break
-            }
-          }
-          if (audioRef.current && url) {
-            setCurrentIndex(nextIndex)
-            audioRef.current.src = url
-            audioRef.current?.play()
-            setIsPlaying(true)
-
-            // Prefetch the next 3 sentences from the new current index
-            prefetchNextSentences(nextIndex, 3)
-          } else {
-          }
-        }
+        await handleForward()
       }
     }
   }, [currentIndex, sentencesMap])
@@ -294,11 +298,13 @@ const Player = () => {
     <div>
       <h1 className="text-9xl mb-10">{title}</h1>
       <audio ref={audioRef} />
-      {Array.from(sentencesMap.values()).map(sentence => (
-        <p key={sentence.id} className="text-3xl mb-10">
-          {sentence.text}
-        </p>
-      ))}
+      <div className="mb-52">
+        {Array.from(sentencesMap.values()).map(sentence => (
+          <p key={sentence.id} className="text-3xl mb-10">
+            {sentence.text}
+          </p>
+        ))}
+      </div>
 
       <div className="left-1/2 -translate-x-1/2 fixed bottom-0 mb-5">
         <div
@@ -330,7 +336,7 @@ const Player = () => {
             )}
           </div>
           <div className="cursor-pointer">
-            <ForwardIcon className="size-10" />
+            <ForwardIcon onClick={handleForward} className="size-10" />
           </div>
           <p>1x</p>
         </div>
