@@ -267,38 +267,30 @@ const Player = () => {
     fromIndex: number,
     count: number = 3
   ) => {
-    const promises: Promise<void>[] = []
-
     for (let i = 1; i <= count; i++) {
       const targetIndex = fromIndex + i
       const sentence = sentencesMap.get(targetIndex)
 
       if (sentence && !sentence.audio.url) {
-        const promise = (async () => {
-          const audioUrl = await fetchSentenceAudio(
-            sentence.text,
-            "en-GB-AdaMultilingualNeural",
-            "+0%"
-          )
+        const audioUrl = await fetchSentenceAudio(
+          sentence.text,
+          "en-GB-AdaMultilingualNeural",
+          "+0%"
+        )
 
-          if (audioUrl) {
-            setSentencesMap(prev => {
-              const updated = new Map(prev)
-              const target = updated.get(targetIndex)
-              if (target) {
-                target.audio.url = audioUrl
-                updated.set(targetIndex, target)
-              }
-              return updated
-            })
-          }
-        })()
-
-        promises.push(promise)
+        if (audioUrl) {
+          setSentencesMap(prev => {
+            const updated = new Map(prev)
+            const target = updated.get(targetIndex)
+            if (target) {
+              target.audio.url = audioUrl
+              updated.set(targetIndex, target)
+            }
+            return updated
+          })
+        }
       }
     }
-
-    await Promise.all(promises)
   }
 
   useEffect(() => {
