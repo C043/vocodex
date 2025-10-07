@@ -4,6 +4,12 @@ import { checkAuthentication } from "../utils/authUtils"
 import { useDispatch } from "react-redux"
 import { setIsLoggedIn } from "../redux/reducer/authSlice"
 
+type sentenceObj = {
+  prev: string | null
+  audio: string | null
+  next: string | null
+}
+
 const Player = () => {
   const env = import.meta.env
 
@@ -12,7 +18,10 @@ const Player = () => {
 
   const dispatch = useDispatch()
 
-  const [content, setContent] = useState("")
+  const [content, setContent] = useState<string[]>([])
+  const [sentencesMap, setSentencesMap] = useState<Map<string, sentenceObj>>(
+    new Map()
+  )
   const [title, setTitle] = useState("")
 
   const fetchEntry = async () => {
@@ -35,11 +44,49 @@ const Player = () => {
       }
 
       const data = await resp.json()
-      setContent(data.content)
+      splitIntoSentences(data.content)
       setTitle(data.title)
     } catch (err) {
       console.error(err)
       navigate("/")
+    }
+  }
+
+  const splitIntoSentences = (content: string, maxChars = 500) => {
+    const sentences: string[] = content.match(/[^.!?]+[.!?]+/g) || [content]
+    const chunks: string[] = []
+    let current: string = ""
+    let previous: string | null = null
+    let next: string | null = null
+
+    for (const sentence of sentences) {
+      if (current.concat(sentence).length > maxChars) {
+        if (current) {
+          chunks.push(current.trim())
+        }
+        current = sentence
+      } else {
+        current += sentence
+      }
+    }
+
+    if (current) {
+      chunks.push(current.trim())
+    }
+
+    setContent(chunks)
+
+    for (const [idx, sentence] of chunks.entries()) {
+      if (idx > 0) {
+        previous = chunks[idx - 1]
+      }
+      if (idx < chunks.length) {
+        next = chunks[idx + 1]
+      } else {
+        next = null
+      }
+
+      sentencesMap.set(sentence, { prev: previous, audio: null, next: next })
     }
   }
 
@@ -59,8 +106,12 @@ const Player = () => {
 
   return (
     <div>
-      <h1>{title}</h1>
-      <p>{content}</p>
+      <h1 className="text-9xl mb-10">{title}</h1>
+      {content.map(sentence => (
+        <p key={sentence} className="text-3xl mb-10">
+          {sentence}
+        </p>
+      ))}
     </div>
   )
 }
