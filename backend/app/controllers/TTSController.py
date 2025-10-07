@@ -16,6 +16,9 @@ async def speak(text: str, voice: str, speed: str) -> str:
             speed,
             "--write-media",
             str(out_path),
-        ]
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
     )
     return str(out_path)
