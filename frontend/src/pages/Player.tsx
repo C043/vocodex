@@ -95,7 +95,7 @@ const Player = () => {
     }
   }
 
-  const splitIntoSentences = async (content: string, maxChars = 500) => {
+  const splitIntoSentences = async (content: string, maxChars = 200) => {
     const sentences: string[] = content.match(/[^.!?]+[.!?]+/g) || [content]
     const chunks: string[] = []
     let current: string = ""
@@ -440,23 +440,21 @@ const Player = () => {
   useEffect(() => {
     if (sentencesMap.size === 0) return // Don't run before sentences are loaded
 
-    const currentSentence = sentencesMap.get(currentIndex)
-
     if (audioRef.current) {
       audioRef.current.pause()
 
-      // Refetch current sentence if voice changed
+      // Fast Forward to the sentence if we have the audio, if not, we fetch it
       ;(async () => {
         setIsPlaying(false)
         let audioUrl = sentencesMap.get(currentIndex)?.audio.url
         if (!audioUrl) {
           setIsLoading(true)
-          audioUrl = await fetchSentenceAudio(
-            sentencesMap.get(currentIndex).text,
-            currentVoice
-          )
-          if (audioUrl) {
-            updateSentence(audioUrl, currentVoice, currentIndex)
+          const text = sentencesMap.get(currentIndex)?.text
+          if (text) {
+            audioUrl = await fetchSentenceAudio(text, currentVoice)
+            if (audioUrl) {
+              updateSentence(audioUrl, currentVoice, currentIndex)
+            }
           }
           setIsLoading(false)
         }
@@ -506,7 +504,7 @@ const Player = () => {
         {Array.from(sentencesMap.values()).map(sentence => (
           <p
             key={sentence.id}
-            className={`text-3xl mb-10 ${isLoading ? "" : "hover:bg-yellow-500"} cursor-pointer ${currentIndex === sentence.id ? "bg-yellow-500" : ""}`}
+            className={`text-3xl px-5 py-2 mb-10 ${isLoading || currentIndex === sentence.id ? "" : "hover:bg-yellow-500/50 cursor-pointer"} ${currentIndex === sentence.id ? "bg-yellow-500/80" : ""}`}
             onClick={() => {
               if (!isLoading) {
                 setCurrentIndex(sentence.id)
@@ -537,7 +535,7 @@ const Player = () => {
           "
         >
           <Select
-            className="w-25"
+            className={`w-25`}
             items={voiceOptions}
             defaultSelectedKeys={["en-GB-AdaMultilingualNeural"]}
             aria-label="Select Voice"
@@ -567,7 +565,7 @@ const Player = () => {
             <ForwardIcon onClick={handleForward} className="size-10" />
           </div>
           <Select
-            className="w-20"
+            className={`w-20`}
             items={speedOptions}
             defaultSelectedKeys={["+0%"]}
             aria-label="Select Speed"
