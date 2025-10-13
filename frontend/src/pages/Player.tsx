@@ -19,7 +19,6 @@ type sentenceObj = {
   audio: {
     url: string | null
     voice: string | null
-    speed: string | null
   }
   next: string | null
 }
@@ -134,7 +133,6 @@ const Player = () => {
         prev: previous,
         audio: {
           voice: null,
-          speed: null,
           url: null
         },
         next: next
@@ -142,21 +140,18 @@ const Player = () => {
     }
 
     // At the end of splitIntoSentences, after setSentencesMap(newMap):
-    const firstAudioUrl = await fetchSentenceAudio(
-      chunks[0],
-      currentVoice,
-      currentSpeed
-    )
+    const firstAudioUrl = await fetchSentenceAudio(chunks[0], currentVoice)
 
     // We start the first sentence
     audioRef.current.src = firstAudioUrl
+    handleVoiceSpeed()
     audioRef.current.play()
     setIsPlaying(true)
     setCurrentIndex(0)
 
     if (firstAudioUrl) {
       setIsLoading(false)
-      updateSentence(firstAudioUrl, currentVoice, currentSpeed, 0)
+      updateSentence(firstAudioUrl, currentVoice, 0)
 
       // Prefetch the next 3 sentences
       prefetchNextSentences(0, 3)
@@ -200,6 +195,7 @@ const Player = () => {
       if (audioRef.current && url) {
         setCurrentIndex(nextIndex)
         audioRef.current.src = url
+        handleVoiceSpeed()
         audioRef.current?.play()
         setIsLoading(false)
         setIsPlaying(true)
@@ -219,18 +215,33 @@ const Player = () => {
 
       // Retry mechanism: poll for audio URL if not ready
       if (!url) {
-        const maxRetries = 10
+        const maxRetries = 50
         const retryDelay = 500 // ms
 
         for (let attempt = 0; attempt < maxRetries; attempt++) {
+          setIsLoading(true)
           await new Promise(resolve => setTimeout(resolve, retryDelay))
-          url = sentencesMap.get(prevIndex)?.audio.url
+          if (sentencesMap.get(prevIndex).text) {
+            url = sentencesMap.get(prevIndex)?.audio.url
+              ? sentencesMap.get(prevIndex)?.audio.url
+              : await fetchSentenceAudio(
+                  sentencesMap.get(prevIndex).text,
+                  currentVoice
+                )
+          }
+
+          if (url) {
+            updateSentence(url, currentVoice, prevIndex)
+            setIsLoading(false)
+          }
+
           if (url) break
         }
       }
       if (audioRef.current && url) {
         setCurrentIndex(prevIndex)
         audioRef.current.src = url
+        handleVoiceSpeed()
         audioRef.current?.play()
         setIsPlaying(true)
 
@@ -240,11 +251,7 @@ const Player = () => {
     }
   }
 
-  const fetchSentenceAudio = async (
-    text: string,
-    voice: string,
-    speed: string = currentSpeed
-  ) => {
+  const fetchSentenceAudio = async (text: string, voice: string) => {
     try {
       const url = `${env.VITE_API_URL}/synthesis/GET`
       const method = "POST"
@@ -255,8 +262,7 @@ const Player = () => {
 
       const body = {
         voice,
-        text,
-        speed
+        text
       }
 
       const resp = await fetch(url, {
@@ -279,7 +285,6 @@ const Player = () => {
   const updateSentence = (
     audioUrl: string,
     voice: string,
-    speed: string,
     targetIndex: number
   ) => {
     setSentencesMap(prev => {
@@ -288,7 +293,6 @@ const Player = () => {
       if (target) {
         target.audio.url = audioUrl
         target.audio.voice = voice
-        target.audio.speed = speed
         updated.set(targetIndex, target)
       }
       return updated
@@ -305,17 +309,12 @@ const Player = () => {
 
       if (
         (sentence && !sentence.audio.url) ||
-        (sentence && sentence.audio.speed !== currentSpeed) ||
         (sentence && sentence.audio.voice !== currentVoice)
       ) {
-        const audioUrl = await fetchSentenceAudio(
-          sentence.text,
-          currentVoice,
-          currentSpeed
-        )
+        const audioUrl = await fetchSentenceAudio(sentence.text, currentVoice)
 
         if (audioUrl) {
-          updateSentence(audioUrl, currentVoice, currentSpeed, targetIndex)
+          updateSentence(audioUrl, currentVoice, targetIndex)
         }
       }
     }
@@ -397,15 +396,11 @@ const Player = () => {
     setSentencesMap(prev => {
       const updated = new Map(prev)
       updated.forEach((sentence, index) => {
-        if (
-          sentence.audio.speed !== currentSpeed ||
-          sentence.audio.voice !== currentVoice
-        ) {
+        if (sentence.audio.voice !== currentVoice) {
           if (sentence.audio.url) {
             URL.revokeObjectURL(sentence.audio.url) // Free memory
           }
           sentence.audio.url = null
-          sentence.audio.speed = null
           sentence.audio.voice = null
           updated.set(index, sentence)
         }
@@ -414,24 +409,20 @@ const Player = () => {
     })
 
     // Refetch current sentence if speed/voice changed
-    if (
-      currentSentence &&
-      (currentSentence.audio.speed !== currentSpeed ||
-        currentSentence.audio.voice !== currentVoice)
-    ) {
+    if (currentSentence && currentSentence.audio.voice !== currentVoice) {
       setIsLoading(true)
       ;(async () => {
         setIsPlaying(false)
         const audioUrl = await fetchSentenceAudio(
           currentSentence.text,
-          currentVoice,
-          currentSpeed
+          currentVoice
         )
 
         if (audioUrl && audioRef.current) {
-          updateSentence(audioUrl, currentVoice, currentSpeed, currentIndex)
+          updateSentence(audioUrl, currentVoice, currentIndex)
           audioRef.current.src = audioUrl
           if (isPlaying) {
+            handleVoiceSpeed()
             audioRef.current.play()
             setIsPlaying(true)
           }
@@ -442,7 +433,30 @@ const Player = () => {
 
     // Refetch next 3 sentences
     prefetchNextSentences(currentIndex, 3)
-  }, [currentSpeed, currentVoice])
+  }, [currentVoice])
+
+  const handleVoiceSpeed = () => {
+    let speed = null
+    switch (currentSpeed) {
+      case "-50%":
+        speed = 0.5
+        break
+      case "+50%":
+        speed = 1.5
+        break
+      case "+100%":
+        speed = 2
+        break
+      default:
+        speed = 1
+    }
+
+    audioRef.current.playbackRate = speed
+  }
+
+  useEffect(() => {
+    handleVoiceSpeed()
+  }, [currentSpeed])
 
   return (
     <div>
@@ -483,6 +497,7 @@ const Player = () => {
               const selected = Array.from(keys)[0] as string
               setVoice(selected)
             }}
+            isDisabled={isLoading ? true : false}
           >
             {voice => <SelectItem>{voice.label}</SelectItem>}
           </Select>
@@ -512,6 +527,7 @@ const Player = () => {
               const selected = Array.from(keys)[0] as string
               setSpeed(selected)
             }}
+            isDisabled={isLoading ? true : false}
           >
             {speed => <SelectItem>{speed.label}</SelectItem>}
           </Select>
