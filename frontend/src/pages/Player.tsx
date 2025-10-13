@@ -143,11 +143,13 @@ const Player = () => {
     const firstAudioUrl = await fetchSentenceAudio(chunks[0], currentVoice)
 
     // We start the first sentence
-    audioRef.current.src = firstAudioUrl
-    handleVoiceSpeed()
-    audioRef.current.play()
-    setIsPlaying(true)
-    setCurrentIndex(0)
+    if (audioRef.current && firstAudioUrl) {
+      audioRef.current.src = firstAudioUrl
+      handleVoiceSpeed()
+      audioRef.current.play()
+      setIsPlaying(true)
+      setCurrentIndex(0)
+    }
 
     if (firstAudioUrl) {
       setIsLoading(false)
@@ -159,14 +161,14 @@ const Player = () => {
   }
 
   const handlePause = () => {
-    if (isPlaying) {
+    if (isPlaying && audioRef.current) {
       audioRef.current.pause()
       setIsPlaying(false)
     }
   }
 
   const handlePlay = () => {
-    if (!isPlaying) {
+    if (!isPlaying && audioRef.current) {
       audioRef.current.play()
       setIsPlaying(true)
     }
@@ -175,7 +177,7 @@ const Player = () => {
   const handleForward = async () => {
     if (isLoading) return
     const nextIndex = currentIndex + 1
-    if (sentencesMap.has(nextIndex)) {
+    if (sentencesMap.has(nextIndex) && audioRef.current) {
       audioRef.current.pause()
       let url = sentencesMap.get(nextIndex)?.audio.url
 
@@ -209,7 +211,7 @@ const Player = () => {
   const handleBackwards = async () => {
     if (isLoading) return
     const prevIndex = currentIndex - 1
-    if (sentencesMap.has(prevIndex)) {
+    if (sentencesMap.has(prevIndex) && audioRef.current) {
       audioRef.current.pause()
       let url = sentencesMap.get(prevIndex)?.audio.url
 
@@ -221,13 +223,11 @@ const Player = () => {
         for (let attempt = 0; attempt < maxRetries; attempt++) {
           setIsLoading(true)
           await new Promise(resolve => setTimeout(resolve, retryDelay))
-          if (sentencesMap.get(prevIndex).text) {
+          if (sentencesMap.get(prevIndex)?.text) {
+            const text = sentencesMap.get(prevIndex)?.text as string
             url = sentencesMap.get(prevIndex)?.audio.url
               ? sentencesMap.get(prevIndex)?.audio.url
-              : await fetchSentenceAudio(
-                  sentencesMap.get(prevIndex).text,
-                  currentVoice
-                )
+              : await fetchSentenceAudio(text, currentVoice)
           }
 
           if (url) {
@@ -390,23 +390,25 @@ const Player = () => {
 
     const currentSentence = sentencesMap.get(currentIndex)
 
-    audioRef.current.pause()
+    if (audioRef.current) {
+      audioRef.current.pause()
 
-    // Invalidate all cached audio that doesn't match current settings
-    setSentencesMap(prev => {
-      const updated = new Map(prev)
-      updated.forEach((sentence, index) => {
-        if (sentence.audio.voice !== currentVoice) {
-          if (sentence.audio.url) {
-            URL.revokeObjectURL(sentence.audio.url) // Free memory
+      // Invalidate all cached audio that doesn't match current settings
+      setSentencesMap(prev => {
+        const updated = new Map(prev)
+        updated.forEach((sentence, index) => {
+          if (sentence.audio.voice !== currentVoice) {
+            if (sentence.audio.url) {
+              URL.revokeObjectURL(sentence.audio.url) // Free memory
+            }
+            sentence.audio.url = null
+            sentence.audio.voice = null
+            updated.set(index, sentence)
           }
-          sentence.audio.url = null
-          sentence.audio.voice = null
-          updated.set(index, sentence)
-        }
+        })
+        return updated
       })
-      return updated
-    })
+    }
 
     // Refetch current sentence if speed/voice changed
     if (currentSentence && currentSentence.audio.voice !== currentVoice) {
@@ -436,22 +438,24 @@ const Player = () => {
   }, [currentVoice])
 
   const handleVoiceSpeed = () => {
-    let speed = null
-    switch (currentSpeed) {
-      case "-50%":
-        speed = 0.5
-        break
-      case "+50%":
-        speed = 1.5
-        break
-      case "+100%":
-        speed = 2
-        break
-      default:
-        speed = 1
-    }
+    if (audioRef.current) {
+      let speed = null
+      switch (currentSpeed) {
+        case "-50%":
+          speed = 0.5
+          break
+        case "+50%":
+          speed = 1.5
+          break
+        case "+100%":
+          speed = 2
+          break
+        default:
+          speed = 1
+      }
 
-    audioRef.current.playbackRate = speed
+      audioRef.current.playbackRate = speed
+    }
   }
 
   useEffect(() => {
