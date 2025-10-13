@@ -155,8 +155,7 @@ const Player = () => {
       setIsLoading(false)
       updateSentence(firstAudioUrl, currentVoice, 0)
 
-      // Prefetch the next 3 sentences
-      prefetchNextSentences(0, 3)
+      prefetchNextSentences(0, 5)
     }
   }
 
@@ -202,8 +201,7 @@ const Player = () => {
         setIsLoading(false)
         setIsPlaying(true)
 
-        // Prefetch the next 3 sentences from the new current index
-        prefetchNextSentences(nextIndex, 3)
+        prefetchNextSentences(nextIndex, 5)
       }
     }
   }
@@ -245,8 +243,7 @@ const Player = () => {
         audioRef.current?.play()
         setIsPlaying(true)
 
-        // Prefetch the next 3 sentences from the new current index
-        prefetchNextSentences(prevIndex, 3)
+        prefetchNextSentences(prevIndex, 5)
       }
     }
   }
@@ -433,8 +430,7 @@ const Player = () => {
       })()
     }
 
-    // Refetch next 3 sentences
-    prefetchNextSentences(currentIndex, 3)
+    prefetchNextSentences(currentIndex, 5)
   }, [currentVoice])
 
   useEffect(() => {
@@ -467,8 +463,7 @@ const Player = () => {
       })()
     }
 
-    // Refetch next 3 sentences
-    prefetchNextSentences(currentIndex, 3)
+    prefetchNextSentences(currentIndex, 5)
   }, [currentIndex])
 
   const handleVoiceSpeed = () => {
