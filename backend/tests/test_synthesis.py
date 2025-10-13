@@ -8,14 +8,12 @@ async def test_synthesis(client, auth_header):
 
     text = "Testing"
     voice = "ar-EG-SalmaNeural"
-    # "1x", "1.5x", "0.5x" to "+0%", "+50%", "-50%"
-    speed = "+0%"
     headers, user = auth_header
 
     resp = await client.post(
         "/synthesis/GET",
         headers=headers,
-        json={"text": text, "voice": voice, "speed": speed},
+        json={"text": text, "voice": voice},
     )
 
     assert resp.status_code == 200

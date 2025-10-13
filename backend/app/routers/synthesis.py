@@ -1,5 +1,5 @@
 import os
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks
 from fastapi.responses import FileResponse
 from app.schemas.synthesisSchemas import SynthesisIn
 from app.controllers import TTSController
@@ -12,6 +12,6 @@ async def speak(
     data: SynthesisIn,
     background_task: BackgroundTasks,
 ):
-    path = await TTSController.speak(data.text, data.voice, data.speed)
+    path = await TTSController.speak(data.text, data.voice)
     background_task.add_task(os.remove, path)
     return FileResponse(path, media_type="audio/mpeg", filename="output.mp3")
