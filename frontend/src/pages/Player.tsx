@@ -410,7 +410,7 @@ const Player = () => {
       })
     }
 
-    // Refetch current sentence if speed/voice changed
+    // Refetch current sentence if voice changed
     if (currentSentence && currentSentence.audio.voice !== currentVoice) {
       setIsLoading(true)
       ;(async () => {
@@ -436,6 +436,42 @@ const Player = () => {
     // Refetch next 3 sentences
     prefetchNextSentences(currentIndex, 3)
   }, [currentVoice])
+
+  useEffect(() => {
+    if (sentencesMap.size === 0) return // Don't run before sentences are loaded
+
+    const currentSentence = sentencesMap.get(currentIndex)
+
+    if (audioRef.current) {
+      audioRef.current.pause()
+
+      // Refetch current sentence if voice changed
+      ;(async () => {
+        setIsPlaying(false)
+        let audioUrl = sentencesMap.get(currentIndex)?.audio.url
+        if (!audioUrl) {
+          setIsLoading(true)
+          audioUrl = await fetchSentenceAudio(
+            sentencesMap.get(currentIndex).text,
+            currentVoice
+          )
+          if (audioUrl) {
+            updateSentence(audioUrl, currentVoice, currentIndex)
+          }
+          setIsLoading(false)
+        }
+        if (audioUrl && audioRef.current) {
+          audioRef.current.src = audioUrl
+          handleVoiceSpeed()
+          audioRef.current.play()
+          setIsPlaying(true)
+        }
+      })()
+    }
+
+    // Refetch next 3 sentences
+    prefetchNextSentences(currentIndex, 3)
+  }, [currentIndex])
 
   const handleVoiceSpeed = () => {
     if (audioRef.current) {
@@ -468,7 +504,15 @@ const Player = () => {
       <audio ref={audioRef} />
       <div className="mb-52">
         {Array.from(sentencesMap.values()).map(sentence => (
-          <p key={sentence.id} className="text-3xl mb-10">
+          <p
+            key={sentence.id}
+            className={`text-3xl mb-10 ${isLoading ? "" : "hover:bg-yellow-500"} cursor-pointer ${currentIndex === sentence.id ? "bg-yellow-500" : ""}`}
+            onClick={() => {
+              if (!isLoading) {
+                setCurrentIndex(sentence.id)
+              }
+            }}
+          >
             {sentence.text}
           </p>
         ))}
