@@ -6,8 +6,10 @@ import { setIsLoggedIn } from "../redux/reducer/authSlice"
 import {
   BackwardIcon,
   ForwardIcon,
+  MinusIcon,
   PauseIcon,
-  PlayIcon
+  PlayIcon,
+  PlusIcon
 } from "@heroicons/react/24/solid"
 import { Spinner } from "@heroui/react"
 import { Select, SelectItem } from "@heroui/react"
@@ -51,6 +53,8 @@ const Player = () => {
   const [currentSpeed, setSpeed] = useState("+0%")
   const [currentVoice, setVoice] = useState("en-GB-AdaMultilingualNeural")
 
+  const [currentFontSize, setFontSize] = useState(1)
+
   const speedOptions = [
     { key: "+100%", label: "2x" },
     { key: "+50%", label: "1.5x" },
@@ -65,6 +69,18 @@ const Player = () => {
   ]
 
   const audioRef = useRef<HTMLAudioElement>(null)
+
+  const handleFontSizeUp = () => {
+    if (currentFontSize <= 2) {
+      setFontSize(currentFontSize + 1)
+    }
+  }
+
+  const handleFontSizeDown = () => {
+    if (currentFontSize >= 2) {
+      setFontSize(currentFontSize - 1)
+    }
+  }
 
   const fetchEntry = async () => {
     try {
@@ -499,7 +515,7 @@ const Player = () => {
         {Array.from(sentencesMap.values()).map(sentence => (
           <p
             key={sentence.id}
-            className={`text-3xl px-5 py-2 mb-10 ${isLoading || currentIndex === sentence.id ? "" : "hover:bg-yellow-500/50 cursor-pointer"} ${currentIndex === sentence.id ? "bg-yellow-500/80" : ""}`}
+            className={`text-${currentFontSize}xl px-5 py-2 mb-${currentFontSize} ${isLoading || currentIndex === sentence.id ? "" : "hover:bg-yellow-500/50 cursor-pointer"} ${currentIndex === sentence.id ? "bg-yellow-500/80" : ""}`}
             onClick={() => {
               if (!isLoading) {
                 setCurrentIndex(sentence.id)
@@ -509,6 +525,36 @@ const Player = () => {
             {sentence.text}
           </p>
         ))}
+      </div>
+
+      <div className="right-5 fixed bottom-0 mb-5">
+        <div
+          className="
+          flex
+          flex-col
+          justify-center
+          items-center
+          gap-5
+          p-5
+          rounded-4xl
+          backdrop-blur-md
+          shadow-lg
+          dark:bg-black/30
+          bg-white/30
+          border
+          dark:border-white/30
+          border-black
+          "
+        >
+          <PlusIcon
+            onClick={handleFontSizeUp}
+            className="size-5 cursor-pointer"
+          />
+          <MinusIcon
+            onClick={handleFontSizeDown}
+            className="size-5 cursor-pointer"
+          />
+        </div>
       </div>
 
       <div className="left-1/2 -translate-x-1/2 fixed bottom-0 mb-5">
