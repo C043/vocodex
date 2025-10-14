@@ -513,17 +513,20 @@ const Player = () => {
       <audio ref={audioRef} />
       <div className="mb-52">
         {Array.from(sentencesMap.values()).map(sentence => (
-          <p
-            key={sentence.id}
-            className={`text-${currentFontSize}xl px-5 py-2 mb-${currentFontSize} ${isLoading || currentIndex === sentence.id ? "" : "hover:bg-yellow-500/50 cursor-pointer"} ${currentIndex === sentence.id ? "bg-yellow-500/80" : ""}`}
-            onClick={() => {
-              if (!isLoading) {
-                setCurrentIndex(sentence.id)
-              }
-            }}
+          <div
+            className={`text-${currentFontSize}xl rounded-3xl px-5 py-2 mb-${currentFontSize} ${isLoading || currentIndex === sentence.id ? "" : "hover:bg-yellow-500/50 cursor-pointer"} ${currentIndex === sentence.id ? "bg-yellow-500/80" : ""}`}
           >
-            {sentence.text}
-          </p>
+            <p
+              key={sentence.id}
+              onClick={() => {
+                if (!isLoading) {
+                  setCurrentIndex(sentence.id)
+                }
+              }}
+            >
+              {sentence.text}
+            </p>
+          </div>
         ))}
       </div>
 
