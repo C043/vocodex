@@ -95,12 +95,13 @@ const Layout = () => {
       <nav className="fixed top-0 left-0 right-0 z-50 p-4 border-b h-[75px] flex bg-[#E4F4F8] dark:bg-black">
         <div className="flex justify-between items-center container mx-auto">
           <NavLink to="/" className={link}>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               {isPlayer ? (
                 <ArrowLeftIcon className="size-6 cursor-pointer" />
               ) : (
                 ""
               )}
+              <img src="/VOCODEX.png" className="me-1 w-10 h-auto" />
               VOCODEX
             </div>
           </NavLink>
