@@ -71,7 +71,7 @@ const Player = () => {
   const audioRef = useRef<HTMLAudioElement>(null)
 
   const handleFontSizeUp = () => {
-    if (currentFontSize <= 2) {
+    if (currentFontSize <= 3) {
       setFontSize(currentFontSize + 1)
     }
   }
