@@ -29,6 +29,7 @@ import { TrashIcon } from "@heroicons/react/24/solid"
 type Entry = {
   id: number
   title: String
+  date: Date
 }
 
 type State = {
@@ -166,6 +167,13 @@ const Home = () => {
       }
 
       const data = await resp.json()
+      data.entries.forEach((entry: Entry) => {
+        entry.date = new Date(entry.date).toLocaleString(undefined, {
+          year: "numeric",
+          month: "short",
+          day: "numeric"
+        })
+      })
       setEntries(data.entries)
     } catch (err) {
       setHasError(true)
@@ -202,6 +210,7 @@ const Home = () => {
       key: "title",
       label: "Title"
     },
+    { key: "date", label: "Uploaded" },
     { key: "actions", label: "Actions" }
   ]
 
