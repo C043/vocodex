@@ -51,13 +51,16 @@ async def listEntries(current_user: Users, session: AsyncSession) -> list[EntryS
     try:
         rows = (
             await session.execute(
-                select(Entries.id, Entries.title).where(
+                select(Entries.id, Entries.title, Entries.created_at).where(
                     Entries.user_id == current_user.id
                 )
             )
         ).all()
 
-        entries = [EntrySummary(id=row.id, title=row.title) for row in rows]
+        entries = [
+            EntrySummary(id=row.id, title=row.title, date=row.created_at)
+            for row in rows
+        ]
         return entries
     except Exception:
         raise
