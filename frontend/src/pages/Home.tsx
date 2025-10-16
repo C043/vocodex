@@ -28,8 +28,8 @@ import { TrashIcon } from "@heroicons/react/24/solid"
 
 type Entry = {
   id: number
-  title: String
-  date: Date
+  title: string
+  date: string
 }
 
 type State = {
