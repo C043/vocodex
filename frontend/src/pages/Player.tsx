@@ -527,7 +527,7 @@ const Player = () => {
       <div className="mb-52">
         {Array.from(sentencesMap.values()).map(sentence => (
           <div
-            className={`${fontClasses.text} rounded-3xl px-5 py-2 ${fontClasses.margin} ${isLoading || currentIndex === sentence.id ? "" : "hover:bg-yellow-500/50 cursor-pointer"} ${currentIndex === sentence.id ? "bg-yellow-500/80" : ""}`}
+            className={`${fontClasses.text} rounded-3xl px-2 py-1 ${fontClasses.margin} ${isLoading || currentIndex === sentence.id ? "" : "hover:bg-yellow-500/50 cursor-pointer"} ${currentIndex === sentence.id ? "bg-yellow-500/80" : ""}`}
           >
             <p
               key={sentence.id}
