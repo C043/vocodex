@@ -4,15 +4,16 @@ import { checkAuthentication } from "../utils/authUtils"
 import { useDispatch, useSelector } from "react-redux"
 import { setIsLoggedIn } from "../redux/reducer/authSlice"
 import {
+  addToast,
   Button,
   Form,
-  getKeyValue,
   Input,
   Modal,
   ModalBody,
   ModalContent,
   ModalFooter,
   ModalHeader,
+  Spinner,
   Table,
   TableBody,
   TableCell,
@@ -55,6 +56,9 @@ const Home = () => {
 
   const [entries, setEntries] = useState<Entry[]>([])
 
+  const [isLoading, setIsLoading] = useState(true)
+  const [hasError, setHasError] = useState(false)
+
   const formRef = useRef<HTMLFormElement>(null)
   const triggerSubmit = () => {
     formRef.current?.requestSubmit()
@@ -64,6 +68,8 @@ const Home = () => {
     ev.preventDefault()
 
     try {
+      setIsLoading(true)
+      setHasError(false)
       const token = window.localStorage.getItem("vocodex-jwt")
       const url = `${env.VITE_API_URL}/entries/text`
       const headers = {
@@ -89,38 +95,64 @@ const Home = () => {
       await getUserEntries()
     } catch (err) {
       console.error(err)
+      addToast({
+        title: "There was an error uploading.",
+        description: "Retry later.",
+        color: "danger"
+      })
+      setHasError(true)
     } finally {
+      setIsLoading(false)
       setTextTitle("")
       setTextContent("")
     }
   }
 
-  const handleDelete = async (entryId: number) => {
+  const handleDelete = async (ev: React.MouseEvent, entryId: number) => {
     try {
-      const url = `${env.VITE_API_URL}/entries/${entryId}`
-      const headers = {
-        Authorization: `Bearer ${token}`
-      }
-      const method = "DELETE"
-      const resp = await fetch(url, {
-        method,
-        headers
-      })
+      ev.stopPropagation()
+      setIsLoading(true)
+      setHasError(false)
+      const confirmed = window.confirm(
+        "Are you sure you want to delete this entry?"
+      )
 
-      if (!resp.ok) {
-        const data = await resp.json().catch(() => null)
-        const detail = data?.detail ?? `HTTP ${resp.status}`
-        throw new Error(detail)
-      }
+      if (confirmed) {
+        const url = `${env.VITE_API_URL}/entries/${entryId}`
+        const headers = {
+          Authorization: `Bearer ${token}`
+        }
+        const method = "DELETE"
+        const resp = await fetch(url, {
+          method,
+          headers
+        })
 
-      await getUserEntries()
+        if (!resp.ok) {
+          const data = await resp.json().catch(() => null)
+          const detail = data?.detail ?? `HTTP ${resp.status}`
+          throw new Error(detail)
+        }
+
+        await getUserEntries()
+      }
     } catch (err) {
+      setHasError(true)
+      addToast({
+        title: "There was an error deleting.",
+        description: "Retry later.",
+        color: "danger"
+      })
       console.error(err)
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const getUserEntries = async () => {
     try {
+      setIsLoading(true)
+      setHasError(false)
       const url = `${env.VITE_API_URL}/entries/list/me`
       const headers = {
         Authorization: `Bearer ${token}`
@@ -136,7 +168,16 @@ const Home = () => {
       const data = await resp.json()
       setEntries(data.entries)
     } catch (err) {
+      setHasError(true)
       console.error(err)
+
+      addToast({
+        title: "There was an error fetching entries.",
+        description: "Retry later.",
+        color: "danger"
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -176,7 +217,7 @@ const Home = () => {
             <Tooltip color="danger" content="Delete">
               <span
                 className="text-danger cursor-pointer active:opacity-50"
-                onClick={ev => handleDelete(entry.id)}
+                onClick={(ev: React.MouseEvent) => handleDelete(ev, entry.id)}
                 data-testid={`delete-entry-${entry.id}`}
               >
                 <TrashIcon className="size-6 text-danger" />
@@ -196,36 +237,44 @@ const Home = () => {
         Upload Text
       </Button>
 
-      {entries.length > 0 ? (
-        <Table
-          aria-label="entries table"
-          className="w-full"
-          color="default"
-          selectionMode="single"
+      <Table
+        aria-label="entries table"
+        className="w-full"
+        color="default"
+        selectionMode="single"
+      >
+        <TableHeader columns={columns}>
+          {column => (
+            <TableColumn
+              key={column.key}
+              align={column.key === "actions" ? "end" : "start"}
+            >
+              {column.label}
+            </TableColumn>
+          )}
+        </TableHeader>
+        <TableBody
+          isLoading={isLoading}
+          loadingContent={
+            <Spinner color="default" className="mt-5" size="lg" />
+          }
+          items={entries}
         >
-          <TableHeader columns={columns}>
-            {column => (
-              <TableColumn
-                key={column.key}
-                align={column.key === "actions" ? "end" : "start"}
-              >
-                {column.label}
-              </TableColumn>
-            )}
-          </TableHeader>
-          <TableBody items={entries}>
-            {item => (
-              <TableRow key={item.id} className="cursor-pointer">
-                {columnKey => (
-                  <TableCell>{renderCell(item, columnKey)}</TableCell>
-                )}
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      ) : (
-        <></>
-      )}
+          {item => (
+            <TableRow
+              onClick={() => {
+                navigate("/player/" + item.id)
+              }}
+              key={item.id}
+              className="cursor-pointer"
+            >
+              {columnKey => (
+                <TableCell>{renderCell(item, columnKey)}</TableCell>
+              )}
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
 
       <Modal
         isOpen={isOpen}

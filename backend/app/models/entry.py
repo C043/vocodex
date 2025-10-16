@@ -18,8 +18,8 @@ class Entries(Base):
         nullable=False,
         index=True,
     )
-    title: Mapped[str] = mapped_column(String(120))
-    content: Mapped[str] = mapped_column(String(1000), nullable=False)
+    title: Mapped[str] = mapped_column(String(1200))
+    content: Mapped[str] = mapped_column(String(10000), nullable=False)
     created_at: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

@@ -1,13 +1,10 @@
-from typing import Sequence
+from datetime import datetime
 from pydantic import BaseModel, Field
-from sqlalchemy import Row
-
-from app.models.entry import Entries
 
 
 class UploadTextIn(BaseModel):
-    title: str = Field(max_length=120)
-    content: str = Field(min_length=3, max_length=1000)
+    title: str = Field(max_length=1200)
+    content: str = Field(min_length=3, max_length=10000)
 
 
 class UploadTextOut(BaseModel):
@@ -17,6 +14,7 @@ class UploadTextOut(BaseModel):
 class EntrySummary(BaseModel):
     id: int
     title: str
+    date: datetime
 
 
 class ListEntriesOut(BaseModel):

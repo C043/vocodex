@@ -1,7 +1,4 @@
 import os, pytest
-from typing import List
-
-from app.schemas.entriesSchemas import EntrySummary, ListEntriesOut
 
 
 @pytest.mark.asyncio
@@ -80,6 +77,7 @@ async def test_entries(client, entry_cleanup, auth_header):
     print(payload)
     entries = payload["entries"]
     assert len(entries) == 2
+    assert entries[0]["date"] is not None
 
     # Delete entry test
     resp = await client.delete(f"/entries/{entryId}", headers=headers)
