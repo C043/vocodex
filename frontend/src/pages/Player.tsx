@@ -507,6 +507,19 @@ const Player = () => {
     handleVoiceSpeed()
   }, [currentSpeed])
 
+  // Map font size to complete Tailwind classes
+  const getFontSizeClasses = (size: number) => {
+    const sizeMap: Record<number, { text: string; margin: string }> = {
+      1: { text: "text-xl", margin: "mb-1" },
+      2: { text: "text-2xl", margin: "mb-2" },
+      3: { text: "text-3xl", margin: "mb-3" },
+      4: { text: "text-4xl", margin: "mb-4" }
+    }
+    return sizeMap[size] || sizeMap[1]
+  }
+
+  const fontClasses = getFontSizeClasses(currentFontSize)
+
   return (
     <div>
       <h1 className="text-9xl mb-10">{title}</h1>
@@ -514,7 +527,7 @@ const Player = () => {
       <div className="mb-52">
         {Array.from(sentencesMap.values()).map(sentence => (
           <div
-            className={`text-${currentFontSize}xl rounded-3xl px-5 py-2 mb-${currentFontSize} ${isLoading || currentIndex === sentence.id ? "" : "hover:bg-yellow-500/50 cursor-pointer"} ${currentIndex === sentence.id ? "bg-yellow-500/80" : ""}`}
+            className={`${fontClasses.text} rounded-3xl px-5 py-2 ${fontClasses.margin} ${isLoading || currentIndex === sentence.id ? "" : "hover:bg-yellow-500/50 cursor-pointer"} ${currentIndex === sentence.id ? "bg-yellow-500/80" : ""}`}
           >
             <p
               key={sentence.id}
