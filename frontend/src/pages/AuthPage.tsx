@@ -116,7 +116,7 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
     } catch (err) {
       setError(true)
       let errors = {}
-      if (err.status === 409) {
+      if (err instanceof Error && (err as any).status === 409) {
         errors = {
           username: "Sorry, this username is already taken."
         }
