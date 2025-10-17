@@ -30,7 +30,8 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: .
+      dockerfile: backend/Dockerfile
       target: dev
     env_file: .env
     environment:
@@ -42,7 +43,6 @@ services:
         condition: service_healthy
     ports:
       - "${BACKEND_PORT}:8000"
-    command: ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"]
 
   frontend:
     build:
