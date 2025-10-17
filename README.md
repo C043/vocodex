@@ -1,5 +1,21 @@
 # VOCODEX
-![vocodex-logo](VOCODEX.png)
+
+<div align="center">
+  <img src="VOCODEX.png" alt="vocodex-logo" width="400">
+</div>
+
+<div align="center">
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)
+![Last Commit](https://img.shields.io/github/last-commit/c043/vocodex)
+![React](https://img.shields.io/badge/react-%2320232a.svg?style=flat&logo=react&logoColor=%2361DAFB)
+![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=flat&logo=typescript&logoColor=white)
+![Python](https://img.shields.io/badge/python-3670A0?style=flat&logo=python&logoColor=ffdd54)
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat&logo=fastapi)
+![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=flat&logo=postgresql&logoColor=white)
+
+</div>
 
 `VOCODEX` is a WIP self-hostable feature rich full fledged `TTS` client.
 Its objective is to become a good open source and self-hosted alternative to premium services like `Speechify`.
@@ -43,7 +59,8 @@ cd vocodex
 # Create a .env file and mimic the .env.example with your personal data like
 # the ip of your server and your personal secret for the backend
 # In the .env you can also change the frontend and backend ports 
-# (Remember to change the backend port for the VITE_API_URL variable too if you change it though!)
+# (Remember to change the backend port for the VITE_API_URL variable too if you
+# change it though!)
 # Edit the database username and password if you want (you cannot change them later)
 vim .env
 
@@ -80,7 +97,9 @@ If everything went according to plan, going to `http://<server-ip>:<frontend-por
 git clone https://github.com/c043/vocodex
 cd vocodex
 
-# This command will bring up the development version of the application with pgadmin too. You will be able to access pgadmin through http://localhost:5050 with the credentials setted in the docker-compose.yml
+# This command will bring up the development version of the application with 
+# pgadmin too. You will be able to access pgadmin through http://localhost:5050
+# with the credentials setted in the docker-compose.yml
 sudo docker compose up
 ```
 
