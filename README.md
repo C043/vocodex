@@ -1,5 +1,21 @@
 # VOCODEX
-![vocodex-logo](VOCODEX.png)
+
+<div align="center">
+  <img src="VOCODEX.png" alt="vocodex-logo" width="400">
+</div>
+
+<div align="center">
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)
+![Last Commit](https://img.shields.io/github/last-commit/c043/vocodex)
+![React](https://img.shields.io/badge/react-%2320232a.svg?style=flat&logo=react&logoColor=%2361DAFB)
+![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=flat&logo=typescript&logoColor=white)
+![Python](https://img.shields.io/badge/python-3670A0?style=flat&logo=python&logoColor=ffdd54)
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat&logo=fastapi)
+![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=flat&logo=postgresql&logoColor=white)
+
+</div>
 
 `VOCODEX` is a WIP self-hostable feature rich full fledged `TTS` client.
 Its objective is to become a good open source and self-hosted alternative to premium services like `Speechify`.
