@@ -263,6 +263,7 @@ const Home = () => {
           )}
         </TableHeader>
         <TableBody
+          emptyContent={"No entries found."}
           isLoading={isLoading}
           loadingContent={
             <Spinner color="default" className="mt-5" size="lg" />
