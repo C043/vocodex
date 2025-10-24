@@ -6,3 +6,4 @@ pydantic>=2.7
 pyjwt
 bcrypt
 edge-tts
+alembic>=1.13
