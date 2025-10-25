@@ -34,8 +34,25 @@ async def test_entries(client, entry_cleanup, auth_header):
 
     getTitle = getData["title"]
     getContent = getData["content"]
+    getProgress = getData["progress"]
     assert getTitle == "TestTitle"
     assert getContent == "TestContent"
+    assert getProgress == 0
+
+    # Update progress test
+    resp = await client.post(
+        f"/entries/text/{entryId}/progress", headers=headers, json={"progress": 10}
+    )
+
+    assert resp.status_code == 201
+
+    resp = await client.get(f"/entries/{entryId}", headers=headers)
+
+    assert resp.status_code == 200
+
+    getData = resp.json()
+    getProgress = getData["progress"]
+    assert getProgress == 10
 
     # Title parsing test
     title = ""

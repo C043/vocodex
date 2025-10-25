@@ -8,6 +8,8 @@ from app.schemas.entriesSchemas import (
     ListEntriesOut,
     UploadTextIn,
     UploadTextOut,
+    UpdateEntryIn,
+    UpdateEntryOut,
 )
 
 from app.controllers import entriesController
@@ -38,6 +40,22 @@ async def uploadText(
         entry = await entriesController.uploadText(data, current_user, session)
         # Return new id
         return UploadTextOut(id=entry.id)
+    except Exception:
+        raise
+
+
+@router.post("/text/{entry_id}/progress", status_code=201)
+async def updateProgress(
+    entry_id: int,
+    data: UpdateEntryIn,
+    current_user: Users = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> UpdateEntryOut:
+    try:
+        entryId = await entriesController.updateProgress(
+            entry_id, data, current_user, session
+        )
+        return UpdateEntryOut(id=entryId)
     except Exception:
         raise
 

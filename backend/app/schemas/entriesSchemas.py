@@ -19,3 +19,11 @@ class EntrySummary(BaseModel):
 
 class ListEntriesOut(BaseModel):
     entries: list[EntrySummary]
+
+
+class UpdateEntryIn(BaseModel):
+    progress: int
+
+
+class UpdateEntryOut(BaseModel):
+    id: int
