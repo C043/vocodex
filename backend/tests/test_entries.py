@@ -23,6 +23,12 @@ async def test_entries(client, entry_cleanup, auth_header):
     assert entryId
     entry_cleanup(entryId)
 
+    # Get entry progress test
+    resp = await client.get(f"/entries/{entryId}/progress", headers=headers)
+    assert resp.status_code == 200
+    getData = resp.json()
+    assert getData["progress"] == 0
+
     # Get entry test
     resp = await client.get(
         f"/entries/{entryId}",

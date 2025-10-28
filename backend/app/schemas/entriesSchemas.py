@@ -21,6 +21,10 @@ class ListEntriesOut(BaseModel):
     entries: list[EntrySummary]
 
 
+class GetEntryProgressOut(BaseModel):
+    progress: int
+
+
 class UpdateEntryIn(BaseModel):
     progress: int
 

@@ -102,3 +102,19 @@ async def updateProgress(
     except Exception:
         await session.rollback()
         raise
+
+
+async def getProgress(entry_id: int, current_user: Users, session: AsyncSession):
+    try:
+        entryProgress = (
+            await session.execute(
+                select(Entries.progress).where(
+                    Entries.id == entry_id, Entries.user_id == current_user.id
+                )
+            )
+        ).scalar_one()
+
+        return entryProgress
+    except Exception:
+        await session.rollback()
+        raise
