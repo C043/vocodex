@@ -16,11 +16,18 @@ from app.routers import entries, synthesis
 from .db import get_session
 
 DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL is needed")
+
 engine = create_async_engine(DATABASE_URL, echo=False)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    if not DATABASE_URL:
+        raise RuntimeError("DATABASE_URL is needed")
+
     engine = create_async_engine(
         DATABASE_URL,
         pool_size=5,
@@ -32,8 +39,6 @@ async def lifespan(app: FastAPI):
     app.state.engine = engine
     app.state.sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
     try:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
         yield
     finally:
         await engine.dispose()

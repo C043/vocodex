@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING
-from sqlalchemy import String, func, ForeignKey
+from sqlalchemy import String, func, ForeignKey, text
 from sqlalchemy.orm import declarative_base, mapped_column, relationship
 from sqlalchemy.orm.base import Mapped
-from sqlalchemy.types import DateTime
+from sqlalchemy.types import DateTime, Integer
 from app.models.base import Base
 
 if TYPE_CHECKING:
@@ -20,6 +20,9 @@ class Entries(Base):
     )
     title: Mapped[str] = mapped_column(String(1200))
     content: Mapped[str] = mapped_column(String(10000), nullable=False)
+    progress: Mapped[int] = mapped_column(
+        Integer, default=0, server_default=text("0"), nullable=False
+    )
     created_at: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

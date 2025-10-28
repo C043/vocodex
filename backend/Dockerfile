@@ -9,8 +9,8 @@ RUN pip install --no-cache-dir -r /deps/requirements/base.txt
 
 FROM deps AS dev
 RUN pip install --no-cache-dir -r /deps/requirements/dev.txt
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["/bin/sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"]
 
 FROM deps AS prod
 COPY backend/ /app
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["/bin/sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]

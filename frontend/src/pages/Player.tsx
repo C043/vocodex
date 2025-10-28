@@ -42,7 +42,7 @@ const Player = () => {
 
   const dispatch = useDispatch()
 
-  const [currentIndex, setCurrentIndex] = useState(0)
+  const [currentIndex, setCurrentIndex] = useState<number>(Infinity)
   const [sentencesMap, setSentencesMap] = useState<Map<number, sentenceObj>>(
     new Map()
   )
@@ -103,6 +103,7 @@ const Player = () => {
 
       const data = await resp.json()
 
+      setCurrentIndex(data.progress)
       splitIntoSentences(data.content)
       setTitle(data.title)
     } catch (err) {
@@ -156,7 +157,10 @@ const Player = () => {
     }
 
     // At the end of splitIntoSentences, after setSentencesMap(newMap):
-    const firstAudioUrl = await fetchSentenceAudio(chunks[0], currentVoice)
+    const firstAudioUrl = await fetchSentenceAudio(
+      chunks[currentIndex],
+      currentVoice
+    )
 
     // We start the first sentence
     if (audioRef.current && firstAudioUrl) {
@@ -333,6 +337,53 @@ const Player = () => {
     }
   }
 
+  const getProgress = async () => {
+    try {
+      const url = `${env.VITE_API_URL}/entries/${id}/progress`
+      const headers = {
+        Authorization: `Bearer ${token}`
+      }
+      const resp = await fetch(url, { headers })
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => null)
+        const detail = data?.detail ?? `HTTP ${resp.status}`
+        throw new Error(detail)
+      }
+
+      const data = await resp.json()
+      const progress = data.progress
+
+      return progress
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const updateProgress = async () => {
+    try {
+      const token = window.localStorage.getItem("vocodex-jwt")
+      const url = `${env.VITE_API_URL}/entries/text/${id}/progress`
+      const method = "POST"
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      }
+      const body = {
+        progress: currentIndex
+      }
+
+      const resp = await fetch(url, {
+        method,
+        headers,
+        body: JSON.stringify(body)
+      })
+
+      if (!resp.ok) throw new Error("Progress saving failed")
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.onended = async () => {
@@ -454,6 +505,7 @@ const Player = () => {
 
     if (audioRef.current) {
       audioRef.current.pause()
+      updateProgress()
 
       // Fast Forward to the sentence if we have the audio, if not, we fetch it
       ;(async () => {

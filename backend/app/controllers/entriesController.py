@@ -1,11 +1,12 @@
 from fastapi import HTTPException
-from sqlalchemy import Delete, Select, select
+from sqlalchemy import Delete, Select, select, update
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from app.models.entry import Entries
 from app.models.user import Users
 from app.schemas.entriesSchemas import (
     EntrySummary,
+    UpdateEntryIn,
     UploadTextIn,
 )
 
@@ -51,7 +52,7 @@ async def listEntries(current_user: Users, session: AsyncSession) -> list[EntryS
     try:
         rows = (
             await session.execute(
-                select(Entries.id, Entries.title, Entries.created_at).where(
+                Select(Entries.id, Entries.title, Entries.created_at).where(
                     Entries.user_id == current_user.id
                 )
             )
@@ -76,6 +77,44 @@ async def deleteEntryById(entry_id: int, current_user: Users, session: AsyncSess
         await session.commit()
         if result.rowcount == 0:
             raise HTTPException(status_code=404, detail="Entry not found")
+    except Exception:
+        await session.rollback()
+        raise
+
+
+async def updateProgress(
+    entry_id: int, data: UpdateEntryIn, current_user: Users, session: AsyncSession
+) -> int:
+    try:
+        stmt = (
+            update(Entries)
+            .where(Entries.id == entry_id, Entries.user_id == current_user.id)
+            .values(progress=data.progress)
+            .returning(Entries.id)
+        )
+        result = await session.execute(stmt)
+        entry_id_updated = result.scalar_one_or_none()
+        if entry_id_updated is None:
+            await session.rollback()
+            raise HTTPException(status_code=404, detail="Entry not found")
+        await session.commit()
+        return entry_id_updated
+    except Exception:
+        await session.rollback()
+        raise
+
+
+async def getProgress(entry_id: int, current_user: Users, session: AsyncSession):
+    try:
+        entryProgress = (
+            await session.execute(
+                select(Entries.progress).where(
+                    Entries.id == entry_id, Entries.user_id == current_user.id
+                )
+            )
+        ).scalar_one()
+
+        return entryProgress
     except Exception:
         await session.rollback()
         raise
