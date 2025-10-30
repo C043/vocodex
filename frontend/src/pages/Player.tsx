@@ -13,6 +13,7 @@ import {
 } from "@heroicons/react/24/solid"
 import { Spinner } from "@heroui/react"
 import { Select, SelectItem } from "@heroui/react"
+import { motion, AnimatePresence, type Variants } from "framer-motion"
 
 type sentenceObj = {
   id: number
@@ -193,8 +194,26 @@ const Player = () => {
     }
   }
 
+  const [forwardIndex, setForwardIndex] = useState(0)
+  const forwardVariants: Variants = {
+    enter: {
+      x: -40,
+      opacity: 0
+    },
+    center: {
+      x: 0,
+      opacity: 1,
+      transition: { type: "spring", stiffness: 400, damping: 25 }
+    },
+    exit: {
+      x: 40,
+      opacity: 0,
+      transition: { duration: 0.2 }
+    }
+  }
   const handleForward = async () => {
     if (isLoading) return
+    setForwardIndex(prev => prev + 1)
     const nextIndex = currentIndex + 1
     if (sentencesMap.has(nextIndex) && audioRef.current) {
       audioRef.current.pause()
@@ -226,8 +245,26 @@ const Player = () => {
     }
   }
 
+  const [backwardIndex, setBackwardIndex] = useState(0)
+  const backwardVariants: Variants = {
+    enter: {
+      x: 40,
+      opacity: 0
+    },
+    center: {
+      x: 0,
+      opacity: 1,
+      transition: { type: "spring", stiffness: 400, damping: 25 }
+    },
+    exit: {
+      x: -40,
+      opacity: 0,
+      transition: { duration: 0.2 }
+    }
+  }
   const handleBackwards = async () => {
     if (isLoading) return
+    setBackwardIndex(prev => prev - 1)
     const prevIndex = currentIndex - 1
     if (sentencesMap.has(prevIndex) && audioRef.current) {
       audioRef.current.pause()
@@ -656,8 +693,18 @@ const Player = () => {
           >
             {voice => <SelectItem>{voice.label}</SelectItem>}
           </Select>
-          <div className="cursor-pointer">
-            <BackwardIcon onClick={handleBackwards} className="size-10" />
+          <div className="cursor-pointer overflow-hidden">
+            <AnimatePresence mode="popLayout" initial={false}>
+              <motion.div
+                key={backwardIndex}
+                variants={backwardVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+              >
+                <BackwardIcon onClick={handleBackwards} className="size-10" />
+              </motion.div>
+            </AnimatePresence>
           </div>
           {isLoading ? (
             <Spinner size="md" color={isDarkMode ? "white" : "warning"} />
@@ -670,8 +717,18 @@ const Player = () => {
               )}
             </div>
           )}
-          <div className="cursor-pointer">
-            <ForwardIcon onClick={handleForward} className="size-10" />
+          <div className="cursor-pointer overflow-hidden">
+            <AnimatePresence mode="popLayout" initial={false}>
+              <motion.div
+                key={forwardIndex}
+                variants={forwardVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+              >
+                <ForwardIcon onClick={handleForward} className="size-10" />
+              </motion.div>
+            </AnimatePresence>
           </div>
           <Select
             className={`w-20`}
