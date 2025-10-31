@@ -211,9 +211,13 @@ const Player = () => {
       transition: { duration: 0.2 }
     }
   }
+
+  const handleForwardAnimation = () => {
+    setForwardIndex(prev => prev + 1)
+  }
+
   const handleForward = async () => {
     if (isLoading) return
-    setForwardIndex(prev => prev + 1)
     const nextIndex = currentIndex + 1
     if (sentencesMap.has(nextIndex) && audioRef.current) {
       audioRef.current.pause()
@@ -262,9 +266,13 @@ const Player = () => {
       transition: { duration: 0.2 }
     }
   }
+
+  const handleBackwardsAnimation = () => {
+    setBackwardIndex(prev => prev - 1)
+  }
+
   const handleBackwards = async () => {
     if (isLoading) return
-    setBackwardIndex(prev => prev - 1)
     const prevIndex = currentIndex - 1
     if (sentencesMap.has(prevIndex) && audioRef.current) {
       audioRef.current.pause()
@@ -469,10 +477,12 @@ const Player = () => {
           break
         case "ArrowRight":
           event.preventDefault()
+          handleForwardAnimation()
           handleForward()
           break
         case "ArrowLeft":
           event.preventDefault()
+          handleBackwardsAnimation()
           handleBackwards()
           break
       }
@@ -702,7 +712,13 @@ const Player = () => {
                 animate="center"
                 exit="exit"
               >
-                <BackwardIcon onClick={handleBackwards} className="size-10" />
+                <BackwardIcon
+                  onClick={() => {
+                    handleBackwardsAnimation()
+                    handleBackwards()
+                  }}
+                  className="size-10"
+                />
               </motion.div>
             </AnimatePresence>
           </div>
@@ -726,7 +742,13 @@ const Player = () => {
                 animate="center"
                 exit="exit"
               >
-                <ForwardIcon onClick={handleForward} className="size-10" />
+                <ForwardIcon
+                  onClick={() => {
+                    handleForwardAnimation()
+                    handleForward()
+                  }}
+                  className="size-10"
+                />
               </motion.div>
             </AnimatePresence>
           </div>
