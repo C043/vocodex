@@ -14,8 +14,6 @@ import {
 import { Spinner } from "@heroui/react"
 import { Select, SelectItem } from "@heroui/react"
 import { motion, AnimatePresence, type Variants } from "framer-motion"
-import { PlayerContext } from "../contexts/PlayerContext"
-import { PlayerControls } from "../components/player/PlayerControls"
 
 type sentenceObj = {
   id: number
@@ -34,16 +32,6 @@ type State = {
   }
 }
 
-type SpeedOption = {
-  key: string
-  label: string
-}
-
-type VoiceOption = {
-  key: string
-  label: string
-}
-
 const Player = () => {
   const env = import.meta.env
   const token = window.localStorage.getItem("vocodex-jwt")
@@ -51,53 +39,49 @@ const Player = () => {
   const isDarkMode = useSelector((state: State) => state.darkMode.value)
 
   const { id } = useParams()
-
   const navigate = useNavigate()
+
   const dispatch = useDispatch()
+
+  const [currentIndex, setCurrentIndex] = useState<number>(Infinity)
+  const [sentencesMap, setSentencesMap] = useState<Map<number, sentenceObj>>(
+    new Map()
+  )
+  const [title, setTitle] = useState("")
 
   const [isPlaying, setIsPlaying] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [currentSpeed, setSpeed] = useState("+0%")
   const [currentVoice, setVoice] = useState("en-GB-AdaMultilingualNeural")
-  const [title, setTitle] = useState("")
-  const [currentIndex, setCurrentIndex] = useState<number>(Infinity)
+
   const [currentFontSize, setFontSize] = useState(1)
-  const [sentencesMap, setSentencesMap] = useState<Map<number, sentenceObj>>(
-    new Map()
-  )
-  const speedOptions: SpeedOption[] = [
+
+  const speedOptions = [
     { key: "+100%", label: "2x" },
     { key: "+50%", label: "1.5x" },
     { key: "+0%", label: "1x" }
   ]
-  const voiceOptions: VoiceOption[] = [
+
+  const voiceOptions = [
     { key: "en-GB-LibbyNeural", label: "Libby" },
     { key: "en-GB-AdaMultilingualNeural", label: "Ada" },
     { key: "en-GB-OllieMultilingualNeural", label: "Ollie" },
     { key: "en-GB-RyanNeural", label: "Ryan" }
   ]
+
   const audioRef = useRef<HTMLAudioElement>(null)
+
   const handleFontSizeUp = () => {
     if (currentFontSize <= 3) {
       setFontSize(currentFontSize + 1)
     }
   }
+
   const handleFontSizeDown = () => {
     if (currentFontSize >= 2) {
       setFontSize(currentFontSize - 1)
     }
   }
-  // Map font size to complete Tailwind classes
-  const getFontSizeClasses = (size: number) => {
-    const sizeMap: Record<number, { text: string; margin: string }> = {
-      1: { text: "text-xl", margin: "mb-1" },
-      2: { text: "text-2xl", margin: "mb-2" },
-      3: { text: "text-3xl", margin: "mb-3" },
-      4: { text: "text-4xl", margin: "mb-4" }
-    }
-    return sizeMap[size] || sizeMap[1]
-  }
-  const fontClasses = getFontSizeClasses(currentFontSize)
 
   const fetchEntry = async () => {
     try {
@@ -128,6 +112,7 @@ const Player = () => {
       navigate("/")
     }
   }
+
   const splitIntoSentences = async (content: string, maxChars = 200) => {
     const sentences: string[] = content.match(/[^.!?]+[.!?]+/g) || [content]
     const chunks: string[] = []
@@ -195,79 +180,6 @@ const Player = () => {
     }
   }
 
-  const handleVoiceSpeed = () => {
-    if (audioRef.current) {
-      let speed = null
-      switch (currentSpeed) {
-        case "-50%":
-          speed = 0.5
-          break
-        case "+50%":
-          speed = 1.5
-          break
-        case "+100%":
-          speed = 2
-          break
-        default:
-          speed = 1
-      }
-
-      audioRef.current.playbackRate = speed
-    }
-  }
-
-  const prefetchNextSentences = async (
-    fromIndex: number,
-    count: number = 3
-  ) => {
-    for (let i = 1; i <= count; i++) {
-      const targetIndex = fromIndex + i
-      const sentence = sentencesMap.get(targetIndex)
-
-      if (
-        (sentence && !sentence.audio.url) ||
-        (sentence && sentence.audio.voice !== currentVoice)
-      ) {
-        const audioUrl = await fetchSentenceAudio(sentence.text, currentVoice)
-
-        if (audioUrl) {
-          updateSentence(audioUrl, currentVoice, targetIndex)
-        }
-      }
-    }
-  }
-
-  const fetchSentenceAudio = async (text: string, voice: string) => {
-    try {
-      const url = `${env.VITE_API_URL}/synthesis/GET`
-      const method = "POST"
-      const headers = {
-        Authentication: `Bearer ${token}`,
-        "Content-Type": "application/json"
-      }
-
-      const body = {
-        voice,
-        text
-      }
-
-      const resp = await fetch(url, {
-        headers,
-        method,
-        body: JSON.stringify(body)
-      })
-
-      if (!resp.ok) throw new Error("Synthesis failed")
-
-      const blob = await resp.blob()
-      const audioUrl = URL.createObjectURL(blob)
-
-      return audioUrl
-    } catch (err) {
-      console.error(err)
-    }
-  }
-
   const handlePause = () => {
     if (isPlaying && audioRef.current) {
       audioRef.current.pause()
@@ -283,6 +195,23 @@ const Player = () => {
   }
 
   const [forwardIndex, setForwardIndex] = useState(0)
+  const forwardVariants: Variants = {
+    enter: {
+      x: -40,
+      opacity: 0
+    },
+    center: {
+      x: 0,
+      opacity: 1,
+      transition: { type: "spring", stiffness: 400, damping: 25 }
+    },
+    exit: {
+      x: 40,
+      opacity: 0,
+      transition: { duration: 0.2 }
+    }
+  }
+
   const handleForwardAnimation = () => {
     setForwardIndex(prev => prev + 1)
   }
@@ -321,6 +250,23 @@ const Player = () => {
   }
 
   const [backwardIndex, setBackwardIndex] = useState(0)
+  const backwardVariants: Variants = {
+    enter: {
+      x: 40,
+      opacity: 0
+    },
+    center: {
+      x: 0,
+      opacity: 1,
+      transition: { type: "spring", stiffness: 400, damping: 25 }
+    },
+    exit: {
+      x: -40,
+      opacity: 0,
+      transition: { duration: 0.2 }
+    }
+  }
+
   const handleBackwardsAnimation = () => {
     setBackwardIndex(prev => prev - 1)
   }
@@ -367,6 +313,75 @@ const Player = () => {
     }
   }
 
+  const fetchSentenceAudio = async (text: string, voice: string) => {
+    try {
+      const url = `${env.VITE_API_URL}/synthesis/GET`
+      const method = "POST"
+      const headers = {
+        Authentication: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      }
+
+      const body = {
+        voice,
+        text
+      }
+
+      const resp = await fetch(url, {
+        headers,
+        method,
+        body: JSON.stringify(body)
+      })
+
+      if (!resp.ok) throw new Error("Synthesis failed")
+
+      const blob = await resp.blob()
+      const audioUrl = URL.createObjectURL(blob)
+
+      return audioUrl
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const updateSentence = (
+    audioUrl: string,
+    voice: string,
+    targetIndex: number
+  ) => {
+    setSentencesMap(prev => {
+      const updated = new Map(prev)
+      const target = updated.get(targetIndex)
+      if (target) {
+        target.audio.url = audioUrl
+        target.audio.voice = voice
+        updated.set(targetIndex, target)
+      }
+      return updated
+    })
+  }
+
+  const prefetchNextSentences = async (
+    fromIndex: number,
+    count: number = 3
+  ) => {
+    for (let i = 1; i <= count; i++) {
+      const targetIndex = fromIndex + i
+      const sentence = sentencesMap.get(targetIndex)
+
+      if (
+        (sentence && !sentence.audio.url) ||
+        (sentence && sentence.audio.voice !== currentVoice)
+      ) {
+        const audioUrl = await fetchSentenceAudio(sentence.text, currentVoice)
+
+        if (audioUrl) {
+          updateSentence(audioUrl, currentVoice, targetIndex)
+        }
+      }
+    }
+  }
+
   const updateProgress = async () => {
     try {
       const token = window.localStorage.getItem("vocodex-jwt")
@@ -392,47 +407,15 @@ const Player = () => {
     }
   }
 
-  const updateSentence = (
-    audioUrl: string,
-    voice: string,
-    targetIndex: number
-  ) => {
-    setSentencesMap(prev => {
-      const updated = new Map(prev)
-      const target = updated.get(targetIndex)
-      if (target) {
-        target.audio.url = audioUrl
-        target.audio.voice = voice
-        updated.set(targetIndex, target)
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.onended = async () => {
+        setIsPlaying(false)
+        await handleForward()
       }
-      return updated
-    })
-  }
-  const contextValue = {
-    isPlaying,
-    isLoading,
-    isDarkMode,
-    currentIndex,
-    sentencesMap,
-    title,
-    currentFontSize,
-    currentSpeed,
-    currentVoice,
-    speedOptions,
-    voiceOptions,
+    }
+  }, [currentIndex, sentencesMap])
 
-    handlePlay,
-    handlePause,
-    handleForward,
-    handleBackwards,
-    setCurrentIndex,
-    setVoice,
-    setSpeed,
-    handleFontSizeUp,
-    handleFontSizeDown
-  }
-
-  // Handle authentication
   useEffect(() => {
     const token = window.localStorage.getItem("vocodex-jwt")
     const isAuthenticated = checkAuthentication(token)
@@ -445,7 +428,9 @@ const Player = () => {
         await fetchEntry()
       })().catch(console.error)
     }
+  }, [])
 
+  useEffect(() => {
     // Cleanup only on component unmount
     return () => {
       sentencesMap.forEach(sentence => {
@@ -456,17 +441,6 @@ const Player = () => {
     }
   }, [])
 
-  // Handle smoothless transition from a sentence to another
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.onended = async () => {
-        setIsPlaying(false)
-        await handleForward()
-      }
-    }
-  }, [currentIndex, sentencesMap])
-
-  // Adds keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       switch (event.key) {
@@ -500,7 +474,6 @@ const Player = () => {
     }
   }, [isPlaying, currentIndex]) // dependencies for the handlers
 
-  // Handle voice change
   useEffect(() => {
     if (sentencesMap.size === 0) return // Don't run before sentences are loaded
 
@@ -552,7 +525,6 @@ const Player = () => {
     prefetchNextSentences(currentIndex, 5)
   }, [currentVoice])
 
-  // Handle sentence change
   useEffect(() => {
     if (sentencesMap.size === 0) return // Don't run before sentences are loaded
 
@@ -587,18 +559,193 @@ const Player = () => {
     prefetchNextSentences(currentIndex, 5)
   }, [currentIndex])
 
-  // Handle voice speed change
+  const handleVoiceSpeed = () => {
+    if (audioRef.current) {
+      let speed = null
+      switch (currentSpeed) {
+        case "-50%":
+          speed = 0.5
+          break
+        case "+50%":
+          speed = 1.5
+          break
+        case "+100%":
+          speed = 2
+          break
+        default:
+          speed = 1
+      }
+
+      audioRef.current.playbackRate = speed
+    }
+  }
+
   useEffect(() => {
     handleVoiceSpeed()
   }, [currentSpeed])
+
+  // Map font size to complete Tailwind classes
+  const getFontSizeClasses = (size: number) => {
+    const sizeMap: Record<number, { text: string; margin: string }> = {
+      1: { text: "text-xl", margin: "mb-1" },
+      2: { text: "text-2xl", margin: "mb-2" },
+      3: { text: "text-3xl", margin: "mb-3" },
+      4: { text: "text-4xl", margin: "mb-4" }
+    }
+    return sizeMap[size] || sizeMap[1]
+  }
+
+  const fontClasses = getFontSizeClasses(currentFontSize)
+
   return (
-    <PlayerContext.Provider value={contextValue}>
-      <div>
-        <audio ref={audioRef} />
-        <h1 className="text-9xl mb-10">{title}</h1>
-        <PlayerControls />
+    <div>
+      <h1 className="text-9xl mb-10">{title}</h1>
+      <audio ref={audioRef} />
+      <div className="mb-52">
+        {Array.from(sentencesMap.values()).map(sentence => (
+          <div
+            className={`${fontClasses.text} rounded-3xl px-2 py-1 ${fontClasses.margin} ${isLoading || currentIndex === sentence.id ? "" : "hover:bg-yellow-500/50 cursor-pointer"} ${currentIndex === sentence.id ? "bg-yellow-500/80" : ""}`}
+          >
+            <p
+              key={sentence.id}
+              onClick={() => {
+                if (!isLoading) {
+                  setCurrentIndex(sentence.id)
+                }
+              }}
+            >
+              {sentence.text}
+            </p>
+          </div>
+        ))}
       </div>
-    </PlayerContext.Provider>
+
+      <div className="right-5 fixed bottom-0 mb-5">
+        <div
+          className="
+          flex
+          flex-col
+          justify-center
+          items-center
+          gap-5
+          p-5
+          rounded-4xl
+          backdrop-blur-md
+          shadow-lg
+          dark:bg-black/30
+          bg-white/30
+          border
+          dark:border-white/30
+          border-black
+          "
+        >
+          <PlusIcon
+            onClick={handleFontSizeUp}
+            className="size-5 cursor-pointer"
+          />
+          <MinusIcon
+            onClick={handleFontSizeDown}
+            className="size-5 cursor-pointer"
+          />
+        </div>
+      </div>
+
+      <div className="left-1/2 -translate-x-1/2 fixed bottom-0 mb-5">
+        <div
+          className="
+          flex
+          justify-center
+          items-center
+          gap-5
+          p-10
+          rounded-4xl
+          backdrop-blur-md
+          shadow-lg
+          dark:bg-black/30
+          bg-white/30
+          border
+          dark:border-white/30
+          border-black
+          "
+        >
+          <Select
+            className={`w-25`}
+            items={voiceOptions}
+            defaultSelectedKeys={["en-GB-AdaMultilingualNeural"]}
+            aria-label="Select Voice"
+            onSelectionChange={keys => {
+              const selected = Array.from(keys)[0] as string
+              setVoice(selected)
+            }}
+            isDisabled={isLoading ? true : false}
+          >
+            {voice => <SelectItem>{voice.label}</SelectItem>}
+          </Select>
+          <div className="cursor-pointer overflow-hidden">
+            <AnimatePresence mode="popLayout" initial={false}>
+              <motion.div
+                key={backwardIndex}
+                variants={backwardVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+              >
+                <BackwardIcon
+                  onClick={() => {
+                    handleBackwardsAnimation()
+                    handleBackwards()
+                  }}
+                  className="size-10"
+                />
+              </motion.div>
+            </AnimatePresence>
+          </div>
+          {isLoading ? (
+            <Spinner size="md" color={isDarkMode ? "white" : "warning"} />
+          ) : (
+            <div className="cursor-pointer">
+              {isPlaying ? (
+                <PauseIcon onClick={handlePause} className="size-10" />
+              ) : (
+                <PlayIcon onClick={handlePlay} className="size-10" />
+              )}
+            </div>
+          )}
+          <div className="cursor-pointer overflow-hidden">
+            <AnimatePresence mode="popLayout" initial={false}>
+              <motion.div
+                key={forwardIndex}
+                variants={forwardVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+              >
+                <ForwardIcon
+                  onClick={() => {
+                    handleForwardAnimation()
+                    handleForward()
+                  }}
+                  className="size-10"
+                />
+              </motion.div>
+            </AnimatePresence>
+          </div>
+          <Select
+            className={`w-20`}
+            items={speedOptions}
+            defaultSelectedKeys={["+0%"]}
+            aria-label="Select Speed"
+            onSelectionChange={keys => {
+              const selected = Array.from(keys)[0] as string
+              setSpeed(selected)
+            }}
+            isDisabled={isLoading ? true : false}
+          >
+            {speed => <SelectItem>{speed.label}</SelectItem>}
+          </Select>
+        </div>
+      </div>
+    </div>
   )
 }
 
