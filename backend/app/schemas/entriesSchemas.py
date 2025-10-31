@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 class UploadTextIn(BaseModel):
     title: str = Field(max_length=1200)
-    content: str = Field(min_length=3, max_length=10000)
+    content: str = Field(min_length=3)
 
 
 class UploadTextOut(BaseModel):

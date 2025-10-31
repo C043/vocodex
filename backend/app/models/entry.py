@@ -19,7 +19,7 @@ class Entries(Base):
         index=True,
     )
     title: Mapped[str] = mapped_column(String(1200))
-    content: Mapped[str] = mapped_column(String(10000), nullable=False)
+    content: Mapped[str] = mapped_column(String(), nullable=False)
     progress: Mapped[int] = mapped_column(
         Integer, default=0, server_default=text("0"), nullable=False
     )
