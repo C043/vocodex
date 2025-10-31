@@ -42,6 +42,7 @@ interface PlayerContextType {
   handleBackwards: () => void
   setVoice: (voice: string) => void
   setSpeed: (speed: string) => void
+  setCurrentIndex: (id: number) => void
 }
 
 export const PlayerContext = createContext<PlayerContextType | undefined>(
