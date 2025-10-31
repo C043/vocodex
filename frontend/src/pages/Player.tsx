@@ -16,6 +16,7 @@ import { Select, SelectItem } from "@heroui/react"
 import { motion, AnimatePresence, type Variants } from "framer-motion"
 import { PlayerContext } from "../contexts/PlayerContext"
 import { PlayerControls } from "../components/player/PlayerControls"
+import FontSizeControls from "../components/player/FontSizeControls"
 
 type sentenceObj = {
   id: number
@@ -596,6 +597,7 @@ const Player = () => {
       <div>
         <audio ref={audioRef} />
         <h1 className="text-9xl mb-10">{title}</h1>
+        <FontSizeControls />
         <PlayerControls />
       </div>
     </PlayerContext.Provider>
