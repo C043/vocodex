@@ -19,7 +19,9 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "types": [
-      "vite/client"
+      "vite/client",
+      "vitest/globals",
+      "node"
     ],
     /* Linting */
     "strict": true,
@@ -30,6 +32,8 @@
     "noUncheckedSideEffectImports": true
   },
   "include": [
-    "src"
-, "tests/Home.test.tsx", "tests/test-utils.tsx", "tests/vitest-setup.ts"  ]
+    "src",
+    "tests/**/*.ts",
+    "tests/**/*.tsx",
+  ]
 }

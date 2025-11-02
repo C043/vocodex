@@ -1,7 +1,8 @@
 {
   "files": [],
   "compilerOptions": {
-    "moduleResolution": "bundler"
+    "moduleResolution": "bundler",
+    "module": "ESNext",
   },
   "references": [
     {
