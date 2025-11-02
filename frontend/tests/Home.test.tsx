@@ -132,6 +132,7 @@ describe("Entries", () => {
         json: () => Promise.resolve({ entries: [{ id: 1, title: "title" }] })
       })
     ) as any
+    window.confirm = vi.fn(() => true)
 
     const testStore = configureStore({
       reducer: { user: authReducer, darkMode: themeModeSlice },
