@@ -129,7 +129,7 @@ export const PlayerControls = () => {
         <Select
           className={`w-25`}
           items={voiceOptions}
-          defaultSelectedKeys={["en-GB-AdaMultilingualNeural"]}
+          defaultSelectedKeys={[""]}
           aria-label="Select Voice"
           onSelectionChange={keys => {
             const selected = Array.from(keys)[0] as string

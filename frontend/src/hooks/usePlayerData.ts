@@ -42,7 +42,7 @@ export const usePlayerData = (id: string | undefined) => {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [currentSpeed, setSpeed] = useState("+0%")
-  const [currentVoice, setVoice] = useState("en-GB-AdaMultilingualNeural")
+  const [currentVoice, setVoice] = useState("")
   const [title, setTitle] = useState("")
   const [currentIndex, setCurrentIndex] = useState<number>(Infinity)
   const [currentFontSize, setFontSize] = useState(1)
@@ -58,6 +58,7 @@ export const usePlayerData = (id: string | undefined) => {
     { key: "+0%", label: "1x" }
   ]
   const voiceOptions: VoiceOption[] = [
+    { key: "", label: "Auto" },
     { key: "en-GB-LibbyNeural", label: "Libby" },
     { key: "en-GB-AdaMultilingualNeural", label: "Ada" },
     { key: "en-GB-OllieMultilingualNeural", label: "Ollie" },
