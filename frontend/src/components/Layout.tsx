@@ -53,6 +53,26 @@ const Layout = () => {
   const location = useLocation()
   const isPlayer = location.pathname.includes("/player/")
 
+  const env = import.meta.env
+  const token = window.localStorage.getItem("vocodex-jwt")
+  const fetchPreferences = async () => {
+    try {
+      const url = `${env.VITE_API_URL}/me/preferences`
+      const headers = {
+        Authorization: `Bearer ${token}`
+      }
+      const resp = await fetch(url, { headers })
+
+      if (!resp.ok) throw new Error("Failed to retrieve user preferences")
+
+      const data = await resp.json()
+
+      dispatch(setUserPreferences(data))
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   const handleLogout = () => {
     window.localStorage.removeItem("vocodex-jwt")
     dispatch(setIsLoggedIn(false))
@@ -65,12 +85,17 @@ const Layout = () => {
     const token = window.localStorage.getItem("vocodex-jwt")
     const isAuthenticated = checkAuthentication(token)
     if (isAuthenticated && token) {
-      const { username, preferences } = parseJwt(token)
+      let { username, preferences } = parseJwt(token)
+      ;(async () => {
+        preferences = await fetchPreferences()
+      })().catch(console.error)
       dispatch(setIsLoggedIn(true))
       dispatch(setUsername(username))
+      console.log(preferences)
       dispatch(setUserPreferences(preferences))
     } else {
       dispatch(setIsLoggedIn(false))
+      handleLogout()
     }
   }, [])
 

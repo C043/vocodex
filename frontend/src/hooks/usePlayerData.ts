@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { checkAuthentication } from "../utils/authUtils"
 import { useDispatch, useSelector } from "react-redux"
-import { setIsLoggedIn, setUserPreferences } from "../redux/reducer/authSlice"
-import { addToast } from "@heroui/react"
+import { setIsLoggedIn } from "../redux/reducer/authSlice"
 
 type sentenceObj = {
   id: number
@@ -87,7 +86,6 @@ export const usePlayerData = (id: string | undefined) => {
 
   const fetchEntry = async () => {
     try {
-      const token = window.localStorage.getItem("vocodex-jwt")
       const url = `${env.VITE_API_URL}/entries/${id}`
       const headers = {
         Authorization: `Bearer ${token}`
@@ -182,37 +180,6 @@ export const usePlayerData = (id: string | undefined) => {
     }
   }
 
-  const saveUserPreferences = async () => {
-    try {
-      const userPreferences = {
-        speed: currentSpeed,
-        voice: currentVoice
-      }
-      const token = window.localStorage.getItem("vocodex-jwt")
-      const url = `${env.VITE_API_URL}/me/preferences`
-      const headers = {
-        Authorization: `Bearer ${token}`,
-        "Content-type": "application/json"
-      }
-      const body = JSON.stringify(userPreferences)
-
-      const resp = await fetch(url, { method: "POST", headers, body })
-
-      if (!resp.ok) throw new Error("Update user preferences failed")
-
-      addToast({
-        title: "User preferences updated successfully.",
-        color: "default"
-      })
-    } catch (err) {
-      console.error(err)
-      addToast({
-        title: "Failed to update user preferences.",
-        color: "danger"
-      })
-    }
-  }
-
   const handleVoiceSpeed = () => {
     if (audioRef.current) {
       let speed = null
@@ -260,7 +227,7 @@ export const usePlayerData = (id: string | undefined) => {
       const url = `${env.VITE_API_URL}/synthesis/GET`
       const method = "POST"
       const headers = {
-        Authentication: `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json"
       }
 
@@ -419,17 +386,9 @@ export const usePlayerData = (id: string | undefined) => {
 
   // Handle authentication
   useEffect(() => {
-    const token = window.localStorage.getItem("vocodex-jwt")
-    const isAuthenticated = checkAuthentication(token)
-    if (!isAuthenticated) {
-      dispatch(setIsLoggedIn(false))
-      navigate("/login")
-    } else {
-      dispatch(setIsLoggedIn(true))
-      ;(async () => {
-        await fetchEntry()
-      })().catch(console.error)
-    }
+    ;(async () => {
+      await fetchEntry()
+    })().catch(console.error)
 
     // Cleanup only on component unmount
     return () => {
@@ -532,8 +491,6 @@ export const usePlayerData = (id: string | undefined) => {
       })()
     }
 
-    saveUserPreferences()
-    dispatch(setUserPreferences({ speed: currentSpeed, voice: currentVoice }))
     prefetchNextSentences(currentIndex, 5)
   }, [currentVoice])
 
@@ -575,8 +532,6 @@ export const usePlayerData = (id: string | undefined) => {
   // Handle voice speed change
   useEffect(() => {
     handleVoiceSpeed()
-    saveUserPreferences()
-    dispatch(setUserPreferences({ speed: currentSpeed, voice: currentVoice }))
   }, [currentSpeed])
 
   return {

@@ -1,15 +1,20 @@
 import { useEffect, useState } from "react"
 import { usePlayer } from "../../contexts/PlayerContext"
 import { motion, AnimatePresence, Variants } from "framer-motion"
-import { Select, SelectItem, Spinner } from "@heroui/react"
+import { addToast, Select, SelectItem, Spinner } from "@heroui/react"
 import {
   BackwardIcon,
   ForwardIcon,
   PauseIcon,
   PlayIcon
 } from "@heroicons/react/24/solid"
+import { useDispatch } from "react-redux"
+import { setUserPreferences } from "../../redux/reducer/authSlice"
 
 export const PlayerControls = () => {
+  const env = import.meta.env
+  const token = window.localStorage.getItem("vocodex-jwt")
+
   const {
     isPlaying,
     isLoading,
@@ -25,6 +30,38 @@ export const PlayerControls = () => {
     speedOptions,
     isDarkMode
   } = usePlayer()
+
+  const dispatch = useDispatch()
+
+  const saveUserPreferences = async (speed: string, voice: string) => {
+    try {
+      const userPreferences = {
+        speed,
+        voice
+      }
+      const url = `${env.VITE_API_URL}/me/preferences`
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        "Content-type": "application/json"
+      }
+      const body = JSON.stringify(userPreferences)
+
+      const resp = await fetch(url, { method: "POST", headers, body })
+
+      if (!resp.ok) throw new Error("Update user preferences failed")
+
+      addToast({
+        title: "User preferences updated successfully.",
+        color: "success"
+      })
+    } catch (err) {
+      console.error(err)
+      addToast({
+        title: "Failed to update user preferences.",
+        color: "danger"
+      })
+    }
+  }
 
   const [forwardIndex, setForwardIndex] = useState(0)
   const forwardVariants: Variants = {
@@ -136,6 +173,10 @@ export const PlayerControls = () => {
           onSelectionChange={keys => {
             const selected = Array.from(keys)[0] as string
             setVoice(selected)
+            saveUserPreferences(currentSpeed, selected)
+            dispatch(
+              setUserPreferences({ speed: currentSpeed, voice: selected })
+            )
           }}
           isDisabled={isLoading ? true : false}
         >
@@ -198,6 +239,10 @@ export const PlayerControls = () => {
           onSelectionChange={keys => {
             const selected = Array.from(keys)[0] as string
             setSpeed(selected)
+            saveUserPreferences(selected, currentVoice)
+            dispatch(
+              setUserPreferences({ speed: selected, voice: currentVoice })
+            )
           }}
           isDisabled={isLoading ? true : false}
         >
