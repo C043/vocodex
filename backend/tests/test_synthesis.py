@@ -17,6 +17,15 @@ async def test_synthesis(client, auth_header):
     )
 
     assert resp.status_code == 200
+    assert resp.headers["content-type"] == "audio/mpeg"
+    assert len(resp.content) > 0
+    assert resp.content[0] == 0xFF  # Valid MP3 starts with 0xFF
+
+    # Test with auto voice
+    resp = await client.post(
+        "/synthesis/GET", headers=headers, json={"text": text, "voice": ""}
+    )
+
     assert resp.status_code == 200
     assert resp.headers["content-type"] == "audio/mpeg"
     assert len(resp.content) > 0

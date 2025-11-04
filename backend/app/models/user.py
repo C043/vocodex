@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, List, Optional
 from sqlalchemy import String, func
 from sqlalchemy.orm import mapped_column, declarative_base, relationship
 from sqlalchemy.orm.base import Mapped
-from sqlalchemy.types import DateTime
+from sqlalchemy.types import JSON, DateTime
 from app.models.base import Base
 
 if TYPE_CHECKING:
