@@ -55,7 +55,7 @@ async def test_protected_route_missing_user(client, db_session, user_cleanup):
     await db_session.refresh(user)
     user_cleanup(username)
 
-    token = create_access_token(user.id, username)
+    token = create_access_token(user.id, username, user.preferences)
 
     await db_session.execute(delete(Users).where(Users.id == user.id))
     await db_session.commit()
@@ -82,7 +82,7 @@ async def test_protected_route_allows_valid_user(client, db_session, user_cleanu
     await db_session.commit()
     await db_session.refresh(user)
 
-    token = create_access_token(user.id, username)
+    token = create_access_token(user.id, username, user.preferences)
 
     resp = await client.post(
         "/upload/some-resource",

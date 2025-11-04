@@ -14,7 +14,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 async def register(data: RegisterIn, session: AsyncSession = Depends(get_session)):
     try:
         user: Users = await authController.register(data, session)
-        return UserOut(id=user.id, username=user.username)
+        return UserOut(id=user.id, username=user.username, preferences=user.preferences)
     except HTTPException as err:
         # Custom handling here
         raise HTTPException(
@@ -35,4 +35,4 @@ async def login(data: LoginIn, session: AsyncSession = Depends(get_session)):
 
 @router.get("/me", response_model=UserOut)
 async def me(user: Users = Depends(get_current_user)):
-    return UserOut(id=user.id, username=user.username)
+    return UserOut(id=user.id, username=user.username, preferences=user.preferences)

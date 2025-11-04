@@ -50,5 +50,5 @@ async def auth_header(db_session, user_cleanup):
     await db_session.commit()
     await db_session.refresh(user)
 
-    token = create_access_token(user.id, username)
+    token = create_access_token(user.id, username, user.preferences)
     return {"Authorization": f"Bearer {token}"}, user
