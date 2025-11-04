@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql import Select
 from app.models.user import Users
 from app.schemas.userSchemas import UserPreferencesIn
 
@@ -25,5 +26,18 @@ async def updatePreferences(
 
         await session.commit()
         return userIdUpdated
+    except Exception:
+        raise
+
+
+async def getPreferences(current_user: Users, session: AsyncSession):
+    try:
+        preferences = (
+            await session.execute(
+                Select(Users.preferences).where(Users.id == current_user.id)
+            )
+        ).scalar_one()
+
+        return preferences
     except Exception:
         raise

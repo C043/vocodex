@@ -15,3 +15,10 @@ async def test_user(client, auth_header):
     )
 
     assert resp.status_code == 200
+
+    resp = await client.get("/me/preferences", headers=headers)
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["speed"] == speed
+    assert data["voice"] == voice
