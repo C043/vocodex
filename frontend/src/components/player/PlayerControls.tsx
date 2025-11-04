@@ -18,7 +18,9 @@ export const PlayerControls = () => {
     handleForward,
     handleBackwards,
     setVoice,
+    currentVoice,
     setSpeed,
+    currentSpeed,
     voiceOptions,
     speedOptions,
     isDarkMode
@@ -129,7 +131,7 @@ export const PlayerControls = () => {
         <Select
           className={`w-25`}
           items={voiceOptions}
-          defaultSelectedKeys={[""]}
+          defaultSelectedKeys={[currentVoice]}
           aria-label="Select Voice"
           onSelectionChange={keys => {
             const selected = Array.from(keys)[0] as string
@@ -191,7 +193,7 @@ export const PlayerControls = () => {
         <Select
           className={`w-20`}
           items={speedOptions}
-          defaultSelectedKeys={["+0%"]}
+          defaultSelectedKeys={[currentSpeed]}
           aria-label="Select Speed"
           onSelectionChange={keys => {
             const selected = Array.from(keys)[0] as string

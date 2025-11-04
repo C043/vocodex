@@ -5,7 +5,8 @@ import { useDispatch, useSelector } from "react-redux"
 import {
   setIsLoggedIn,
   setUserId,
-  setUsername
+  setUsername,
+  setUserPreferences
 } from "../redux/reducer/authSlice"
 import { setDarkMode } from "../redux/reducer/themeModeSlice"
 import { ArrowLeftIcon, MoonIcon, SunIcon } from "@heroicons/react/24/solid"
@@ -64,9 +65,10 @@ const Layout = () => {
     const token = window.localStorage.getItem("vocodex-jwt")
     const isAuthenticated = checkAuthentication(token)
     if (isAuthenticated && token) {
-      const { username } = parseJwt(token)
+      const { username, preferences } = parseJwt(token)
       dispatch(setIsLoggedIn(true))
       dispatch(setUsername(username))
+      dispatch(setUserPreferences(preferences))
     } else {
       dispatch(setIsLoggedIn(false))
     }

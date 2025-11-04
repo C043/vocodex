@@ -7,10 +7,16 @@ import { useDispatch } from "react-redux"
 import {
   setIsLoggedIn,
   setUserId,
-  setUsername
+  setUsername,
+  setUserPreferences
 } from "../redux/reducer/authSlice"
 
 type Mode = "login" | "register"
+
+type UserPreferences = {
+  speed: string
+  voice: string
+}
 
 const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
   const env = import.meta.env
@@ -57,10 +63,11 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
       const data = await resp.json()
       const token = data.token
 
-      const { sub, username } = parseJwt(token)
+      const { sub, username, preferences } = parseJwt(token)
 
       dispatch(setUserId(sub))
       dispatch(setUsername(username))
+      dispatch(setUserPreferences(preferences))
 
       window.localStorage.setItem("vocodex-jwt", token)
       navigate("/")

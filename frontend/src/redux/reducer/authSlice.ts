@@ -1,11 +1,20 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit"
 
+type UserPreferences = {
+  speed: string
+  voice: string
+}
+
 export const authSlice = createSlice({
   name: "user",
   initialState: {
     isLoggedIn: false,
     userId: -1,
-    username: ""
+    username: "",
+    preferences: {
+      speed: "+0%",
+      voice: ""
+    }
   },
 
   reducers: {
@@ -17,10 +26,15 @@ export const authSlice = createSlice({
     },
     setUsername: (state, action: PayloadAction<string>) => {
       state.username = action.payload
+    },
+    setUserPreferences: (state, action: PayloadAction<UserPreferences>) => {
+      state.preferences.speed = action.payload.speed
+      state.preferences.voice = action.payload.voice
     }
   }
 })
 
-export const { setIsLoggedIn, setUsername, setUserId } = authSlice.actions
+export const { setIsLoggedIn, setUsername, setUserId, setUserPreferences } =
+  authSlice.actions
 
 export default authSlice.reducer

@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { checkAuthentication } from "../utils/authUtils"
 import { useDispatch, useSelector } from "react-redux"
-import { setIsLoggedIn } from "../redux/reducer/authSlice"
+import { setIsLoggedIn, setUserPreferences } from "../redux/reducer/authSlice"
+import { addToast } from "@heroui/react"
 
 type sentenceObj = {
   id: number
@@ -18,6 +19,12 @@ type sentenceObj = {
 type State = {
   darkMode: {
     value: boolean
+  }
+  user: {
+    preferences: {
+      speed: string
+      voice: string
+    }
   }
 }
 
@@ -36,13 +43,15 @@ export const usePlayerData = (id: string | undefined) => {
   const token = window.localStorage.getItem("vocodex-jwt")
 
   const isDarkMode = useSelector((state: State) => state.darkMode.value)
+  const userSpeed = useSelector((state: State) => state.user.preferences.speed)
+  const userVoice = useSelector((state: State) => state.user.preferences.voice)
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
   const [isPlaying, setIsPlaying] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [currentSpeed, setSpeed] = useState("+0%")
-  const [currentVoice, setVoice] = useState("")
+  const [currentSpeed, setSpeed] = useState(userSpeed)
+  const [currentVoice, setVoice] = useState(userVoice)
   const [title, setTitle] = useState("")
   const [currentIndex, setCurrentIndex] = useState<number>(Infinity)
   const [currentFontSize, setFontSize] = useState(1)
@@ -170,6 +179,37 @@ export const usePlayerData = (id: string | undefined) => {
       updateSentence(firstAudioUrl, currentVoice, 0)
 
       prefetchNextSentences(0, 5)
+    }
+  }
+
+  const saveUserPreferences = async () => {
+    try {
+      const userPreferences = {
+        speed: currentSpeed,
+        voice: currentVoice
+      }
+      const token = window.localStorage.getItem("vocodex-jwt")
+      const url = `${env.VITE_API_URL}/me/preferences`
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        "Content-type": "application/json"
+      }
+      const body = JSON.stringify(userPreferences)
+
+      const resp = await fetch(url, { method: "POST", headers, body })
+
+      if (!resp.ok) throw new Error("Update user preferences failed")
+
+      addToast({
+        title: "User preferences updated successfully.",
+        color: "default"
+      })
+    } catch (err) {
+      console.error(err)
+      addToast({
+        title: "Failed to update user preferences.",
+        color: "danger"
+      })
     }
   }
 
@@ -492,6 +532,8 @@ export const usePlayerData = (id: string | undefined) => {
       })()
     }
 
+    saveUserPreferences()
+    dispatch(setUserPreferences({ speed: currentSpeed, voice: currentVoice }))
     prefetchNextSentences(currentIndex, 5)
   }, [currentVoice])
 
@@ -533,7 +575,10 @@ export const usePlayerData = (id: string | undefined) => {
   // Handle voice speed change
   useEffect(() => {
     handleVoiceSpeed()
+    saveUserPreferences()
+    dispatch(setUserPreferences({ speed: currentSpeed, voice: currentVoice }))
   }, [currentSpeed])
+
   return {
     audioRef,
 
