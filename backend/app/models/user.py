@@ -15,6 +15,11 @@ class Users(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[Optional[str]] = mapped_column(String(120))
     hashed_password: Mapped[str] = mapped_column(String(60), nullable=False)
+    preferences: Mapped[dict] = mapped_column(
+        JSON,
+        server_default='{"speed": "+0%", "voice": ""}',
+        nullable=False,
+    )
     created_at: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
