@@ -5,7 +5,7 @@ from app.controllers import userController
 from app.db import get_session
 from app.deps import get_current_user
 from app.models.user import Users
-from app.schemas.userSchemas import UserPreferencesIn, UserPreferencesOut
+from app.schemas.userSchemas import UserPreferencesIn
 
 
 router = APIRouter(prefix="/me", tags=["user"])
@@ -27,7 +27,7 @@ async def updatePreferences(
 async def getPreferences(
     current_user: Users = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
-) -> UserPreferencesOut:
+):
     try:
         preferences = await userController.getPreferences(current_user, session)
         return preferences
