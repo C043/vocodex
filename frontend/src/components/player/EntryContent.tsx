@@ -5,6 +5,7 @@ const EntryContent = () => {
     title,
     sentencesMap,
     currentIndex,
+    currentWordIndex,
     setCurrentIndex,
     isLoading,
     currentFontSize
@@ -28,7 +29,14 @@ const EntryContent = () => {
       <div className="mb-52">
         {Array.from(sentencesMap.values()).map(sentence => (
           <div
-            className={`${fontClasses.text} rounded-3xl px-2 py-1 ${fontClasses.margin} ${isLoading || currentIndex === sentence.id ? "" : "hover:bg-yellow-500/50 cursor-pointer"} ${currentIndex === sentence.id ? "bg-yellow-500/80" : ""}`}
+            className={`
+              ${fontClasses.text}
+              rounded-3xl
+              px-2
+              py-1
+              ${fontClasses.margin}
+              ${isLoading || currentIndex === sentence.id ? "" : "hover:bg-yellow-500/50 cursor-pointer"} ${currentIndex === sentence.id ? "bg-yellow-500/80" : ""}
+            `}
           >
             <p
               key={sentence.id}
@@ -38,7 +46,24 @@ const EntryContent = () => {
                 }
               }}
             >
-              {sentence.text}
+              {sentence.text.split(" ").map((word, idx) => {
+                return (
+                  <>
+                    <span
+                      key={idx}
+                      className={`
+                        inline-block
+                        rounded-3xl
+                        px-2
+                        py-1
+                        ${currentWordIndex === idx ? "bg-red-500" : ""}
+                      `}
+                    >
+                      {word}
+                    </span>
+                  </>
+                )
+              })}
             </p>
           </div>
         ))}

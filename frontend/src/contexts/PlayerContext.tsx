@@ -2,6 +2,7 @@ import { createContext, useContext } from "react"
 
 type sentenceObj = {
   id: number
+  words: string[]
   text: string
   prev: string | null
   audio: {
@@ -26,6 +27,7 @@ interface PlayerContextType {
   isPlaying: boolean
   isLoading: boolean
   currentIndex: number
+  currentWordIndex: number
   sentencesMap: Map<number, sentenceObj>
   title: string
   currentFontSize: number

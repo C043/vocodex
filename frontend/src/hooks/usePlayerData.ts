@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { checkAuthentication } from "../utils/authUtils"
 import { useDispatch, useSelector } from "react-redux"
-import { setIsLoggedIn } from "../redux/reducer/authSlice"
 
 type sentenceObj = {
   id: number
+  words: string[]
   text: string
   prev: string | null
   audio: {
@@ -53,6 +52,7 @@ export const usePlayerData = (id: string | undefined) => {
   const [currentVoice, setVoice] = useState(userVoice)
   const [title, setTitle] = useState("")
   const [currentIndex, setCurrentIndex] = useState<number>(Infinity)
+  const [currentWordIndex, setCurrentWordIndex] = useState<number>(Infinity)
   const [currentFontSize, setFontSize] = useState(1)
   const [sentencesMap, setSentencesMap] = useState<Map<number, sentenceObj>>(
     new Map()
@@ -105,6 +105,7 @@ export const usePlayerData = (id: string | undefined) => {
       const data = await resp.json()
 
       setCurrentIndex(data.progress)
+      setCurrentWordIndex(0)
       splitIntoSentences(data.content)
       setTitle(data.title)
     } catch (err) {
@@ -147,6 +148,7 @@ export const usePlayerData = (id: string | undefined) => {
 
       sentencesMap.set(idx, {
         id: idx,
+        words: sentence.split(" "),
         text: sentence,
         prev: previous,
         audio: {
@@ -170,6 +172,7 @@ export const usePlayerData = (id: string | undefined) => {
       audioRef.current.play()
       setIsPlaying(true)
       setCurrentIndex(0)
+      setCurrentWordIndex(0)
     }
 
     if (firstAudioUrl) {
@@ -289,6 +292,7 @@ export const usePlayerData = (id: string | undefined) => {
       }
       if (audioRef.current && url) {
         setCurrentIndex(nextIndex)
+        setCurrentWordIndex(0)
         audioRef.current.src = url
         handleVoiceSpeed()
         audioRef.current?.play()
@@ -332,6 +336,7 @@ export const usePlayerData = (id: string | undefined) => {
       }
       if (audioRef.current && url) {
         setCurrentIndex(prevIndex)
+        setCurrentWordIndex(0)
         audioRef.current.src = url
         handleVoiceSpeed()
         audioRef.current?.play()
@@ -541,6 +546,7 @@ export const usePlayerData = (id: string | undefined) => {
     isLoading,
     isDarkMode,
     currentIndex,
+    currentWordIndex,
     sentencesMap,
     title,
     currentFontSize,
