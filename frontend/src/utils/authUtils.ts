@@ -3,6 +3,7 @@ import { jwtDecode } from "jwt-decode"
 interface MyJwtPayload {
   sub: number
   username: string
+  preferences: UserPreferences
   iat: number
   exp: number
 }
@@ -27,10 +28,12 @@ export const checkAuthentication = (token: string | null) => {
 }
 
 export const parseJwt = (token: string): MyJwtPayload => {
-  const { sub, username, iat, exp } = jwtDecode<MyJwtPayload>(token)
+  const { sub, username, preferences, iat, exp } =
+    jwtDecode<MyJwtPayload>(token)
   return {
     sub,
     username,
+    preferences,
     iat,
     exp
   }

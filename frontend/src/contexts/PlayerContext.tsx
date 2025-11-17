@@ -30,7 +30,9 @@ interface PlayerContextType {
   title: string
   currentFontSize: number
   voiceOptions: VoiceOption[]
+  currentVoice: string
   speedOptions: SpeedOption[]
+  currentSpeed: string
   isDarkMode: boolean
 
   // Functions

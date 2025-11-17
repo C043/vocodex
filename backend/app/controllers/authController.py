@@ -35,7 +35,7 @@ async def login(data: LoginIn, session: AsyncSession):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     if user.username and user.id:
-        token = create_access_token(user.id, user.username)
+        token = create_access_token(user.id, user.username, user.preferences)
         return token
     else:
         raise HTTPException(status_code=401, detail="Invalid credentials")

@@ -28,6 +28,7 @@ async def test_register_and_login(client, user_cleanup):
     assert resp.status_code == 200
     me = resp.json()
     assert me["username"] == username
+    assert me["preferences"]
 
 
 @pytest.mark.asyncio

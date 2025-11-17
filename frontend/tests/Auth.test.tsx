@@ -92,6 +92,10 @@ describe("Authenticated user", () => {
       iat: new Date().getMilliseconds(),
       sub: 1,
       username: "TestUser",
+      preferences: {
+        speed: "+0%",
+        voice: ""
+      },
       exp: 3
     })
     window.localStorage.setItem("vocodex-jwt", "fake-token")
@@ -139,7 +143,11 @@ describe("Authenticated user", () => {
         user: {
           isLoggedIn: true,
           userId: 1,
-          username: "TestUser"
+          username: "TestUser",
+          preferences: {
+            voice: "",
+            speed: "+0%"
+          }
         }
       }
     })

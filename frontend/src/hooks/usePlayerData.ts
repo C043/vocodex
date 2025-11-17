@@ -19,6 +19,12 @@ type State = {
   darkMode: {
     value: boolean
   }
+  user: {
+    preferences: {
+      speed: string
+      voice: string
+    }
+  }
 }
 
 type SpeedOption = {
@@ -36,13 +42,15 @@ export const usePlayerData = (id: string | undefined) => {
   const token = window.localStorage.getItem("vocodex-jwt")
 
   const isDarkMode = useSelector((state: State) => state.darkMode.value)
+  const userSpeed = useSelector((state: State) => state.user.preferences.speed)
+  const userVoice = useSelector((state: State) => state.user.preferences.voice)
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
   const [isPlaying, setIsPlaying] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [currentSpeed, setSpeed] = useState("+0%")
-  const [currentVoice, setVoice] = useState("en-GB-AdaMultilingualNeural")
+  const [currentSpeed, setSpeed] = useState(userSpeed)
+  const [currentVoice, setVoice] = useState(userVoice)
   const [title, setTitle] = useState("")
   const [currentIndex, setCurrentIndex] = useState<number>(Infinity)
   const [currentFontSize, setFontSize] = useState(1)
@@ -58,6 +66,7 @@ export const usePlayerData = (id: string | undefined) => {
     { key: "+0%", label: "1x" }
   ]
   const voiceOptions: VoiceOption[] = [
+    { key: "", label: "Auto" },
     { key: "en-GB-LibbyNeural", label: "Libby" },
     { key: "en-GB-AdaMultilingualNeural", label: "Ada" },
     { key: "en-GB-OllieMultilingualNeural", label: "Ollie" },
@@ -77,7 +86,6 @@ export const usePlayerData = (id: string | undefined) => {
 
   const fetchEntry = async () => {
     try {
-      const token = window.localStorage.getItem("vocodex-jwt")
       const url = `${env.VITE_API_URL}/entries/${id}`
       const headers = {
         Authorization: `Bearer ${token}`
@@ -219,7 +227,7 @@ export const usePlayerData = (id: string | undefined) => {
       const url = `${env.VITE_API_URL}/synthesis/GET`
       const method = "POST"
       const headers = {
-        Authentication: `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json"
       }
 
@@ -378,17 +386,9 @@ export const usePlayerData = (id: string | undefined) => {
 
   // Handle authentication
   useEffect(() => {
-    const token = window.localStorage.getItem("vocodex-jwt")
-    const isAuthenticated = checkAuthentication(token)
-    if (!isAuthenticated) {
-      dispatch(setIsLoggedIn(false))
-      navigate("/login")
-    } else {
-      dispatch(setIsLoggedIn(true))
-      ;(async () => {
-        await fetchEntry()
-      })().catch(console.error)
-    }
+    ;(async () => {
+      await fetchEntry()
+    })().catch(console.error)
 
     // Cleanup only on component unmount
     return () => {
@@ -533,6 +533,7 @@ export const usePlayerData = (id: string | undefined) => {
   useEffect(() => {
     handleVoiceSpeed()
   }, [currentSpeed])
+
   return {
     audioRef,
 

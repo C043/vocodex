@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, List, Optional
 from sqlalchemy import String, func
 from sqlalchemy.orm import mapped_column, declarative_base, relationship
 from sqlalchemy.orm.base import Mapped
-from sqlalchemy.types import DateTime
+from sqlalchemy.types import JSON, DateTime
 from app.models.base import Base
 
 if TYPE_CHECKING:
@@ -15,6 +15,11 @@ class Users(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[Optional[str]] = mapped_column(String(120))
     hashed_password: Mapped[str] = mapped_column(String(60), nullable=False)
+    preferences: Mapped[dict] = mapped_column(
+        JSON,
+        server_default='{"speed": "+0%", "voice": ""}',
+        nullable=False,
+    )
     created_at: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
