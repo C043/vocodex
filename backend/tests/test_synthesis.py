@@ -1,4 +1,5 @@
 import os, pytest
+import base64
 
 
 @pytest.mark.asyncio
@@ -17,9 +18,22 @@ async def test_synthesis(client, auth_header):
     )
 
     assert resp.status_code == 200
-    assert resp.headers["content-type"] == "audio/mpeg"
-    assert len(resp.content) > 0
-    assert resp.content[0] == 0xFF  # Valid MP3 starts with 0xFF
+    assert resp.headers["content-type"] == "application/json"
+    data = resp.json()
+    assert "audio" in data
+    assert "boundaries" in data
+    assert isinstance(data["boundaries"], list)
+
+    audio_content = base64.b64decode(data["audio"])
+    assert len(audio_content) > 0
+    assert audio_content[0] == 0xFF  # Valid MP3 starts with 0xFF
+
+    if len(data["boundaries"]) > 0:
+        first_boundary = data["boundaries"][0]
+        assert "text" in first_boundary
+        assert "start" in first_boundary
+        assert "end" in first_boundary
+        assert first_boundary["text"] == "Testing"
 
     # Test with auto voice
     resp = await client.post(
@@ -27,6 +41,12 @@ async def test_synthesis(client, auth_header):
     )
 
     assert resp.status_code == 200
-    assert resp.headers["content-type"] == "audio/mpeg"
-    assert len(resp.content) > 0
-    assert resp.content[0] == 0xFF  # Valid MP3 starts with 0xFF
+    assert resp.headers["content-type"] == "application/json"
+
+    data = resp.json()
+    assert "audio" in data
+    assert "boundaries" in data
+
+    audio_content = base64.b64decode(data["audio"])
+    assert len(audio_content) > 0
+    assert audio_content[0] == 0xFF  # Valid MP3 starts with 0xFF
