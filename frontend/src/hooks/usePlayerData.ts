@@ -1,18 +1,11 @@
 import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useDispatch, useSelector } from "react-redux"
-
-type sentenceObj = {
-  id: number
-  words: string[]
-  text: string
-  prev: string | null
-  audio: {
-    url: string | null
-    voice: string | null
-  }
-  next: string | null
-}
+import {
+  SentenceObj,
+  SpeedOption,
+  VoiceOption
+} from "../contexts/PlayerContext"
 
 type State = {
   darkMode: {
@@ -24,16 +17,6 @@ type State = {
       voice: string
     }
   }
-}
-
-type SpeedOption = {
-  key: string
-  label: string
-}
-
-type VoiceOption = {
-  key: string
-  label: string
 }
 
 export const usePlayerData = (id: string | undefined) => {
@@ -54,7 +37,7 @@ export const usePlayerData = (id: string | undefined) => {
   const [currentIndex, setCurrentIndex] = useState<number>(Infinity)
   const [currentWordIndex, setCurrentWordIndex] = useState<number>(Infinity)
   const [currentFontSize, setFontSize] = useState(1)
-  const [sentencesMap, setSentencesMap] = useState<Map<number, sentenceObj>>(
+  const [sentencesMap, setSentencesMap] = useState<Map<number, SentenceObj>>(
     new Map()
   )
 

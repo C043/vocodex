@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react"
 
-type sentenceObj = {
+export type SentenceObj = {
   id: number
   words: string[]
   text: string
@@ -12,12 +12,12 @@ type sentenceObj = {
   next: string | null
 }
 
-type SpeedOption = {
+export type SpeedOption = {
   key: string
   label: string
 }
 
-type VoiceOption = {
+export type VoiceOption = {
   key: string
   label: string
 }
@@ -28,7 +28,7 @@ interface PlayerContextType {
   isLoading: boolean
   currentIndex: number
   currentWordIndex: number
-  sentencesMap: Map<number, sentenceObj>
+  sentencesMap: Map<number, SentenceObj>
   title: string
   currentFontSize: number
   voiceOptions: VoiceOption[]
