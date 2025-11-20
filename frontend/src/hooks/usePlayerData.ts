@@ -148,27 +148,9 @@ export const usePlayerData = (id: string | undefined) => {
     setSentencesMap(newMap)
 
     // At the end of splitIntoSentences, after setSentencesMap(newMap):
-    const { audioUrl, boundaries } = await fetchSentenceAudio(
-      chunks[progress],
-      currentVoice
-    )
+    await fetchSentenceAudio(chunks[progress], currentVoice)
 
     setCurrentIndex(progress)
-
-    // We start the first sentence
-    /* if (audioRef.current && audioUrl) {
-      audioRef.current.src = audioUrl
-      handleVoiceSpeed()
-      audioRef.current.play()
-      setIsPlaying(true)
-    } */
-
-    /* if (audioUrl) {
-      setIsLoading(false)
-      updateSentence(audioUrl, boundaries, currentVoice, 0)
-
-      prefetchNextSentences(0, 5)
-    } */
   }
 
   const handleVoiceSpeed = () => {
