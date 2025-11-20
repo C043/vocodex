@@ -7,6 +7,7 @@ import {
   SpeedOption,
   VoiceOption
 } from "../contexts/PlayerContext"
+import { audio } from "framer-motion/m"
 
 type State = {
   darkMode: {
@@ -406,9 +407,8 @@ export const usePlayerData = (id: string | undefined) => {
 
   // Handle voice change
   useEffect(() => {
-    if (sentencesMap.size === 0) return // Don't run before sentences are loaded
-
-    const currentSentence = sentencesMap.get(currentIndex)
+    if (sentencesMap.size === 0 || currentIndex === -1 || !audioRef.current)
+      return
 
     if (audioRef.current) {
       // Invalidate all cached audio that doesn't match current settings
@@ -427,6 +427,35 @@ export const usePlayerData = (id: string | undefined) => {
         return updated
       })
     }
+
+    const audio = audioRef.current
+    audio.pause()
+    setIsPlaying(false)
+    setIsLoading(true)
+    setActiveWordIndex(-1)
+    ;(async () => {
+      try {
+        const text = sentencesMap.get(currentIndex)?.text
+        if (!text) throw new Error("No current sentence text")
+        const { audioUrl, boundaries } = await fetchSentenceAudio(
+          text,
+          currentVoice
+        )
+        if (!audioUrl) return
+
+        updateSentence(audioUrl, boundaries, currentVoice, currentIndex)
+
+        audio.src = audioUrl
+        handleVoiceSpeed()
+        await audio.play()
+        setIsPlaying(true)
+      } catch (err) {
+        console.error(err)
+        setIsPlaying(false)
+      } finally {
+        setIsLoading(false)
+      }
+    })()
   }, [currentVoice])
 
   const handleCueChange = () => {
@@ -439,6 +468,7 @@ export const usePlayerData = (id: string | undefined) => {
       setActiveWordIndex(Number.isNaN(idx) ? -1 : idx)
     }
   }
+
   // Handle sentence change
   useEffect(() => {
     if (!audioRef.current || sentencesMap.size === 0 || currentIndex === -1)
