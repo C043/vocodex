@@ -35,7 +35,8 @@ export const usePlayerData = (id: string | undefined) => {
   const [currentSpeed, setSpeed] = useState(userSpeed)
   const [currentVoice, setVoice] = useState(userVoice)
   const [title, setTitle] = useState("")
-  const [currentIndex, setCurrentIndex] = useState<number>(Infinity)
+  const [currentIndex, setCurrentIndex] = useState<number>(-1)
+  const [activeWordIndex, setActiveWordIndex] = useState(-1)
   const [currentFontSize, setFontSize] = useState(1)
   const [sentencesMap, setSentencesMap] = useState<Map<number, SentenceObj>>(
     new Map()
@@ -269,6 +270,7 @@ export const usePlayerData = (id: string | undefined) => {
     if (isPlaying && audioRef.current) {
       audioRef.current.pause()
       setIsPlaying(false)
+      setActiveWordIndex(-1)
     }
   }
 
@@ -341,7 +343,7 @@ export const usePlayerData = (id: string | undefined) => {
     })
   }
 
-  // Handle authentication
+  // Handle entry fetch
   useEffect(() => {
     ;(async () => {
       await fetchEntry()
@@ -354,6 +356,9 @@ export const usePlayerData = (id: string | undefined) => {
           URL.revokeObjectURL(sentence.audio.url)
         }
       })
+
+      const track = audioRef.current?.textTracks[0]
+      if (track) track.removeEventListener("cuechange", handleCueChange)
     }
   }, [])
 
@@ -361,6 +366,7 @@ export const usePlayerData = (id: string | undefined) => {
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.onended = async () => {
+        setActiveWordIndex(-1)
         await handleForward()
       }
     }
@@ -423,47 +429,85 @@ export const usePlayerData = (id: string | undefined) => {
     }
   }, [currentVoice])
 
+  const handleCueChange = () => {
+    if (audioRef.current) {
+      const track =
+        audioRef.current.textTracks[0] ??
+        audioRef.current.addTextTrack("metadata")
+      const cue = track.activeCues?.[0] as VTTCue | undefined
+      const idx = cue ? Number(cue.text) : -1
+      setActiveWordIndex(Number.isNaN(idx) ? -1 : idx)
+    }
+  }
   // Handle sentence change
   useEffect(() => {
-    if (sentencesMap.size === 0 || currentIndex === Infinity) return // Don't run before sentences are loaded
+    if (!audioRef.current || sentencesMap.size === 0 || currentIndex === -1)
+      return // Don't run before sentences are loaded
 
-    if (audioRef.current) {
-      audioRef.current.pause()
-      updateProgress()
+    audioRef.current.pause()
+    updateProgress()
+    setActiveWordIndex(-1)
 
-      // Fast Forward to the sentence if we have the audio, if not, we fetch it
-      ;(async () => {
-        let audioUrl = sentencesMap.get(currentIndex)?.audio.url
-        if (!audioUrl) {
-          setIsPlaying(false)
-          setIsLoading(true)
-          const text = sentencesMap.get(currentIndex)?.text
-          if (text) {
-            const { audioUrl: fetchedAudioUrl, boundaries } =
-              await fetchSentenceAudio(text, currentVoice)
-            if (fetchedAudioUrl) {
-              updateSentence(
-                fetchedAudioUrl,
-                boundaries,
-                currentVoice,
-                currentIndex
-              )
-              audioUrl = fetchedAudioUrl
-            }
+    // Fast Forward to the sentence if we have the audio, if not, we fetch it
+    ;(async () => {
+      let audioUrl = sentencesMap.get(currentIndex)?.audio.url
+      if (!audioUrl) {
+        setIsPlaying(false)
+        setIsLoading(true)
+        const text = sentencesMap.get(currentIndex)?.text
+        if (text) {
+          const { audioUrl: fetchedAudioUrl, boundaries } =
+            await fetchSentenceAudio(text, currentVoice)
+          if (fetchedAudioUrl) {
+            updateSentence(
+              fetchedAudioUrl,
+              boundaries,
+              currentVoice,
+              currentIndex
+            )
+            audioUrl = fetchedAudioUrl
           }
-          setIsLoading(false)
         }
-        if (audioUrl && audioRef.current) {
-          audioRef.current.src = audioUrl
-          handleVoiceSpeed()
-          audioRef.current.play()
-          setIsPlaying(true)
-        }
-      })()
+        setIsLoading(false)
+      }
+      if (audioUrl && audioRef.current) {
+        audioRef.current.src = audioUrl
+        handleVoiceSpeed()
+        audioRef.current.play()
+        setIsPlaying(true)
+      }
+    })()
+
+    // Ensure the audio tag has the right settings
+    const track =
+      audioRef.current.textTracks[0] ??
+      audioRef.current.addTextTrack("metadata")
+    track.mode = "hidden"
+
+    // Remove stale cues
+    const cues = track.cues
+    if (cues) {
+      for (let i = cues.length - 1; i >= 0; i--) {
+        track.removeCue(track.cues[i])
+      }
     }
 
+    // Add new cues
+    const boundaries = sentencesMap.get(currentIndex)?.boundaries ?? []
+    boundaries.forEach((boundary: boundaryObj, idx) => {
+      const cue = new VTTCue(boundary.start, boundary.end, String(idx))
+      track.addCue(cue)
+    })
+
+    // Add the cue event listener
+    track.addEventListener("cuechange", handleCueChange)
+
     prefetchNextSentences(currentIndex, 5)
-  }, [currentIndex])
+
+    return () => {
+      track.removeEventListener("cuechange", handleCueChange)
+    }
+  }, [currentIndex, sentencesMap.get(currentIndex)?.boundaries])
 
   // Handle voice speed change
   useEffect(() => {
@@ -477,6 +521,7 @@ export const usePlayerData = (id: string | undefined) => {
     isLoading,
     isDarkMode,
     currentIndex,
+    activeWordIndex,
     sentencesMap,
     title,
     currentFontSize,
@@ -490,6 +535,7 @@ export const usePlayerData = (id: string | undefined) => {
     handleForward,
     handleBackwards,
     setCurrentIndex,
+    setActiveWordIndex,
     setVoice,
     setSpeed,
     handleFontSizeUp,

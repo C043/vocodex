@@ -5,6 +5,7 @@ const EntryContent = () => {
     title,
     sentencesMap,
     currentIndex,
+    activeWordIndex,
     setCurrentIndex,
     isLoading,
     currentFontSize
@@ -26,9 +27,28 @@ const EntryContent = () => {
     <>
       <h1 className="text-9xl mb-10">{title}</h1>
       <div className="mb-52">
-        {Array.from(sentencesMap.values()).map(sentence => (
-          <div
-            className={`
+        {Array.from(sentencesMap.values()).map(sentence => {
+          const boundaries = sentence.boundaries ?? []
+          let wordCounter = 0
+
+          const tokens = sentence.text
+            .split(/(\s+)/)
+            .filter(t => t.length > 0)
+            .map(token => {
+              const isWord = /[A-Za-z0-9'’]+/.test(token)
+
+              if (isWord) {
+                const idx = wordCounter
+                wordCounter += 1
+                return { text: token, wordIndex: idx }
+              }
+
+              return { text: token, wordIndex: null }
+            })
+          return (
+            <div
+              key={sentence.id}
+              className={`
               ${fontClasses.text}
               rounded-3xl
               px-2
@@ -36,35 +56,40 @@ const EntryContent = () => {
               ${fontClasses.margin}
               ${isLoading || currentIndex === sentence.id ? "" : "hover:bg-yellow-500/50 cursor-pointer"} ${currentIndex === sentence.id ? "bg-yellow-500/80" : ""}
             `}
-          >
-            <p
-              key={sentence.id}
-              onClick={() => {
-                if (!isLoading) {
-                  setCurrentIndex(sentence.id)
-                }
-              }}
             >
-              {sentence.text.split(" ").map((word, idx) => {
-                return (
-                  <>
+              <p
+                className="whitespace-pre-wrap"
+                onClick={() => {
+                  if (!isLoading) {
+                    setCurrentIndex(sentence.id)
+                  }
+                }}
+              >
+                {tokens.map((token, idx) => {
+                  if (token.wordIndex === null) return token.text
+
+                  const isActive =
+                    sentence.id === currentIndex &&
+                    boundaries.length > 0 &&
+                    token.wordIndex === activeWordIndex
+
+                  return (
                     <span
-                      key={idx}
+                      key={`${sentence.id}-${idx}`}
                       className={`
                         inline-block
                         rounded-3xl
-                        px-2
-                        py-1
+                        ${isActive ? "bg-red-600" : ""}
                       `}
                     >
-                      {word}
+                      {token.text}
                     </span>
-                  </>
-                )
-              })}
-            </p>
-          </div>
-        ))}
+                  )
+                })}
+              </p>
+            </div>
+          )
+        })}
       </div>
     </>
   )

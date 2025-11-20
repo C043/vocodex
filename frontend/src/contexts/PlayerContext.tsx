@@ -33,6 +33,7 @@ interface PlayerContextType {
   isPlaying: boolean
   isLoading: boolean
   currentIndex: number
+  activeWordIndex: number
   sentencesMap: Map<number, SentenceObj>
   title: string
   currentFontSize: number
@@ -52,6 +53,7 @@ interface PlayerContextType {
   setVoice: (voice: string) => void
   setSpeed: (speed: string) => void
   setCurrentIndex: (id: number) => void
+  setActiveWordIndex: (num: number) => void
 }
 
 export const PlayerContext = createContext<PlayerContextType | undefined>(
