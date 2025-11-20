@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach, Mock } from "vitest"
 import { renderHook, waitFor } from "@testing-library/react"
 import { usePlayerData } from "../src/hooks/usePlayerData"
-import { checkAuthentication } from "../src/utils/authUtils"
 import { setIsLoggedIn } from "../src/redux/reducer/authSlice"
 
 const mockNavigate = vi.fn()
@@ -13,10 +12,6 @@ const mockDispatch = vi.fn()
 vi.mock("react-redux", () => ({
   useDispatch: () => mockDispatch,
   useSelector: () => false
-}))
-
-vi.mock("../src/utils/authUtils", () => ({
-  checkAuthentication: vi.fn()
 }))
 
 vi.stubGlobal("URL", {
@@ -58,8 +53,6 @@ describe("usePlayerData hook", () => {
   })
 
   it("should navigate to /login if user is not authenticated", () => {
-    ;(checkAuthentication as Mock).mockReturnValue(false)
-
     renderHook(() => usePlayerData("test-id"))
 
     expect(mockDispatch).toHaveBeenCalledWith(setIsLoggedIn(false))
@@ -67,8 +60,6 @@ describe("usePlayerData hook", () => {
   })
 
   it("should fetch entry data and set state if user is authenticated", async () => {
-    ;(checkAuthentication as Mock).mockReturnValue(true)
-
     const mockEntryData = {
       title: "title",
       content:

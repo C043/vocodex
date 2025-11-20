@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useDispatch, useSelector } from "react-redux"
 import {
+  boundaryObj,
   SentenceObj,
   SpeedOption,
   VoiceOption
@@ -35,7 +36,6 @@ export const usePlayerData = (id: string | undefined) => {
   const [currentVoice, setVoice] = useState(userVoice)
   const [title, setTitle] = useState("")
   const [currentIndex, setCurrentIndex] = useState<number>(Infinity)
-  const [currentWordIndex, setCurrentWordIndex] = useState<number>(Infinity)
   const [currentFontSize, setFontSize] = useState(1)
   const [sentencesMap, setSentencesMap] = useState<Map<number, SentenceObj>>(
     new Map()
@@ -69,6 +69,7 @@ export const usePlayerData = (id: string | undefined) => {
 
   const fetchEntry = async () => {
     try {
+      setIsLoading(true)
       const url = `${env.VITE_API_URL}/entries/${id}`
       const headers = {
         Authorization: `Bearer ${token}`
@@ -87,9 +88,7 @@ export const usePlayerData = (id: string | undefined) => {
 
       const data = await resp.json()
 
-      setCurrentIndex(data.progress)
-      setCurrentWordIndex(0)
-      splitIntoSentences(data.content)
+      splitIntoSentences(data.content, data.progress)
       setTitle(data.title)
     } catch (err) {
       console.error(err)
@@ -97,7 +96,11 @@ export const usePlayerData = (id: string | undefined) => {
     }
   }
 
-  const splitIntoSentences = async (content: string, maxChars = 200) => {
+  const splitIntoSentences = async (
+    content: string,
+    progress: number,
+    maxChars = 200
+  ) => {
     const sentences: string[] = content.match(/[^.!?]+[.!?]+/g) || [content]
     const chunks: string[] = []
     let current: string = ""
@@ -119,6 +122,7 @@ export const usePlayerData = (id: string | undefined) => {
       chunks.push(current.trim())
     }
 
+    const newMap = new Map<number, SentenceObj>()
     for (const [idx, sentence] of chunks.entries()) {
       if (idx > 0) {
         previous = chunks[idx - 1]
@@ -129,9 +133,9 @@ export const usePlayerData = (id: string | undefined) => {
         next = null
       }
 
-      sentencesMap.set(idx, {
+      newMap.set(idx, {
         id: idx,
-        words: sentence.split(" "),
+        boundaries: [],
         text: sentence,
         prev: previous,
         audio: {
@@ -141,29 +145,30 @@ export const usePlayerData = (id: string | undefined) => {
         next: next
       })
     }
+    setSentencesMap(newMap)
 
     // At the end of splitIntoSentences, after setSentencesMap(newMap):
-    const firstAudioUrl = await fetchSentenceAudio(
-      chunks[currentIndex],
+    const { audioUrl, boundaries } = await fetchSentenceAudio(
+      chunks[progress],
       currentVoice
     )
 
+    setCurrentIndex(progress)
+
     // We start the first sentence
-    if (audioRef.current && firstAudioUrl) {
-      audioRef.current.src = firstAudioUrl
+    /* if (audioRef.current && audioUrl) {
+      audioRef.current.src = audioUrl
       handleVoiceSpeed()
       audioRef.current.play()
       setIsPlaying(true)
-      setCurrentIndex(0)
-      setCurrentWordIndex(0)
-    }
+    } */
 
-    if (firstAudioUrl) {
+    /* if (audioUrl) {
       setIsLoading(false)
-      updateSentence(firstAudioUrl, currentVoice, 0)
+      updateSentence(audioUrl, boundaries, currentVoice, 0)
 
       prefetchNextSentences(0, 5)
-    }
+    } */
   }
 
   const handleVoiceSpeed = () => {
@@ -199,10 +204,13 @@ export const usePlayerData = (id: string | undefined) => {
         (sentence && !sentence.audio.url) ||
         (sentence && sentence.audio.voice !== currentVoice)
       ) {
-        const audioUrl = await fetchSentenceAudio(sentence.text, currentVoice)
+        const { audioUrl, boundaries } = await fetchSentenceAudio(
+          sentence.text,
+          currentVoice
+        )
 
         if (audioUrl) {
-          updateSentence(audioUrl, currentVoice, targetIndex)
+          updateSentence(audioUrl, boundaries, currentVoice, targetIndex)
         }
       }
     }
@@ -230,13 +238,49 @@ export const usePlayerData = (id: string | undefined) => {
 
       if (!resp.ok) throw new Error("Synthesis failed")
 
-      const blob = await resp.blob()
-      const audioUrl = URL.createObjectURL(blob)
+      const data = await resp.json()
+      const audioData = `data:audio/mpeg;base64,${data.audio}`
+      const blob = base64ToBlob(audioData)
 
-      return audioUrl
+      const boundaries: boundaryObj[] = data.boundaries
+      let audioUrl = ""
+      if (blob) {
+        audioUrl = URL.createObjectURL(blob)
+      } else {
+        throw new Error("Failed to convert base64 url to blob")
+      }
+
+      return { audioUrl, boundaries }
     } catch (err) {
       console.error(err)
+      return { audioUrl: "", boundaries: [] }
     }
+  }
+
+  const base64ToBlob = (base64DataUrl: string) => {
+    if (!base64DataUrl || typeof base64DataUrl !== "string") {
+      console.error("Invalid base64DataUrl provided.")
+      return null
+    }
+
+    const parts = base64DataUrl.split(";base64,")
+    if (parts.length !== 2) {
+      console.error("base64DataUrl format is incorrect.")
+      return null
+    }
+
+    const mimeType = parts[0].split(":")[1]
+    const base64 = parts[1]
+
+    const binaryString = atob(base64)
+    const len = binaryString.length
+    const bytes = new Uint8Array(len)
+
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i)
+    }
+
+    return new Blob([bytes], { type: mimeType })
   }
 
   const handlePause = () => {
@@ -256,78 +300,13 @@ export const usePlayerData = (id: string | undefined) => {
   const handleForward = async () => {
     if (isLoading) return
     const nextIndex = currentIndex + 1
-    if (sentencesMap.has(nextIndex) && audioRef.current) {
-      audioRef.current.pause()
-      let url = sentencesMap.get(nextIndex)?.audio.url
-
-      // Retry mechanism: poll for audio URL if not ready
-      if (!url) {
-        const maxRetries = 50
-        const retryDelay = 500 // ms
-
-        for (let attempt = 0; attempt < maxRetries; attempt++) {
-          setIsLoading(true)
-          await new Promise(resolve => setTimeout(resolve, retryDelay))
-          url = sentencesMap.get(nextIndex)?.audio.url
-          if (url) break
-        }
-        setIsLoading(false)
-      }
-      if (audioRef.current && url) {
-        setCurrentIndex(nextIndex)
-        setCurrentWordIndex(0)
-        audioRef.current.src = url
-        handleVoiceSpeed()
-        audioRef.current?.play()
-        setIsLoading(false)
-        setIsPlaying(true)
-
-        prefetchNextSentences(nextIndex, 5)
-      }
-    }
+    setCurrentIndex(nextIndex)
   }
 
   const handleBackwards = async () => {
     if (isLoading) return
     const prevIndex = currentIndex - 1
-    if (sentencesMap.has(prevIndex) && audioRef.current) {
-      audioRef.current.pause()
-      let url = sentencesMap.get(prevIndex)?.audio.url
-
-      // Retry mechanism: poll for audio URL if not ready
-      if (!url) {
-        const maxRetries = 50
-        const retryDelay = 500 // ms
-
-        for (let attempt = 0; attempt < maxRetries; attempt++) {
-          setIsLoading(true)
-          await new Promise(resolve => setTimeout(resolve, retryDelay))
-          if (sentencesMap.get(prevIndex)?.text) {
-            const text = sentencesMap.get(prevIndex)?.text as string
-            url = sentencesMap.get(prevIndex)?.audio.url
-              ? sentencesMap.get(prevIndex)?.audio.url
-              : await fetchSentenceAudio(text, currentVoice)
-          }
-
-          if (url) {
-            updateSentence(url, currentVoice, prevIndex)
-            setIsLoading(false)
-          }
-
-          if (url) break
-        }
-      }
-      if (audioRef.current && url) {
-        setCurrentIndex(prevIndex)
-        setCurrentWordIndex(0)
-        audioRef.current.src = url
-        handleVoiceSpeed()
-        audioRef.current?.play()
-        setIsPlaying(true)
-
-        prefetchNextSentences(prevIndex, 5)
-      }
-    }
+    setCurrentIndex(prevIndex)
   }
 
   const updateProgress = async () => {
@@ -357,6 +336,7 @@ export const usePlayerData = (id: string | undefined) => {
 
   const updateSentence = (
     audioUrl: string,
+    boundaries: boundaryObj[],
     voice: string,
     targetIndex: number
   ) => {
@@ -364,9 +344,16 @@ export const usePlayerData = (id: string | undefined) => {
       const updated = new Map(prev)
       const target = updated.get(targetIndex)
       if (target) {
-        target.audio.url = audioUrl
-        target.audio.voice = voice
-        updated.set(targetIndex, target)
+        const updatedSentence: SentenceObj = {
+          ...target,
+          audio: {
+            ...target.audio,
+            url: audioUrl,
+            voice
+          },
+          boundaries
+        }
+        updated.set(targetIndex, updatedSentence)
       }
       return updated
     })
@@ -392,7 +379,6 @@ export const usePlayerData = (id: string | undefined) => {
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.onended = async () => {
-        setIsPlaying(false)
         await handleForward()
       }
     }
@@ -437,8 +423,6 @@ export const usePlayerData = (id: string | undefined) => {
     const currentSentence = sentencesMap.get(currentIndex)
 
     if (audioRef.current) {
-      audioRef.current.pause()
-
       // Invalidate all cached audio that doesn't match current settings
       setSentencesMap(prev => {
         const updated = new Map(prev)
@@ -455,36 +439,11 @@ export const usePlayerData = (id: string | undefined) => {
         return updated
       })
     }
-
-    // Refetch current sentence if voice changed
-    if (currentSentence && currentSentence.audio.voice !== currentVoice) {
-      setIsLoading(true)
-      ;(async () => {
-        setIsPlaying(false)
-        const audioUrl = await fetchSentenceAudio(
-          currentSentence.text,
-          currentVoice
-        )
-
-        if (audioUrl && audioRef.current) {
-          updateSentence(audioUrl, currentVoice, currentIndex)
-          audioRef.current.src = audioUrl
-          if (isPlaying) {
-            handleVoiceSpeed()
-            audioRef.current.play()
-            setIsPlaying(true)
-          }
-          setIsLoading(false)
-        }
-      })()
-    }
-
-    prefetchNextSentences(currentIndex, 5)
   }, [currentVoice])
 
   // Handle sentence change
   useEffect(() => {
-    if (sentencesMap.size === 0) return // Don't run before sentences are loaded
+    if (sentencesMap.size === 0 || currentIndex === Infinity) return // Don't run before sentences are loaded
 
     if (audioRef.current) {
       audioRef.current.pause()
@@ -492,15 +451,22 @@ export const usePlayerData = (id: string | undefined) => {
 
       // Fast Forward to the sentence if we have the audio, if not, we fetch it
       ;(async () => {
-        setIsPlaying(false)
         let audioUrl = sentencesMap.get(currentIndex)?.audio.url
         if (!audioUrl) {
+          setIsPlaying(false)
           setIsLoading(true)
           const text = sentencesMap.get(currentIndex)?.text
           if (text) {
-            audioUrl = await fetchSentenceAudio(text, currentVoice)
-            if (audioUrl) {
-              updateSentence(audioUrl, currentVoice, currentIndex)
+            const { audioUrl: fetchedAudioUrl, boundaries } =
+              await fetchSentenceAudio(text, currentVoice)
+            if (fetchedAudioUrl) {
+              updateSentence(
+                fetchedAudioUrl,
+                boundaries,
+                currentVoice,
+                currentIndex
+              )
+              audioUrl = fetchedAudioUrl
             }
           }
           setIsLoading(false)
@@ -529,7 +495,6 @@ export const usePlayerData = (id: string | undefined) => {
     isLoading,
     isDarkMode,
     currentIndex,
-    currentWordIndex,
     sentencesMap,
     title,
     currentFontSize,

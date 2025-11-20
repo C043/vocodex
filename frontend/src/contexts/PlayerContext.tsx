@@ -1,8 +1,14 @@
 import { createContext, useContext } from "react"
 
+export type boundaryObj = {
+  text: string
+  start: number
+  end: number
+}
+
 export type SentenceObj = {
   id: number
-  words: string[]
+  boundaries: boundaryObj[]
   text: string
   prev: string | null
   audio: {
@@ -27,7 +33,6 @@ interface PlayerContextType {
   isPlaying: boolean
   isLoading: boolean
   currentIndex: number
-  currentWordIndex: number
   sentencesMap: Map<number, SentenceObj>
   title: string
   currentFontSize: number

@@ -5,7 +5,6 @@ const EntryContent = () => {
     title,
     sentencesMap,
     currentIndex,
-    currentWordIndex,
     setCurrentIndex,
     isLoading,
     currentFontSize
@@ -56,7 +55,6 @@ const EntryContent = () => {
                         rounded-3xl
                         px-2
                         py-1
-                        ${currentWordIndex === idx ? "bg-red-500" : ""}
                       `}
                     >
                       {word}
