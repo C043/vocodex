@@ -8,9 +8,11 @@ async def speak(text: str, voice: str) -> dict:
 
     communicate = None
     if voice:
-        communicate = edge_tts.Communicate(text, voice, rate="+0%")
+        communicate = edge_tts.Communicate(
+            text, voice, rate="+0%", boundary="WordBoundary"
+        )
     else:
-        communicate = edge_tts.Communicate(text, rate="+0%")
+        communicate = edge_tts.Communicate(text, rate="+0%", boundary="WordBoundary")
 
     audioChunks = []
     boundaries = []
