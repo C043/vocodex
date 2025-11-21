@@ -447,8 +447,8 @@ export const usePlayerData = (id: string | undefined) => {
 
         audio.src = audioUrl
         handleVoiceSpeed()
-        await audio.play()
         setIsPlaying(true)
+        audio.play()
       } catch (err) {
         console.error(err)
         setIsPlaying(false)

@@ -54,7 +54,7 @@ const EntryContent = () => {
               px-2
               py-1
               ${fontClasses.margin}
-              ${isLoading || currentIndex === sentence.id ? "" : "hover:bg-yellow-500/50 cursor-pointer"} ${currentIndex === sentence.id ? "bg-yellow-500/80" : ""}
+              ${isLoading ? "" : currentIndex === sentence.id ? "dark:bg-[#444766] bg-yellow-400" : "dark:hover:bg-[#444766]/50 hover:bg-yellow-400/50 cursor-pointer"}
             `}
             >
               <p
@@ -78,11 +78,12 @@ const EntryContent = () => {
                       key={`${sentence.id}-${idx}`}
                       className={`
                         inline-block
+                        relative
                         rounded-3xl
-                        ${isActive ? "bg-red-600" : ""}
+                        ${isActive ? "after:z-0 after:content-[''] after:pointer-events-none after:absolute after:-inset-x-2 after:-inset-y-1 after:block after:bg-yellow-600 dark:after:bg-[#4759F7] after:rounded-2xl" : ""}
                       `}
                     >
-                      {token.text}
+                      <span className="relative z-10">{token.text}</span>
                     </span>
                   )
                 })}
