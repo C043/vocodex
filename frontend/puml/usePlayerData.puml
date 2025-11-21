@@ -1,0 +1,113 @@
+@startuml
+skinparam linetype ortho
+package "Player Component Logic" {
+
+package "React Core" {
+  class "useState"
+  class "useEffect"
+  class "useRef"
+}
+
+package "React Router" {
+  class "useNavigate"
+}
+
+package "Redux" {
+  class "useSelector"
+  class "useDispatch"
+}
+
+package "usePlayerData Hook" {
+  class usePlayerData {
+    + **State & Refs**
+    + audioRef: useRef<HTMLAudioElement>
+    + isPlaying: boolean
+    + isLoading: boolean
+    + currentSpeed: string
+    + currentVoice: string
+    + title: string
+    + currentIndex: number
+    + currentWordIndex: number
+    + currentFontSize: number
+    + sentencesMap: Map<number, sentenceObj>
+
+    + **Handlers & Logic**
+    + handlePlay()
+    + handlePause()
+    + handleForward()
+    + handleBackwards()
+    + handleVoiceSpeed()
+    + handleFontSizeUp()
+    + handleFontSizeDown()
+    + updateProgress()
+    + updateSentence()
+    + prefetchNextSentences()
+
+    + **Async Operations**
+    + fetchEntry()
+    + splitIntoSentences()
+    + fetchSentenceAudio()
+
+    + **Returned Values**
+  }
+
+  note right of usePlayerData
+    This custom hook encapsulates all the logic
+    for the audio player functionality, including
+    state management, API interactions, and
+    side effects.
+  end note
+
+  package "Side Effects (useEffect)" {
+    class "Effect: Initial Fetch" as InitialFetch
+    class "Effect: Auto-Advance on End" as AutoAdvance
+    class "Effect: Keyboard Shortcuts" as KeyboardShortcuts
+    class "Effect: Voice Change" as VoiceChange
+    class "Effect: Sentence Change" as SentenceChange
+    class "Effect: Speed Change" as SpeedChange
+  }
+}
+
+package "External API" {
+  class "API Endpoint" as API {
+    + /entries/{id} (GET)
+    + /synthesis/GET (POST)
+    + /entries/text/{id}/progress (POST)
+  }
+}
+
+' --- Relationships ---
+
+usePlayerData --> useState : uses
+usePlayerData --> useEffect : uses
+usePlayerData --> useRef : uses
+usePlayerData --> useNavigate : uses
+usePlayerData --> useSelector : uses
+usePlayerData --> useDispatch : uses
+
+usePlayerData ..> InitialFetch
+usePlayerData ..> AutoAdvance
+usePlayerData ..> KeyboardShortcuts
+usePlayerData ..> VoiceChange
+usePlayerData ..> SentenceChange
+usePlayerData ..> SpeedChange
+
+InitialFetch ..> fetchEntry : calls
+fetchEntry ..> splitIntoSentences : calls
+splitIntoSentences ..> fetchSentenceAudio : calls on init
+fetchEntry --> API : "GET /entries/{id}"
+updateProgress --> API : "POST /entries/.../progress"
+fetchSentenceAudio --> API : "POST /synthesis/GET"
+
+VoiceChange ..> fetchSentenceAudio : calls
+SentenceChange ..> fetchSentenceAudio : calls
+prefetchNextSentences ..> fetchSentenceAudio : calls
+
+handleForward ..> prefetchNextSentences : calls
+handleBackwards ..> fetchSentenceAudio : calls
+
+AutoAdvance o-- usePlayerData : "onended"
+KeyboardShortcuts o-- usePlayerData : "keydown"
+
+}
+@enduml

@@ -1,7 +1,14 @@
 import { createContext, useContext } from "react"
 
-type sentenceObj = {
+export type boundaryObj = {
+  text: string
+  start: number
+  end: number
+}
+
+export type SentenceObj = {
   id: number
+  boundaries: boundaryObj[]
   text: string
   prev: string | null
   audio: {
@@ -11,12 +18,12 @@ type sentenceObj = {
   next: string | null
 }
 
-type SpeedOption = {
+export type SpeedOption = {
   key: string
   label: string
 }
 
-type VoiceOption = {
+export type VoiceOption = {
   key: string
   label: string
 }
@@ -26,7 +33,8 @@ interface PlayerContextType {
   isPlaying: boolean
   isLoading: boolean
   currentIndex: number
-  sentencesMap: Map<number, sentenceObj>
+  activeWordIndex: number
+  sentencesMap: Map<number, SentenceObj>
   title: string
   currentFontSize: number
   voiceOptions: VoiceOption[]
@@ -45,6 +53,7 @@ interface PlayerContextType {
   setVoice: (voice: string) => void
   setSpeed: (speed: string) => void
   setCurrentIndex: (id: number) => void
+  setActiveWordIndex: (num: number) => void
 }
 
 export const PlayerContext = createContext<PlayerContextType | undefined>(

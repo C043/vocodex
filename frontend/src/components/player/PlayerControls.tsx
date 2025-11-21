@@ -147,7 +147,7 @@ export const PlayerControls = () => {
     handleBackwardAnimation
   ]) // dependencies for the handlers
   return (
-    <div className="left-1/2 -translate-x-1/2 fixed bottom-0 mb-5">
+    <div className="left-1/2 -translate-x-1/2 fixed bottom-0 mb-5 z-50">
       <div
         className="
           flex

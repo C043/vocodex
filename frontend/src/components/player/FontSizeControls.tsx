@@ -5,7 +5,7 @@ const FontSizeControls = () => {
   const { handleFontSizeUp, handleFontSizeDown } = usePlayer()
 
   return (
-    <div className="right-5 fixed bottom-0 mb-5">
+    <div className="right-5 fixed bottom-0 mb-5 z-50">
       <div
         className="
           flex
