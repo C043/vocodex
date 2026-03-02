@@ -103,7 +103,9 @@ export const usePlayerData = (id: string | undefined) => {
     progress: number,
     maxChars = 200
   ) => {
-    const sentences: string[] = content.match(/[^.!?]+[.!?]+/g) || [content]
+    const sentences = content.match(/[^.!?]+(?:[!?]|\.(?=\s|$)|$)/g) || [
+      content
+    ]
     const chunks: string[] = []
     let current: string = ""
     let previous: string | null = null
