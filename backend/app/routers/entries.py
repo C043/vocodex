@@ -11,6 +11,8 @@ from app.schemas.entriesSchemas import (
     UploadTextOut,
     UpdateEntryIn,
     UpdateEntryOut,
+    UploadWebsiteIn,
+    UploadWebsiteOut,
 )
 
 from app.controllers import entriesController
@@ -97,5 +99,18 @@ async def deleteEntryById(
 ):
     try:
         await entriesController.deleteEntryById(entry_id, current_user, session)
+    except Exception:
+        raise
+
+
+@router.post("/website", status_code=201)
+async def uploadWebsite(
+    data: UploadWebsiteIn,
+    current_user: Users = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    try:
+        entry = await entriesController.uploadWebsite(data, current_user, session)
+        return UploadWebsiteOut(id=entry.id)
     except Exception:
         raise

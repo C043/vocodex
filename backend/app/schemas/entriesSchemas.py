@@ -31,3 +31,11 @@ class UpdateEntryIn(BaseModel):
 
 class UpdateEntryOut(BaseModel):
     id: int
+
+
+class UploadWebsiteIn(BaseModel):
+    url: str
+
+
+class UploadWebsiteOut(BaseModel):
+    id: int

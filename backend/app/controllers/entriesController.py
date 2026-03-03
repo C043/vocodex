@@ -8,6 +8,7 @@ from app.schemas.entriesSchemas import (
     EntrySummary,
     UpdateEntryIn,
     UploadTextIn,
+    UploadWebsiteIn,
 )
 
 
@@ -115,6 +116,19 @@ async def getProgress(entry_id: int, current_user: Users, session: AsyncSession)
         ).scalar_one()
 
         return entryProgress
+    except Exception:
+        await session.rollback()
+        raise
+
+
+async def uploadWebsite(
+    data: UploadWebsiteIn, current_user: Users, session: AsyncSession
+) -> Entries:
+    try:
+        entry = Entries(title=data.url, user_id=current_user.id, content="test")
+        session.add(entry)
+        await session.commit()
+        return entry
     except Exception:
         await session.rollback()
         raise
