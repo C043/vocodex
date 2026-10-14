@@ -187,11 +187,13 @@ export const PlayerControls = () => {
       className={className}
       classNames={selectClassNames}
       items={speedOptions}
-      defaultSelectedKeys={[currentSpeed]}
+      selectedKeys={[currentSpeed]}
+      disallowEmptySelection
       aria-label="Select Speed"
       size="sm"
       onSelectionChange={keys => {
-        const selected = Array.from(keys)[0] as string
+        const selected = Array.from(keys)[0] as string | undefined
+        if (!selected) return
         setSpeed(selected)
         saveUserPreferences(selected, currentVoice)
         dispatch(setUserPreferences({ speed: selected, voice: currentVoice }))

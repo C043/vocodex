@@ -234,3 +234,24 @@ describe("PlayerControls on desktop", () => {
     expect(screen.getByRole("button", { name: "Text view" })).toBeInTheDocument()
   })
 })
+
+describe("PlayerControls speed select", () => {
+  afterEach(resetScreenWidth)
+
+  it("keeps the current speed when it is picked again", async () => {
+    setScreenWidth(390)
+    const value = renderControls({
+      speedOptions: [
+        { key: "+0%", label: "1x" },
+        { key: "+50%", label: "1.5x" }
+      ]
+    })
+    await userEvent.click(screen.getByRole("button", { name: "Player options" }))
+    const trigger = screen.getByRole("button", { name: /Select Speed/ })
+    await userEvent.click(trigger)
+    await userEvent.click(await screen.findByRole("option", { name: "1x" }))
+
+    expect(value.setSpeed).not.toHaveBeenCalledWith(undefined)
+    expect(trigger).toHaveTextContent("1x")
+  })
+})
