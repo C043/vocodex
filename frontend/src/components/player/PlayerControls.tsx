@@ -10,6 +10,8 @@ import {
 } from "@heroicons/react/24/solid"
 import { useDispatch } from "react-redux"
 import { setUserPreferences } from "../../redux/reducer/authSlice"
+import { isTypingTarget } from "../../utils/isTypingTarget"
+import { VoiceSelect } from "./VoiceSelect"
 
 export const PlayerControls = () => {
   const env = import.meta.env
@@ -107,6 +109,7 @@ export const PlayerControls = () => {
   // Adds keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (isTypingTarget(event.target)) return
       switch (event.key) {
         case "Enter":
         case " ": // spacebar
@@ -158,15 +161,11 @@ export const PlayerControls = () => {
     <div className="fixed z-50 inset-x-0 bottom-0 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:bottom-6">
       <div className="glass rounded-t-[2rem] md:rounded-full px-5 pt-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:p-3 md:pl-4 flex flex-col-reverse md:flex-row items-center gap-3 md:gap-4">
         <div className="flex w-full md:w-auto gap-3 md:contents">
-          <Select
-            className="flex-1 md:flex-none md:w-36 md:order-1"
-            classNames={selectClassNames}
-            items={voiceOptions}
-            defaultSelectedKeys={[currentVoice]}
-            aria-label="Select Voice"
-            size="sm"
-            onSelectionChange={keys => {
-              const selected = Array.from(keys)[0] as string
+          <VoiceSelect
+            className="flex-1 md:flex-none md:w-44 md:order-1"
+            voices={voiceOptions}
+            selectedVoice={currentVoice}
+            onChange={selected => {
               setVoice(selected)
               saveUserPreferences(currentSpeed, selected)
               dispatch(
@@ -174,9 +173,7 @@ export const PlayerControls = () => {
               )
             }}
             isDisabled={isLoading ? true : false}
-          >
-            {voice => <SelectItem>{voice.label}</SelectItem>}
-          </Select>
+          />
           <Select
             className="w-28 md:w-24 md:order-3"
             classNames={selectClassNames}

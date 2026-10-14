@@ -26,7 +26,9 @@ export type SpeedOption = {
 
 export type VoiceOption = {
   key: string
-  label: string
+  name: string
+  locale: string
+  language: string
 }
 
 interface PlayerContextType {

@@ -10,6 +10,7 @@ import {
 import { audio } from "framer-motion/m"
 import { splitIntoChunks } from "../utils/splitIntoChunks"
 import { useAutoScroll } from "./useAutoScroll"
+import { isTypingTarget } from "../utils/isTypingTarget"
 
 type State = {
   darkMode: {
@@ -53,13 +54,7 @@ export const usePlayerData = (id: string | undefined) => {
     { key: "+50%", label: "1.5x" },
     { key: "+0%", label: "1x" }
   ]
-  const voiceOptions: VoiceOption[] = [
-    { key: "", label: "Auto" },
-    { key: "en-GB-LibbyNeural", label: "Libby" },
-    { key: "en-GB-AdaMultilingualNeural", label: "Ada" },
-    { key: "en-GB-OllieMultilingualNeural", label: "Ollie" },
-    { key: "en-GB-RyanNeural", label: "Ryan" }
-  ]
+  const [voiceOptions, setVoiceOptions] = useState<VoiceOption[]>([])
 
   const handleFontSizeUp = () => {
     if (currentFontSize <= 3) {
@@ -98,6 +93,24 @@ export const usePlayerData = (id: string | undefined) => {
     } catch (err) {
       console.error(err)
       navigate("/")
+    }
+  }
+
+  const fetchVoices = async () => {
+    try {
+      const url = `${env.VITE_API_URL}/voices`
+      const headers = {
+        Authorization: `Bearer ${token}`
+      }
+
+      const resp = await fetch(url, { method: "GET", headers })
+
+      if (!resp.ok) throw new Error("Fetching voices failed")
+
+      const data: VoiceOption[] = await resp.json()
+      setVoiceOptions(data)
+    } catch (err) {
+      console.error(err)
     }
   }
 
@@ -351,6 +364,11 @@ export const usePlayerData = (id: string | undefined) => {
     }
   }, [])
 
+  // Handle voices list fetch
+  useEffect(() => {
+    fetchVoices()
+  }, [])
+
   // Handle smoothless transition from a sentence to another
   useEffect(() => {
     if (audioRef.current) {
@@ -364,6 +382,7 @@ export const usePlayerData = (id: string | undefined) => {
   // Adds keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (isTypingTarget(event.target)) return
       switch (event.key) {
         case "Enter":
         case " ": // spacebar
