@@ -176,9 +176,18 @@ const PdfPageView = ({
               <div
                 key={`word-${idx}`}
                 data-highlight="word"
-                className="absolute rounded-sm bg-brand mix-blend-multiply shadow-md shadow-violet-500/40"
+                className="absolute"
                 style={boxStyle(box)}
-              />
+              >
+                {/* Same as the text reader's light theme word, white text on
+                    the brand gradient: the page is white in either theme.
+                    The glyphs are drawn on the canvas, so the box inverts
+                    them to white on black, then screens the gradient over
+                    the black */}
+                <div className="absolute -inset-x-1 -inset-y-0.5 rounded-md shadow-md shadow-violet-500/40" />
+                <div className="absolute -inset-x-1 -inset-y-0.5 rounded-md bg-white mix-blend-difference" />
+                <div className="absolute -inset-x-1 -inset-y-0.5 rounded-md bg-brand mix-blend-screen" />
+              </div>
             ))}
           </div>
           <div
