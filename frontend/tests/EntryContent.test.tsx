@@ -196,4 +196,43 @@ describe("EntryContent", () => {
       expect(chunk("First chunk.")).toHaveClass("scroll-mb-40", "md:scroll-mb-0")
     })
   })
+
+  describe("word highlight", () => {
+    // Positioned, z-indexed layers changing word by word make the browser
+    // rebuild the layers under the glass bars, which then lose their blur
+    const sentenceWithWords = {
+      ...makeSentence(0, "Hello brave world."),
+      boundaries: [{ word: "Hello" }, { word: "brave" }, { word: "world" }]
+    } as unknown as SentenceObj
+
+    const renderWords = () =>
+      renderContent(
+        makeValue({
+          sentencesMap: new Map([[0, sentenceWithWords]]),
+          activeWordIndex: 1
+        })
+      )
+
+    it("paints the word being read on the word itself", () => {
+      renderWords()
+
+      const word = screen.getByText("brave")
+      expect(word).toHaveClass("bg-brand", "text-white", "box-decoration-clone")
+    })
+
+    it("adds no positioned or stacked layers around the words", () => {
+      const { container } = renderWords()
+
+      const chunkEl = container.querySelector("[data-chunk-id]")!
+      expect(chunkEl.querySelector('[class*="after:"]')).toBeNull()
+      expect(chunkEl.querySelector(".relative")).toBeNull()
+      expect(chunkEl.querySelector('[class*="z-"]')).toBeNull()
+    })
+
+    it("keeps the reading in its own stacking context", () => {
+      const { container } = renderWords()
+
+      expect(container.querySelector("article")).toHaveClass("isolate")
+    })
+  })
 })

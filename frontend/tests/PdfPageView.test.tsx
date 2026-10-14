@@ -156,6 +156,9 @@ describe("PdfPageView", () => {
       Node.DOCUMENT_POSITION_FOLLOWING
     )
     expect(container.querySelector('[class*="dark:"]')).toBeNull()
+    // The blend modes mix within the page only: blending into the whole app
+    // makes the glass bars over it lose their blur as the word moves
+    expect(container.querySelector("section")).toHaveClass("isolate")
     expect(measureRanges).toHaveBeenCalledWith(
       textLayers[0].textDivs,
       expect.any(Array),

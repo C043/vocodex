@@ -112,19 +112,19 @@ const EntryContent = () => {
             boundaries.length > 0 &&
             token.wordIndex === activeWordIndex
 
+          // Painted on the word itself: positioned, z-indexed overlays
+          // changing word by word make the glass bars lose their blur
           return (
             <span
               key={`${sentence.id}-${idx}`}
               className={`
-                relative
-                ${isActive ? "after:z-0 after:content-[''] after:pointer-events-none after:absolute after:-inset-x-1 after:-inset-y-0.5 after:block after:bg-brand after:rounded-md after:shadow-md after:shadow-violet-500/40" : ""}
+                rounded-md
+                box-decoration-clone
+                transition-colors
+                ${isActive ? "bg-brand text-white px-1 -mx-1 py-0.5 shadow-md shadow-violet-500/40" : ""}
               `}
             >
-              <span
-                className={`relative z-10 transition-colors ${isActive ? "text-white" : ""}`}
-              >
-                {token.text}
-              </span>
+              {token.text}
             </span>
           )
         })}
@@ -133,7 +133,7 @@ const EntryContent = () => {
   }
 
   return (
-    <article className="max-w-3xl mx-auto">
+    <article className="isolate max-w-3xl mx-auto">
       <p className="text-xs md:text-sm font-semibold uppercase tracking-[0.2em] text-foreground/50 mb-2">
         Now reading
       </p>
