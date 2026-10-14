@@ -5,18 +5,23 @@ import PdfTextContent from "../src/components/player/PdfTextContent"
 import { PlayerContext } from "../src/contexts/PlayerContext"
 import type { PdfPage } from "../src/hooks/usePdfDocument"
 import { chunkPageText } from "../src/utils/pdfText"
+import type { TextBlock } from "../src/utils/pdfText"
 
 type PlayerValue = NonNullable<
   ComponentProps<typeof PlayerContext.Provider>["value"]
 >
 
-const makePage = (pageNumber: number, text: string): PdfPage => ({
+const makePage = (
+  pageNumber: number,
+  text: string,
+  blocks: TextBlock[] = [{ start: 0, end: text.length, kind: "paragraph" }]
+): PdfPage => ({
   pageNumber,
   width: 600,
   height: 800,
-  text: { text, itemStarts: [0] },
+  text: { text, itemStarts: [0], blocks },
   itemStrs: [text],
-  chunks: chunkPageText(pageNumber, text, 20)
+  chunks: chunkPageText(pageNumber, text, 20, blocks)
 })
 
 // Pages 1 and 2 loaded, 3 not yet. Lines break mid-sentence, like in PDFs
@@ -97,6 +102,32 @@ describe("PdfTextContent", () => {
     )
   })
 
+  it("shows the headings and the paragraphs of a page apart", () => {
+    const text = "Chapter One\nThe Start\nIt begins.\nAnother one."
+    const page = makePage(1, text, [
+      { start: 0, end: 12, kind: "heading" },
+      { start: 12, end: 22, kind: "subheading" },
+      { start: 22, end: 33, kind: "paragraph" },
+      { start: 33, end: text.length, kind: "paragraph" }
+    ])
+    renderContent(
+      makeValue({
+        currentIndex: 0,
+        pdf: { ...makeValue().pdf, pages: new Map([[1, page]]) }
+      })
+    )
+
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Chapter One" })
+    ).toContainElement(chunk("Chapter One"))
+    expect(
+      screen.getByRole("heading", { level: 3, name: "The Start" })
+    ).toContainElement(chunk("The Start"))
+    const paragraph = chunk("It begins.").closest("p")
+    expect(paragraph).toHaveTextContent(/^It begins\.$/)
+    expect(chunk("Another one.").closest("p")).not.toBe(paragraph)
+  })
+
   it("marks the chunk being read", () => {
     renderContent(makeValue())
 
@@ -137,7 +168,8 @@ describe("PdfTextContent", () => {
   it("uses the reader font size", () => {
     renderContent(makeValue({ currentFontSize: 3 }))
 
-    expect(chunk("It ends.").closest("p")).toHaveClass("text-2xl")
+    // Headings are sized relative to it
+    expect(chunk("It ends.").closest("div")).toHaveClass("text-2xl")
   })
 
   it("keeps the chunk being read on screen", () => {

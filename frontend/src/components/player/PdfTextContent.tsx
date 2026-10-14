@@ -2,8 +2,24 @@ import { useEffect, useRef, useState } from "react"
 import { usePlayer } from "../../contexts/PlayerContext"
 import { useUserScrollPause } from "../../hooks/useUserScrollPause"
 import { pageOfChunk } from "../../utils/pdfText"
+import type { BlockKind } from "../../utils/pdfText"
 import { fontSizeClasses } from "../../utils/fontSize"
 import ReadingChunk from "./ReadingChunk"
+
+const BLOCK_TAGS = {
+  heading: "h2",
+  subheading: "h3",
+  paragraph: "p"
+} as const satisfies Record<BlockKind, string>
+
+// Sized in em, so they follow the reader font size
+const BLOCK_CLASSES: Record<BlockKind, string> = {
+  heading:
+    "text-[1.5em] font-bold leading-tight tracking-tight mt-[1.4em] first:mt-0 mb-[0.6em]",
+  subheading:
+    "text-[1.2em] font-semibold leading-snug mt-[1.2em] first:mt-0 mb-[0.5em]",
+  paragraph: "leading-[1.8] mb-[1em] last:mb-0"
+}
 
 // A PDF shown as plain text, page by page: much easier to read than whole
 // pages on a small screen
@@ -126,27 +142,38 @@ const PdfTextContent = () => {
                 </p>
               )}
               {page && page.chunks.length > 0 && (
-                <p
-                  className={`font-serif leading-[1.8] whitespace-pre-wrap break-words ${fontSizeClasses(currentFontSize)}`}
+                <div
+                  className={`font-serif break-words ${fontSizeClasses(currentFontSize)}`}
                 >
-                  {page.chunks.map((chunk, idx) => (
-                    <span key={chunk.id}>
-                      {idx > 0 && " "}
-                      <ReadingChunk
-                        id={chunk.id}
-                        text={chunk.text}
-                        isCurrent={!isLoading && currentIndex === chunk.id}
-                        activeWordIndex={activeWordIndex}
-                        isLoading={isLoading}
-                        onSelect={() => setCurrentIndex(chunk.id)}
-                        chunkRef={el => {
-                          if (el) chunkRefs.current.set(chunk.id, el)
-                          else chunkRefs.current.delete(chunk.id)
-                        }}
-                      />
-                    </span>
-                  ))}
-                </p>
+                  {page.text.blocks.map((block, blockIdx) => {
+                    const chunks = page.chunks.filter(
+                      chunk => chunk.block === blockIdx
+                    )
+                    if (chunks.length === 0) return null
+                    const Tag = BLOCK_TAGS[block.kind]
+                    return (
+                      <Tag key={blockIdx} className={BLOCK_CLASSES[block.kind]}>
+                        {chunks.map((chunk, idx) => (
+                          <span key={chunk.id}>
+                            {idx > 0 && " "}
+                            <ReadingChunk
+                              id={chunk.id}
+                              text={chunk.text}
+                              isCurrent={!isLoading && currentIndex === chunk.id}
+                              activeWordIndex={activeWordIndex}
+                              isLoading={isLoading}
+                              onSelect={() => setCurrentIndex(chunk.id)}
+                              chunkRef={el => {
+                                if (el) chunkRefs.current.set(chunk.id, el)
+                                else chunkRefs.current.delete(chunk.id)
+                              }}
+                            />
+                          </span>
+                        ))}
+                      </Tag>
+                    )
+                  })}
+                </div>
               )}
             </section>
           )

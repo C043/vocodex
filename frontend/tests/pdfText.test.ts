@@ -20,6 +20,13 @@ const item = (str: string, y: number, hasEOL = false): PdfTextItem => ({
   transform: [12, 0, 0, 12, 72, y]
 })
 
+// A whole line drawn with a font size
+const line = (str: string, y: number, size = 12): PdfTextItem => ({
+  str,
+  hasEOL: true,
+  transform: [size, 0, 0, size, 72, y]
+})
+
 const body = (str: string, hasEOL = true) => item(str, 400, hasEOL)
 const header = (str: string) => item(str, 780, true)
 const footer = (str: string) => item(str, 20, true)
@@ -111,6 +118,80 @@ describe("buildPageText", () => {
   })
 })
 
+describe("page blocks", () => {
+  const blocksOf = (items: PdfTextItem[]) => {
+    const { text, blocks } = buildPageText(items, PAGE_HEIGHT)
+    return blocks.map(block => ({
+      kind: block.kind,
+      text: text.slice(block.start, block.end)
+    }))
+  }
+
+  it("keeps the close lines of the body text in one paragraph", () => {
+    expect(
+      blocksOf([line("A sentence that", 500), line("wraps.", 486)])
+    ).toEqual([{ kind: "paragraph", text: "A sentence that\nwraps.\n" }])
+  })
+
+  it("starts a new paragraph after a wider gap between lines", () => {
+    expect(
+      blocksOf([
+        line("First paragraph.", 500),
+        line("Second paragraph", 470),
+        line("goes on.", 456)
+      ])
+    ).toEqual([
+      { kind: "paragraph", text: "First paragraph.\n" },
+      { kind: "paragraph", text: "Second paragraph\ngoes on.\n" }
+    ])
+  })
+
+  it("tells the headings by their larger font", () => {
+    expect(
+      blocksOf([
+        line("Chapter One", 600, 24),
+        line("The Beginning", 560, 15),
+        line("It was a dark", 530),
+        line("night.", 516)
+      ])
+    ).toEqual([
+      { kind: "heading", text: "Chapter One\n" },
+      { kind: "subheading", text: "The Beginning\n" },
+      { kind: "paragraph", text: "It was a dark\nnight.\n" }
+    ])
+  })
+
+  it("keeps a heading on two lines together", () => {
+    expect(
+      blocksOf([
+        line("A Very Long", 600, 24),
+        line("Chapter Title", 572, 24),
+        line("The body text of the chapter.", 530)
+      ])
+    ).toEqual([
+      { kind: "heading", text: "A Very Long\nChapter Title\n" },
+      { kind: "paragraph", text: "The body text of the chapter.\n" }
+    ])
+  })
+
+  it("measures the body size by the amount of text, not by line count", () => {
+    expect(
+      blocksOf([
+        line("Big", 600, 24),
+        line("Big", 570, 24),
+        line("Plenty of body text on this line.", 530),
+        line("Some more.", 516)
+      ]).map(block => block.kind)
+    ).toEqual(["heading", "paragraph"])
+  })
+
+  it("leaves the dropped margin lines out", () => {
+    expect(blocksOf([line("Body.", 400), line("12", 20)])).toEqual([
+      { kind: "paragraph", text: "Body.\n" }
+    ])
+  })
+})
+
 describe("chunkPageText", () => {
   it("splits the page into chunks that know where they are in the text", () => {
     const text = "First sentence here. Second one!\nThird."
@@ -137,6 +218,24 @@ describe("chunkPageText", () => {
     ])
     // Same length as the page text it comes from, so word offsets still match
     expect(chunks[0].end - chunks[0].start).toBe(chunks[0].text.length)
+  })
+
+  it("never lets a chunk run over two blocks", () => {
+    // A heading has no period to end it
+    const text = "Chapter One\nIt begins. It ends."
+    const chunks = chunkPageText(1, text, 200, [
+      { start: 0, end: 12, kind: "heading" },
+      { start: 12, end: text.length, kind: "paragraph" }
+    ])
+
+    expect(chunks.map(c => [c.text, c.block])).toEqual([
+      ["Chapter One", 0],
+      ["It begins. It ends.", 1]
+    ])
+    expect(chunks.map(c => c.id)).toEqual([0, 1])
+    for (const chunk of chunks) {
+      expect(text.slice(chunk.start, chunk.end)).toBe(chunk.text)
+    }
   })
 
   it("returns no chunks for a page without text", () => {

@@ -70,6 +70,25 @@ describe("usePdfDocument", () => {
     ])
   })
 
+  it("reads a heading on its own, apart from the paragraph after it", async () => {
+    pageTexts[2] = [
+      { ...line("Chapter One", 600), transform: [24, 0, 0, 24, 72, 600] },
+      line("The chapter text starts here.", 560)
+    ]
+    const { result } = renderPdf()
+
+    await act(async () => {
+      await result.current.loadPage(2)
+    })
+
+    const page = result.current.pages.get(2)
+    expect(page?.text.blocks.map(b => b.kind)).toEqual(["heading", "paragraph"])
+    expect(page?.chunks.map(c => [c.text, c.block])).toEqual([
+      ["Chapter One", 0],
+      ["The chapter text starts here.", 1]
+    ])
+  })
+
   it("reads each page only once", async () => {
     const { result } = renderPdf()
 

@@ -73,7 +73,7 @@ export const usePdfDocument = (
           height: content.height,
           text,
           itemStrs: content.items.map(item => item.str),
-          chunks: chunkPageText(pageNumber, text.text, maxChars)
+          chunks: chunkPageText(pageNumber, text.text, maxChars, text.blocks)
         }
         setPages(prev => new Map(prev).set(pageNumber, loaded))
         return loaded
