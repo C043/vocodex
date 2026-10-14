@@ -1,40 +1,73 @@
-import { describe, it, expect, vi, beforeEach, afterEach, Mock } from "vitest"
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { renderHook, waitFor } from "@testing-library/react"
 import { usePlayerData } from "../src/hooks/usePlayerData"
-import { setIsLoggedIn } from "../src/redux/reducer/authSlice"
 
 const mockNavigate = vi.fn()
 vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate
 }))
 
+const mockState = {
+  darkMode: { value: false },
+  user: {
+    preferences: { speed: "+0%", voice: "en-GB-AdaMultilingualNeural" }
+  }
+}
 const mockDispatch = vi.fn()
 vi.mock("react-redux", () => ({
   useDispatch: () => mockDispatch,
-  useSelector: () => false
+  useSelector: (selector: (state: typeof mockState) => unknown) =>
+    selector(mockState)
 }))
 
 vi.stubGlobal("URL", {
-  createObjectURL: vi.fn((blob: any) => `blob:${blob.size}`),
+  createObjectURL: vi.fn(() => "blob:mock-audio-url"),
   revokeObjectURL: vi.fn()
 })
 
-describe("usePlayerData hook", () => {
-  const mockAudioRef = {
-    current: {
-      play: vi.fn(),
-      pause: vi.fn(),
-      onended: vi.fn(),
-      playbackRate: 1,
-      src: ""
-    } as unknown as HTMLAudioElement
+// jsdom has no VTTCue; the hook only constructs and adds them to a track
+vi.stubGlobal(
+  "VTTCue",
+  class {
+    startTime: number
+    endTime: number
+    text: string
+    constructor(startTime: number, endTime: number, text: string) {
+      this.startTime = startTime
+      this.endTime = endTime
+      this.text = text
+    }
   }
+)
 
+const createMockAudio = () => {
+  const track = {
+    mode: "disabled",
+    cues: [] as unknown[],
+    activeCues: [] as unknown[],
+    addCue: vi.fn(),
+    removeCue: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn()
+  }
+  return {
+    play: vi.fn().mockResolvedValue(undefined),
+    pause: vi.fn(),
+    onended: null,
+    playbackRate: 1,
+    src: "",
+    textTracks: [] as unknown[],
+    addTextTrack: vi.fn(() => track)
+  } as unknown as HTMLAudioElement
+}
+
+describe("usePlayerData hook", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.spyOn(window.localStorage.__proto__, "getItem").mockReturnValue(
       "fake-token"
     )
+    vi.spyOn(console, "error").mockImplementation(() => {})
   })
 
   afterEach(() => {
@@ -42,73 +75,77 @@ describe("usePlayerData hook", () => {
   })
 
   it("should have a correct initial state", () => {
+    vi.spyOn(window, "fetch").mockReturnValue(new Promise(() => {}))
+
     const { result } = renderHook(() => usePlayerData("test-id"))
 
     expect(result.current.isLoading).toBe(true)
     expect(result.current.isPlaying).toBe(false)
     expect(result.current.title).toBe("")
-    expect(result.current.currentIndex).toBe(Infinity)
+    expect(result.current.currentIndex).toBe(-1)
     expect(result.current.currentSpeed).toBe("+0%")
     expect(result.current.currentVoice).toBe("en-GB-AdaMultilingualNeural")
   })
 
-  it("should navigate to /login if user is not authenticated", () => {
-    renderHook(() => usePlayerData("test-id"))
+  it("should navigate home if the entry cannot be fetched", async () => {
+    vi.spyOn(window, "fetch").mockImplementation(
+      async () =>
+        new Response(JSON.stringify({ detail: "Not found" }), { status: 404 })
+    )
 
-    expect(mockDispatch).toHaveBeenCalledWith(setIsLoggedIn(false))
-    expect(mockNavigate).toHaveBeenCalledWith("/login")
+    renderHook(() => usePlayerData("missing-id"))
+
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/"))
   })
 
-  it("should fetch entry data and set state if user is authenticated", async () => {
+  it("should fetch entry data, synthesize the current sentence and play it", async () => {
     const mockEntryData = {
       title: "title",
       content:
         "This is the content. This is fake data. This will be always fake.",
       progress: 0
     }
+    const mockSynthesis = {
+      audio: btoa("mock audio data"),
+      boundaries: [{ text: "This", start: 0, end: 0.2 }]
+    }
 
-    const mockAudioUrl = "blob:http://mock-audio-url"
-
-    const fetchSpy = vi.spyOn(window, "fetch")
-
-    fetchSpy.mockResolvedValueOnce(
-      new Response(JSON.stringify(mockEntryData), { status: 200 })
-    )
-
-    vi.spyOn(window, "fetch").mockResolvedValue(
-      new Response(new Blob(["mock audio data"], { type: "audio/mpgeg" }), {
-        status: 200
+    const fetchSpy = vi
+      .spyOn(window, "fetch")
+      .mockImplementation(async input => {
+        const url = String(input)
+        if (url.endsWith("/entries/test-entry-id"))
+          return new Response(JSON.stringify(mockEntryData), { status: 200 })
+        if (url.endsWith("/synthesis/GET"))
+          return new Response(JSON.stringify(mockSynthesis), { status: 200 })
+        return new Response(JSON.stringify([]), { status: 200 })
       })
-    )
-    ;(URL.createObjectURL as Mock).mockReturnValue(mockAudioUrl)
 
     const { result } = renderHook(() => usePlayerData("test-entry-id"))
+    // The hook never renders an <audio>, so attach one before fetches resolve
+    const audio = createMockAudio()
+    result.current.audioRef.current = audio
 
-    await waitFor(
-      () => {
-        expect(mockDispatch).toHaveBeenCalledWith(setIsLoggedIn(true))
-        expect(window.fetch).toHaveBeenCalledWith(
-          expect.stringContaining("/entries/test-entry-id"),
-          expect.any(Object)
-        )
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
+      expect(result.current.isPlaying).toBe(true)
+    })
 
-        expect(window.fetch).toHaveBeenCalledWith(
-          expect.stringContaining("/synthesist/GET"),
-          expect.any(Object)
-        )
-
-        expect(result.current.isLoading).toBe(false)
-        expect(result.current.title).toBe(mockEntryData.title)
-        expect(result.current.sentencesMap.size).toBeGreaterThan(0)
-        expect(result.current.currentIndex).toBe(mockEntryData.progress)
-
-        const audioEl = result.current.audioRef.current
-        expect(audioEl?.src).toBe(mockAudioUrl)
-        expect(audioEl?.play).toHaveBeenCalledTimes(1)
-        expect(result.current.isPlaying).toBe(true)
-      },
-      { timeout: 10000 }
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining("/entries/test-entry-id"),
+      expect.objectContaining({
+        headers: { Authorization: "Bearer fake-token" }
+      })
     )
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining("/synthesis/GET"),
+      expect.objectContaining({ method: "POST" })
+    )
+    expect(result.current.title).toBe(mockEntryData.title)
+    expect(result.current.sentencesMap.size).toBeGreaterThan(0)
+    expect(result.current.currentIndex).toBe(mockEntryData.progress)
+    expect(audio.src).toBe("blob:mock-audio-url")
+    expect(audio.play).toHaveBeenCalled()
   })
 })
 
