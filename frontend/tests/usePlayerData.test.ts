@@ -470,6 +470,40 @@ describe("usePlayerData in the background", () => {
     ).toHaveLength(1)
   })
 
+  // iOS only keeps a locked phone playing when the next sentence starts
+  // inside the ended event, before any await or React render
+  it("starts the next sentence inside the ended event", async () => {
+    let blobs = 0
+    vi.mocked(URL.createObjectURL).mockImplementation(() => `blob:${blobs++}`)
+    mockBackend()
+    const result = await startPlayer()
+    const audio = result.current.audioRef.current as HTMLAudioElement
+    await waitFor(() =>
+      expect(result.current.sentencesMap.get(1)?.audio.url).toBeTruthy()
+    )
+    const nextUrl = result.current.sentencesMap.get(1)?.audio.url
+    const plays = vi.mocked(audio.play).mock.calls.length
+    const pauses = vi.mocked(audio.pause).mock.calls.length
+
+    act(() => {
+      audio.onended?.(new Event("ended"))
+      // Checked before React runs any effect
+      expect(audio.src).toBe(nextUrl)
+      expect(audio.play).toHaveBeenCalledTimes(plays + 1)
+    })
+
+    await waitFor(() => expect(result.current.currentIndex).toBe(1))
+    await new Promise(resolve => setTimeout(resolve, 20))
+    // The sentence already playing is not stopped and started over
+    expect(audio.src).toBe(nextUrl)
+    expect(audio.play).toHaveBeenCalledTimes(plays + 1)
+    expect(audio.pause).toHaveBeenCalledTimes(pauses)
+    expect(result.current.isPlaying).toBe(true)
+    vi.mocked(URL.createObjectURL).mockImplementation(
+      () => "blob:mock-audio-url"
+    )
+  })
+
   it("saves progress with a request that outlives a frozen page", async () => {
     const fetchSpy = mockBackend()
 

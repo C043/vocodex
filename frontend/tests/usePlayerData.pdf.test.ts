@@ -183,6 +183,28 @@ describe("usePlayerData with a PDF entry", () => {
     )
   })
 
+  it("starts the next page inside the ended event, for a locked iPhone", async () => {
+    let blobs = 0
+    vi.mocked(URL.createObjectURL).mockImplementation(() => `blob:${blobs++}`)
+    mockFetch(0)
+    const { result } = renderPlayer()
+    const audio = result.current.audioRef.current as HTMLAudioElement
+    await waitFor(() =>
+      expect(result.current.sentencesMap.get(10000)?.audio.url).toBeTruthy()
+    )
+    const nextUrl = result.current.sentencesMap.get(10000)?.audio.url
+
+    act(() => {
+      audio.onended?.(new Event("ended"))
+      expect(audio.src).toBe(nextUrl)
+    })
+
+    await waitFor(() => expect(result.current.currentIndex).toBe(10000))
+    vi.mocked(URL.createObjectURL).mockImplementation(
+      () => "blob:mock-audio-url"
+    )
+  })
+
   it("goes back to the previous page", async () => {
     mockFetch(10000)
     const { result } = renderPlayer()

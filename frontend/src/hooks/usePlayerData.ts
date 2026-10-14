@@ -527,15 +527,40 @@ export const usePlayerData = (id: string | undefined) => {
     fetchVoices()
   }, [])
 
+  // The next sentence when its audio is ready to play right away. For a PDF
+  // only the same or the next page counts, the pages always kept loaded
+  const readyNextSentence = () => {
+    const [nextIndex] = followingIds(currentIndex, 1)
+    const next = sentencesRef.current.get(nextIndex)
+    if (!next?.audio.url || next.audio.voice !== currentVoice) return null
+    if (
+      kind === "pdf" &&
+      pageOfChunk(nextIndex) > pageOfChunk(currentIndex) + 1
+    )
+      return null
+    return next
+  }
+
   // Handle smoothless transition from a sentence to another
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.onended = async () => {
         setActiveWordIndex(-1)
+        // iOS keeps a locked phone playing only if the next sentence starts
+        // within this event, so it cannot wait for the sentence effect
+        const next = readyNextSentence()
+        const audio = audioRef.current
+        if (next?.audio.url && audio && !isLoading) {
+          audio.src = next.audio.url
+          handleVoiceSpeed()
+          playAudio(audio, () => setIsPlaying(false))
+          setCurrentIndex(next.id)
+          return
+        }
         await handleForward()
       }
     }
-  }, [currentIndex, sentencesMap])
+  }, [currentIndex, sentencesMap, currentVoice, kind, isLoading])
 
   // Adds keyboard shortcuts
   useEffect(() => {
@@ -638,7 +663,12 @@ export const usePlayerData = (id: string | undefined) => {
     if (!audioRef.current || sentencesMap.size === 0 || currentIndex === -1)
       return // Don't run before sentences are loaded
 
-    audioRef.current.pause()
+    // Already started by the ended event, so it keeps playing
+    const handedOff =
+      !!audioRef.current.src &&
+      audioRef.current.src === sentencesMap.get(currentIndex)?.audio.url
+
+    if (!handedOff) audioRef.current.pause()
     updateProgress()
     setActiveWordIndex(-1)
 
@@ -648,6 +678,7 @@ export const usePlayerData = (id: string | undefined) => {
 
     // Fast Forward to the sentence if we have the audio, if not, we fetch it
     ;(async () => {
+      if (handedOff) return
       let audioUrl = sentencesMap.get(currentIndex)?.audio.url
       if (!audioUrl) {
         setIsPlaying(false)
