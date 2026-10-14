@@ -8,6 +8,8 @@ import {
   VoiceOption
 } from "../contexts/PlayerContext"
 import { audio } from "framer-motion/m"
+import { splitIntoChunks } from "../utils/splitIntoChunks"
+import { useAutoScroll } from "./useAutoScroll"
 
 type State = {
   darkMode: {
@@ -39,6 +41,7 @@ export const usePlayerData = (id: string | undefined) => {
   const [currentIndex, setCurrentIndex] = useState<number>(-1)
   const [activeWordIndex, setActiveWordIndex] = useState(-1)
   const [currentFontSize, setFontSize] = useState(1)
+  const { isAutoScroll, toggleAutoScroll } = useAutoScroll()
   const [sentencesMap, setSentencesMap] = useState<Map<number, SentenceObj>>(
     new Map()
   )
@@ -103,28 +106,10 @@ export const usePlayerData = (id: string | undefined) => {
     progress: number,
     maxChars = 200
   ) => {
-    const sentences = content.match(/[^.!?]+(?:[!?]|\.(?=\s|$)|$)/g) || [
-      content
-    ]
-    const chunks: string[] = []
-    let current: string = ""
+    const textChunks = splitIntoChunks(content, maxChars)
+    const chunks = textChunks.map(chunk => chunk.text)
     let previous: string | null = null
     let next: string | null = null
-
-    for (const sentence of sentences) {
-      if (current.concat(sentence).length > maxChars) {
-        if (current) {
-          chunks.push(current.trim())
-        }
-        current = sentence
-      } else {
-        current += sentence
-      }
-    }
-
-    if (current) {
-      chunks.push(current.trim())
-    }
 
     const newMap = new Map<number, SentenceObj>()
     for (const [idx, sentence] of chunks.entries()) {
@@ -141,6 +126,7 @@ export const usePlayerData = (id: string | undefined) => {
         id: idx,
         boundaries: [],
         text: sentence,
+        paragraphStart: textChunks[idx].paragraphStart,
         prev: previous,
         audio: {
           voice: null,
@@ -557,6 +543,7 @@ export const usePlayerData = (id: string | undefined) => {
     sentencesMap,
     title,
     currentFontSize,
+    isAutoScroll,
     currentSpeed,
     currentVoice,
     speedOptions,
@@ -571,6 +558,7 @@ export const usePlayerData = (id: string | undefined) => {
     setVoice,
     setSpeed,
     handleFontSizeUp,
-    handleFontSizeDown
+    handleFontSizeDown,
+    toggleAutoScroll
   }
 }

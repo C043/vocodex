@@ -1,8 +1,17 @@
-import { MinusIcon, PlusIcon } from "@heroicons/react/24/solid"
+import {
+  MinusIcon,
+  PlusIcon,
+  ViewfinderCircleIcon
+} from "@heroicons/react/24/solid"
 import { usePlayer } from "../../contexts/PlayerContext"
 
 const FontSizeControls = () => {
-  const { handleFontSizeUp, handleFontSizeDown } = usePlayer()
+  const {
+    handleFontSizeUp,
+    handleFontSizeDown,
+    isAutoScroll,
+    toggleAutoScroll
+  } = usePlayer()
 
   const button =
     "grid place-items-center size-9 rounded-full hover:bg-foreground/10 active:scale-90 transition cursor-pointer"
@@ -31,6 +40,18 @@ const FontSizeControls = () => {
           className={button}
         >
           <MinusIcon className="size-4" />
+        </button>
+        <span className="w-5 h-px bg-foreground/15" />
+        <button
+          type="button"
+          aria-label="Auto scroll"
+          aria-pressed={isAutoScroll}
+          title={isAutoScroll ? "Auto scroll on" : "Auto scroll off"}
+          onMouseDown={ev => ev.preventDefault()}
+          onClick={toggleAutoScroll}
+          className={`${button} ${isAutoScroll ? "bg-brand text-white shadow-md shadow-violet-500/40 hover:bg-brand" : "text-foreground/50"}`}
+        >
+          <ViewfinderCircleIcon className="size-4" />
         </button>
       </div>
     </div>

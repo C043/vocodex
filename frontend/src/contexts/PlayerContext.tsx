@@ -10,6 +10,7 @@ export type SentenceObj = {
   id: number
   boundaries: boundaryObj[]
   text: string
+  paragraphStart?: boolean
   prev: string | null
   audio: {
     url: string | null
@@ -42,10 +43,12 @@ interface PlayerContextType {
   speedOptions: SpeedOption[]
   currentSpeed: string
   isDarkMode: boolean
+  isAutoScroll: boolean
 
   // Functions
   handleFontSizeUp: () => void
   handleFontSizeDown: () => void
+  toggleAutoScroll: () => void
   handlePause: () => void
   handlePlay: () => void
   handleForward: () => void
