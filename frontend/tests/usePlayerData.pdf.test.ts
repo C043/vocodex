@@ -139,7 +139,7 @@ describe("usePlayerData with a PDF entry", () => {
     expect(result.current.kind).toBe("pdf")
     expect(result.current.title).toBe("A book")
     expect(result.current.currentIndex).toBe(0)
-    expect(synthesized[0]).toBe("Page 1 opens here.\nPage 1 ends here.")
+    expect(synthesized[0]).toBe("Page 1 opens here. Page 1 ends here.")
   })
 
   it("resumes on the saved page, loading only the pages around it", async () => {

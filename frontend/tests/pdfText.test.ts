@@ -127,6 +127,18 @@ describe("chunkPageText", () => {
     }
   })
 
+  it("reads the lines of a sentence as one, without the line breaks", () => {
+    // The voice pauses on line breaks, but a PDF breaks lines mid-sentence
+    const text = "A sentence that\nwraps over\nthree lines. Next."
+    const chunks = chunkPageText(1, text)
+
+    expect(chunks.map(c => c.text)).toEqual([
+      "A sentence that wraps over three lines. Next."
+    ])
+    // Same length as the page text it comes from, so word offsets still match
+    expect(chunks[0].end - chunks[0].start).toBe(chunks[0].text.length)
+  })
+
   it("returns no chunks for a page without text", () => {
     expect(chunkPageText(1, "  \n ")).toEqual([])
   })

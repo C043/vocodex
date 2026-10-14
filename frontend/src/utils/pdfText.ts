@@ -119,7 +119,11 @@ export const chunkPageText = (
     // Chunks are trimmed slices of the text, in order
     const start = text.indexOf(chunk.text, cursor)
     cursor = start + chunk.text.length
-    return { id: chunkId(page, idx), text: chunk.text, start, end: cursor }
+    // PDF lines break mid-sentence and the voice pauses on line breaks, so
+    // they become spaces: only the punctuation decides the pauses. Same
+    // length, so offsets in the chunk still match the page text
+    const spoken = chunk.text.replace(/\n/g, " ")
+    return { id: chunkId(page, idx), text: spoken, start, end: cursor }
   })
 }
 
