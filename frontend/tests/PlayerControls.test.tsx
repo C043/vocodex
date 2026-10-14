@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import type { ComponentProps } from "react"
 import userEvent from "@testing-library/user-event"
-import { render, screen } from "./test-utils"
+import { render, screen, fireEvent } from "./test-utils"
 import { PlayerControls } from "../src/components/player/PlayerControls"
 import { PlayerContext } from "../src/contexts/PlayerContext"
 import { setScreenWidth, resetScreenWidth } from "./mediaQuery"
@@ -37,6 +37,8 @@ const renderControls = (overrides: Partial<PlayerValue> = {}) => {
     sentencesMap: new Map(),
     pdf: { numPages: 0, pages: new Map() },
     togglePdfView: vi.fn(),
+    currentFont: "literata",
+    setFont: vi.fn(),
     ...overrides
   } as PlayerValue
   render(
@@ -46,6 +48,10 @@ const renderControls = (overrides: Partial<PlayerValue> = {}) => {
   )
   return value
 }
+
+// The voice, speed and view settings live in the options
+const openOptions = () =>
+  userEvent.click(screen.getByRole("button", { name: "Player options" }))
 
 describe("PlayerControls keyboard shortcuts", () => {
   it("toggles play with space outside text fields", async () => {
@@ -65,6 +71,7 @@ describe("PlayerControls keyboard shortcuts", () => {
 
   it("lets the voice search receive spaces and arrows", async () => {
     const value = renderControls()
+    await openOptions()
     const input = screen.getByRole("combobox", { name: "Select Voice" })
 
     await userEvent.clear(input)
@@ -92,18 +99,6 @@ describe("PlayerControls reading progress", () => {
   })
 })
 
-describe("PlayerControls voice select", () => {
-  it("keeps the voice select compact instead of stretching", () => {
-    renderControls()
-    const input = screen.getByRole("combobox", { name: "Select Voice" })
-    const root = input.closest(".md\\:order-1")
-
-    expect(root).toHaveClass("w-32")
-    expect(root).not.toHaveClass("flex-1")
-    expect(root).not.toHaveClass("md:w-44")
-  })
-})
-
 describe("PlayerControls text view switch", () => {
   it("is not shown for a text entry", () => {
     renderControls({ kind: "text" })
@@ -113,24 +108,27 @@ describe("PlayerControls text view switch", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("shows an Aa icon for a PDF", () => {
+  it("shows an Aa icon for a PDF", async () => {
     renderControls({ kind: "pdf", pdfView: "pdf" })
+    await openOptions()
 
     expect(screen.getByRole("button", { name: "Text view" })).toHaveTextContent(
       "Aa"
     )
   })
 
-  it("is not pressed while a PDF shows its pages", () => {
+  it("is not pressed while a PDF shows its pages", async () => {
     renderControls({ kind: "pdf", pdfView: "pdf" })
+    await openOptions()
 
     expect(
       screen.getByRole("button", { name: "Text view" })
     ).toHaveAttribute("aria-pressed", "false")
   })
 
-  it("is pressed while a PDF is read as text", () => {
+  it("is pressed while a PDF is read as text", async () => {
     renderControls({ kind: "pdf", pdfView: "text" })
+    await openOptions()
 
     expect(
       screen.getByRole("button", { name: "Text view" })
@@ -139,6 +137,7 @@ describe("PlayerControls text view switch", () => {
 
   it("switches the view of a PDF when clicked", async () => {
     const value = renderControls({ kind: "pdf", pdfView: "pdf" })
+    await openOptions()
 
     await userEvent.click(screen.getByRole("button", { name: "Text view" }))
 
@@ -146,12 +145,13 @@ describe("PlayerControls text view switch", () => {
   })
 })
 
-describe("PlayerControls on mobile", () => {
-  beforeEach(() => setScreenWidth(390))
+// Desktop has the same commands and options as mobile, in a floating card
+describe.each([
+  ["mobile", 390],
+  ["desktop", 1280]
+])("PlayerControls on %s", (_, width) => {
+  beforeEach(() => setScreenWidth(width))
   afterEach(resetScreenWidth)
-
-  const openOptions = () =>
-    userEvent.click(screen.getByRole("button", { name: "Player options" }))
 
   it("keeps only the playback commands in the bar", () => {
     renderControls({ kind: "pdf", pdfView: "pdf" })
@@ -218,20 +218,32 @@ describe("PlayerControls on mobile", () => {
   })
 })
 
-describe("PlayerControls on desktop", () => {
-  beforeEach(() => setScreenWidth(1280))
+describe("PlayerControls font select", () => {
+  const fontSelect = () => screen.queryByRole("button", { name: /Select Font/ })
   afterEach(resetScreenWidth)
 
-  it("shows every control without an options button", () => {
-    renderControls({ kind: "pdf", pdfView: "pdf" })
+  it("is shown in the desktop options for a text entry", async () => {
+    setScreenWidth(1280)
+    renderControls({ kind: "text" })
+    await openOptions()
 
-    expect(
-      screen.queryByRole("button", { name: "Player options" })
-    ).not.toBeInTheDocument()
-    expect(
-      screen.getByRole("combobox", { name: "Select Voice" })
-    ).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Text view" })).toBeInTheDocument()
+    expect(fontSelect()).toBeInTheDocument()
+  })
+
+  it("is shown in the mobile options for a PDF read as text", async () => {
+    setScreenWidth(390)
+    renderControls({ kind: "pdf", pdfView: "text" })
+    await openOptions()
+
+    expect(fontSelect()).toBeInTheDocument()
+  })
+
+  it("is hidden while a PDF shows its pages", async () => {
+    setScreenWidth(390)
+    renderControls({ kind: "pdf", pdfView: "pdf" })
+    await openOptions()
+
+    expect(fontSelect()).not.toBeInTheDocument()
   })
 })
 
@@ -253,5 +265,32 @@ describe("PlayerControls speed select", () => {
 
     expect(value.setSpeed).not.toHaveBeenCalledWith(undefined)
     expect(trigger).toHaveTextContent("1x")
+  })
+})
+
+describe("PlayerControls selects while auto scrolling", () => {
+  beforeEach(() => setScreenWidth(1280))
+  afterEach(resetScreenWidth)
+
+  it("keeps the voice list open", async () => {
+    renderControls()
+    const input = screen.getByRole("combobox", { name: "Select Voice" })
+    await userEvent.click(input)
+    expect(input).toHaveAttribute("aria-expanded", "true")
+
+    fireEvent.scroll(document)
+
+    expect(input).toHaveAttribute("aria-expanded", "true")
+  })
+
+  it("keeps the speed list open", async () => {
+    renderControls()
+    const trigger = screen.getByRole("button", { name: /Select Speed/ })
+    await userEvent.click(trigger)
+    expect(trigger).toHaveAttribute("aria-expanded", "true")
+
+    fireEvent.scroll(document)
+
+    expect(trigger).toHaveAttribute("aria-expanded", "true")
   })
 })

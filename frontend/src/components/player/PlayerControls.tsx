@@ -15,6 +15,7 @@ import { setUserPreferences } from "../../redux/reducer/authSlice"
 import { VoiceSelect } from "./VoiceSelect"
 import { ReadingProgress } from "./ReadingProgress"
 import FontSizeControls from "./FontSizeControls"
+import { FontSelect } from "./FontSelect"
 import { useIsDesktop } from "../../hooks/useIsDesktop"
 
 export const PlayerControls = () => {
@@ -41,6 +42,8 @@ export const PlayerControls = () => {
     toggleAutoScroll
   } = usePlayer()
   const isPdfText = kind === "pdf" && pdfView === "text"
+  // The pages of a PDF keep their own fonts
+  const hasReaderFont = kind !== "pdf" || isPdfText
 
   const dispatch = useDispatch()
   const isDesktop = useIsDesktop()
@@ -289,29 +292,19 @@ export const PlayerControls = () => {
     </div>
   )
 
-  if (isDesktop) {
-    return (
-      // Desktop: floating card
-      <div className="fixed z-50 left-1/2 -translate-x-1/2 bottom-6">
-        <div className="glass rounded-[2rem] p-3 pt-4 px-4 flex flex-col gap-3">
-          <ReadingProgress />
-          <div className="flex items-center gap-4">
-            {voiceSelect("w-32 md:order-1")}
-            {transport("gap-2 md:order-2")}
-            {speedSelect("w-24 md:order-3")}
-            {textViewButton("md:order-4")}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   const barButton =
     "grid place-items-center size-10 shrink-0 rounded-full active:scale-90 transition cursor-pointer"
 
   return (
-    // Mobile: compact docked bar, settings slide out of it
-    <div className="fixed z-50 inset-x-0 bottom-0">
+    // A compact bar, docked on mobile and floating on desktop, the settings
+    // slide out of it
+    <div
+      className={
+        isDesktop
+          ? "fixed z-50 left-1/2 -translate-x-1/2 bottom-6 w-[26rem]"
+          : "fixed z-50 inset-x-0 bottom-0"
+      }
+    >
       {isOptionsOpen && (
         <div
           aria-hidden
@@ -319,11 +312,15 @@ export const PlayerControls = () => {
           onClick={() => setIsOptionsOpen(false)}
         />
       )}
-      <div className="relative glass !border-x-0 !border-b-0 rounded-t-3xl px-4 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] flex flex-col gap-2">
-        <span
-          aria-hidden
-          className="mx-auto w-9 h-1 rounded-full bg-foreground/15"
-        />
+      <div
+        className={`relative glass flex flex-col gap-2 px-4 ${isDesktop ? "rounded-[2rem] py-3" : "!border-x-0 !border-b-0 rounded-t-3xl pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]"}`}
+      >
+        {!isDesktop && (
+          <span
+            aria-hidden
+            className="mx-auto w-9 h-1 rounded-full bg-foreground/15"
+          />
+        )}
         <AnimatePresence initial={false}>
           {isOptionsOpen && (
             <motion.div
@@ -345,6 +342,7 @@ export const PlayerControls = () => {
                   </div>
                   {textViewButton()}
                 </div>
+                {hasReaderFont && <FontSelect />}
               </div>
             </motion.div>
           )}

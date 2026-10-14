@@ -82,13 +82,13 @@ describe("Player component", () => {
     expect(usePlayerData).toHaveBeenCalledWith(undefined)
   })
 
-  it("should render all child components", () => {
+  it("should render the controls, which hold the font size too", () => {
     render(<Player />)
-    expect(screen.getByText("FontSizeControls")).toBeInTheDocument()
     expect(screen.getByText("PlayerControls")).toBeInTheDocument()
+    expect(screen.queryByText("FontSizeControls")).not.toBeInTheDocument()
   })
 
-  it("should render children in order: content, font size, controls", () => {
+  it("should render children in order: content, controls", () => {
     const { container } = render(<Player />)
     const playerRoot = container.querySelector("audio")!.parentElement!
     const texts = Array.from(playerRoot.children)
@@ -96,7 +96,6 @@ describe("Player component", () => {
       .map(el => el.textContent)
     expect(texts).toEqual([
       "Title: My test Title",
-      "FontSizeControls",
       "PlayerControls"
     ])
   })
@@ -142,16 +141,5 @@ describe("Player component", () => {
     ;(useParams as Mock).mockReturnValue({ id: "other-id" })
     rerender(<Player />)
     expect(usePlayerData).toHaveBeenLastCalledWith("other-id")
-  })
-
-  describe("on mobile", () => {
-    beforeEach(() => setScreenWidth(390))
-    afterEach(resetScreenWidth)
-
-    it("leaves the font size controls to the player options", () => {
-      render(<Player />)
-      expect(screen.queryByText("FontSizeControls")).not.toBeInTheDocument()
-      expect(screen.getByText("PlayerControls")).toBeInTheDocument()
-    })
   })
 })
