@@ -14,19 +14,24 @@ const EntryContent = () => {
   // Map font size to complete Tailwind classes
   const getFontSizeClasses = (size: number) => {
     const sizeMap: Record<number, { text: string; margin: string }> = {
-      1: { text: "text-xl", margin: "mb-1" },
-      2: { text: "text-2xl", margin: "mb-2" },
-      3: { text: "text-3xl", margin: "mb-3" },
-      4: { text: "text-4xl", margin: "mb-4" }
+      1: { text: "text-lg md:text-xl", margin: "mb-1" },
+      2: { text: "text-xl md:text-2xl", margin: "mb-2" },
+      3: { text: "text-2xl md:text-3xl", margin: "mb-3" },
+      4: { text: "text-3xl md:text-4xl", margin: "mb-4" }
     }
     return sizeMap[size] || sizeMap[1]
   }
   const fontClasses = getFontSizeClasses(currentFontSize)
 
   return (
-    <>
-      <h1 className="text-9xl mb-10">{title}</h1>
-      <div className="mb-52">
+    <article className="max-w-3xl mx-auto">
+      <p className="text-xs md:text-sm font-semibold uppercase tracking-[0.2em] text-foreground/50 mb-2">
+        Now reading
+      </p>
+      <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight text-gradient leading-[1.05] pb-2 mb-8 md:mb-12 break-words">
+        {title}
+      </h1>
+      <div className="font-serif leading-relaxed mb-72 md:mb-52">
         {Array.from(sentencesMap.values()).map(sentence => {
           const boundaries = sentence.boundaries ?? []
           let wordCounter = 0
@@ -50,11 +55,16 @@ const EntryContent = () => {
               key={sentence.id}
               className={`
               ${fontClasses.text}
-              rounded-3xl
+              rounded-2xl
               px-2
-              py-1
+              py-1.5
+              -mx-2
+              md:px-3
+              md:-mx-3
+              transition-colors
+              duration-300
               ${fontClasses.margin}
-              ${isLoading ? "" : currentIndex === sentence.id ? "dark:bg-[#444766] bg-yellow-400" : "dark:hover:bg-[#444766]/50 hover:bg-yellow-400/50 cursor-pointer"}
+              ${isLoading ? "" : currentIndex === sentence.id ? "bg-violet-500/15 ring-1 ring-violet-500/30 dark:bg-violet-500/20" : "text-foreground/75 hover:bg-foreground/5 cursor-pointer"}
             `}
             >
               <p
@@ -80,10 +90,14 @@ const EntryContent = () => {
                         inline-block
                         relative
                         rounded-3xl
-                        ${isActive ? "after:z-0 after:content-[''] after:pointer-events-none after:absolute after:-inset-x-2 after:-inset-y-1 after:block after:bg-yellow-600 dark:after:bg-[#4759F7] after:rounded-2xl" : ""}
+                        ${isActive ? "after:z-0 after:content-[''] after:pointer-events-none after:absolute after:-inset-x-2 after:-inset-y-1 after:block after:bg-brand after:rounded-xl after:shadow-md after:shadow-violet-500/40" : ""}
                       `}
                     >
-                      <span className="relative z-10">{token.text}</span>
+                      <span
+                        className={`relative z-10 ${isActive ? "text-white" : ""}`}
+                      >
+                        {token.text}
+                      </span>
                     </span>
                   )
                 })}
@@ -92,7 +106,7 @@ const EntryContent = () => {
           )
         })}
       </div>
-    </>
+    </article>
   )
 }
 

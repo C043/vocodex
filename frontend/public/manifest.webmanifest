@@ -1,0 +1,10 @@
+{
+  "name": "VOCODEX",
+  "short_name": "VOCODEX",
+  "description": "Listen to your texts and articles.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07060D",
+  "theme_color": "#07060D",
+  "icons": [{ "src": "/VOCODEX.png", "sizes": "any", "type": "image/png" }]
+}

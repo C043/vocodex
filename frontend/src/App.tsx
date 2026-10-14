@@ -1,4 +1,3 @@
-import "./App.css"
 import { HeroUIProvider } from "@heroui/react"
 import { ToastProvider } from "@heroui/toast"
 import { Navigate, Route, Routes } from "react-router-dom"

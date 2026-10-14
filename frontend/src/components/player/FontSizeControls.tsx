@@ -4,34 +4,34 @@ import { usePlayer } from "../../contexts/PlayerContext"
 const FontSizeControls = () => {
   const { handleFontSizeUp, handleFontSizeDown } = usePlayer()
 
+  const button =
+    "grid place-items-center size-9 rounded-full hover:bg-foreground/10 active:scale-90 transition cursor-pointer"
+
   return (
-    <div className="right-5 fixed bottom-0 mb-5 z-50">
-      <div
-        className="
-          flex
-          flex-col
-          justify-center
-          items-center
-          gap-5
-          p-5
-          rounded-4xl
-          backdrop-blur-md
-          shadow-lg
-          dark:bg-black/30
-          bg-white/30
-          border
-          dark:border-white/30
-          border-black
-          "
-      >
-        <PlusIcon
+    // Mobile: floats above the docked player. Desktop: bottom right
+    <div className="fixed z-40 right-4 bottom-[calc(env(safe-area-inset-bottom)+10.5rem)] md:bottom-8 md:right-6">
+      <div className="glass flex flex-col items-center gap-1 p-1 rounded-full">
+        <button
+          type="button"
+          aria-label="Increase font size"
+          onMouseDown={ev => ev.preventDefault()}
           onClick={handleFontSizeUp}
-          className="size-5 cursor-pointer"
-        />
-        <MinusIcon
+          className={button}
+        >
+          <PlusIcon className="size-4" />
+        </button>
+        <span className="text-[10px] font-bold text-foreground/50 select-none">
+          Aa
+        </span>
+        <button
+          type="button"
+          aria-label="Decrease font size"
+          onMouseDown={ev => ev.preventDefault()}
           onClick={handleFontSizeDown}
-          className="size-5 cursor-pointer"
-        />
+          className={button}
+        >
+          <MinusIcon className="size-4" />
+        </button>
       </div>
     </div>
   )

@@ -27,8 +27,7 @@ export const PlayerControls = () => {
     setSpeed,
     currentSpeed,
     voiceOptions,
-    speedOptions,
-    isDarkMode
+    speedOptions
   } = usePlayer()
 
   const dispatch = useDispatch()
@@ -146,108 +145,123 @@ export const PlayerControls = () => {
     handleForwardAnimation,
     handleBackwardAnimation
   ]) // dependencies for the handlers
+  const iconButton =
+    "grid place-items-center size-12 rounded-full overflow-hidden hover:bg-foreground/10 active:scale-90 transition cursor-pointer"
+
+  const selectClassNames = {
+    trigger:
+      "bg-foreground/5 data-[hover=true]:bg-foreground/10 rounded-full min-h-10 h-10"
+  }
+
   return (
-    <div className="left-1/2 -translate-x-1/2 fixed bottom-0 mb-5 z-50">
-      <div
-        className="
-          flex
-          justify-center
-          items-center
-          gap-5
-          p-10
-          rounded-4xl
-          backdrop-blur-md
-          shadow-lg
-          dark:bg-black/30
-          bg-white/30
-          border
-          dark:border-white/30
-          border-black
-          "
-      >
-        <Select
-          className={`w-25`}
-          items={voiceOptions}
-          defaultSelectedKeys={[currentVoice]}
-          aria-label="Select Voice"
-          onSelectionChange={keys => {
-            const selected = Array.from(keys)[0] as string
-            setVoice(selected)
-            saveUserPreferences(currentSpeed, selected)
-            dispatch(
-              setUserPreferences({ speed: currentSpeed, voice: selected })
-            )
-          }}
-          isDisabled={isLoading ? true : false}
-        >
-          {voice => <SelectItem>{voice.label}</SelectItem>}
-        </Select>
-        <div className="cursor-pointer overflow-hidden">
-          <AnimatePresence mode="popLayout" initial={false}>
-            <motion.div
-              key={backwardIndex}
-              variants={backwardVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-            >
-              <BackwardIcon
-                onClick={() => {
-                  handleBackwardAnimation()
-                  handleBackwards()
-                }}
-                className="size-10"
-              />
-            </motion.div>
-          </AnimatePresence>
+    // Mobile: docked bottom sheet. Desktop: floating pill
+    <div className="fixed z-50 inset-x-0 bottom-0 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:bottom-6">
+      <div className="glass rounded-t-[2rem] md:rounded-full px-5 pt-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:p-3 md:pl-4 flex flex-col-reverse md:flex-row items-center gap-3 md:gap-4">
+        <div className="flex w-full md:w-auto gap-3 md:contents">
+          <Select
+            className="flex-1 md:flex-none md:w-36 md:order-1"
+            classNames={selectClassNames}
+            items={voiceOptions}
+            defaultSelectedKeys={[currentVoice]}
+            aria-label="Select Voice"
+            size="sm"
+            onSelectionChange={keys => {
+              const selected = Array.from(keys)[0] as string
+              setVoice(selected)
+              saveUserPreferences(currentSpeed, selected)
+              dispatch(
+                setUserPreferences({ speed: currentSpeed, voice: selected })
+              )
+            }}
+            isDisabled={isLoading ? true : false}
+          >
+            {voice => <SelectItem>{voice.label}</SelectItem>}
+          </Select>
+          <Select
+            className="w-28 md:w-24 md:order-3"
+            classNames={selectClassNames}
+            items={speedOptions}
+            defaultSelectedKeys={[currentSpeed]}
+            aria-label="Select Speed"
+            size="sm"
+            onSelectionChange={keys => {
+              const selected = Array.from(keys)[0] as string
+              setSpeed(selected)
+              saveUserPreferences(selected, currentVoice)
+              dispatch(
+                setUserPreferences({ speed: selected, voice: currentVoice })
+              )
+            }}
+            isDisabled={isLoading ? true : false}
+          >
+            {speed => <SelectItem>{speed.label}</SelectItem>}
+          </Select>
         </div>
-        {isLoading ? (
-          <Spinner size="md" color={isDarkMode ? "white" : "warning"} />
-        ) : (
-          <div className="cursor-pointer">
-            {isPlaying ? (
-              <PauseIcon onClick={handlePause} className="size-10" />
+
+        <div className="flex items-center justify-center gap-6 md:gap-2 md:order-2">
+          <button
+            type="button"
+            aria-label="Previous sentence"
+            className={iconButton}
+            onMouseDown={ev => ev.preventDefault()}
+            onClick={() => {
+              handleBackwardAnimation()
+              handleBackwards()
+            }}
+          >
+            <AnimatePresence mode="popLayout" initial={false}>
+              <motion.div
+                key={backwardIndex}
+                variants={backwardVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+              >
+                <BackwardIcon className="size-7" />
+              </motion.div>
+            </AnimatePresence>
+          </button>
+
+          <button
+            type="button"
+            aria-label={isPlaying ? "Pause" : "Play"}
+            disabled={isLoading}
+            onMouseDown={ev => ev.preventDefault()}
+            onClick={isPlaying ? handlePause : handlePlay}
+            className="grid place-items-center size-16 md:size-14 rounded-full bg-brand text-white shadow-xl shadow-violet-500/40 hover:scale-105 active:scale-95 transition cursor-pointer disabled:cursor-wait"
+          >
+            {isLoading ? (
+              <Spinner size="sm" color="white" />
+            ) : isPlaying ? (
+              <PauseIcon className="size-8 md:size-7" />
             ) : (
-              <PlayIcon onClick={handlePlay} className="size-10" />
+              <PlayIcon className="size-8 md:size-7 translate-x-0.5" />
             )}
-          </div>
-        )}
-        <div className="cursor-pointer overflow-hidden">
-          <AnimatePresence mode="popLayout" initial={false}>
-            <motion.div
-              key={forwardIndex}
-              variants={forwardVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-            >
-              <ForwardIcon
-                onClick={() => {
-                  handleForwardAnimation()
-                  handleForward()
-                }}
-                className="size-10"
-              />
-            </motion.div>
-          </AnimatePresence>
+          </button>
+
+          <button
+            type="button"
+            aria-label="Next sentence"
+            className={iconButton}
+            onMouseDown={ev => ev.preventDefault()}
+            onClick={() => {
+              handleForwardAnimation()
+              handleForward()
+            }}
+          >
+            <AnimatePresence mode="popLayout" initial={false}>
+              <motion.div
+                key={forwardIndex}
+                variants={forwardVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+              >
+                <ForwardIcon className="size-7" />
+              </motion.div>
+            </AnimatePresence>
+          </button>
         </div>
-        <Select
-          className={`w-20`}
-          items={speedOptions}
-          defaultSelectedKeys={[currentSpeed]}
-          aria-label="Select Speed"
-          onSelectionChange={keys => {
-            const selected = Array.from(keys)[0] as string
-            setSpeed(selected)
-            saveUserPreferences(selected, currentVoice)
-            dispatch(
-              setUserPreferences({ speed: selected, voice: currentVoice })
-            )
-          }}
-          isDisabled={isLoading ? true : false}
-        >
-          {speed => <SelectItem>{speed.label}</SelectItem>}
-        </Select>
       </div>
     </div>
   )

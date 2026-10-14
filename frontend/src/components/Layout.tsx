@@ -9,7 +9,13 @@ import {
   setUserPreferences
 } from "../redux/reducer/authSlice"
 import { setDarkMode } from "../redux/reducer/themeModeSlice"
-import { ArrowLeftIcon, MoonIcon, SunIcon } from "@heroicons/react/24/solid"
+import {
+  ArrowLeftIcon,
+  ArrowRightStartOnRectangleIcon,
+  BookOpenIcon,
+  MoonIcon,
+  SunIcon
+} from "@heroicons/react/24/solid"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Avatar,
@@ -34,20 +40,6 @@ const Layout = () => {
   const username = useSelector((state: State) => state.user.username)
   const isDarkMode = useSelector((state: State) => state.darkMode.value)
   const dispatch = useDispatch()
-
-  const darkBg = `
-    radial-gradient(ellipse at 20% 30%, rgba(56, 189, 248, 0.4) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 70%, rgba(139, 92, 246, 0.3) 0%, transparent 70%),
-    radial-gradient(ellipse at 60% 20%, rgba(236, 72, 153, 0.25) 0%, transparent 50%),
-    radial-gradient(ellipse at 40% 80%, rgba(34, 197, 94, 0.2) 0%, transparent 65%)
-  `
-
-  const lightBg = `
-    linear-gradient(135deg, #F8BBD9 0%, #FDD5B4 25%, #FFF2CC 50%, #E1F5FE 75%, #BBDEFB 100%)
-  `
-
-  const link = ({ isActive }: { isActive: boolean }) =>
-    isActive ? "font-semibold mr-4" : "mr-4"
 
   const navigate = useNavigate()
   const location = useLocation()
@@ -115,93 +107,165 @@ const Layout = () => {
     } else {
       html.classList.remove("dark")
     }
+
+    // Tints the mobile browser / installed app status bar
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", isDarkMode ? "#07060D" : "#F6F5FB")
   }, [isDarkMode])
 
+  const toggleDarkMode = () => {
+    dispatch(setDarkMode(!isDarkMode))
+    window.localStorage.setItem("dark-mode", String(!isDarkMode))
+  }
+
+  const themeToggle = (
+    <button
+      type="button"
+      aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+      onClick={toggleDarkMode}
+      className="grid place-items-center size-10 rounded-full overflow-hidden text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-colors"
+    >
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.span
+          key={isDarkMode ? "moon" : "sun"}
+          initial={{ y: -16, opacity: 0, rotate: -45 }}
+          animate={{ y: 0, opacity: 1, rotate: 0 }}
+          exit={{ y: 16, opacity: 0, rotate: 45 }}
+          transition={{ duration: 0.25 }}
+        >
+          {isDarkMode ? (
+            <MoonIcon className="size-5" />
+          ) : (
+            <SunIcon className="size-5 text-amber-500" />
+          )}
+        </motion.span>
+      </AnimatePresence>
+    </button>
+  )
+
+  const accountMenu = (
+    <Dropdown placement="bottom-end">
+      <DropdownTrigger className="cursor-pointer">
+        <Avatar
+          size="sm"
+          isBordered
+          color="primary"
+          src={`https://ui-avatars.com/api/?name=${username}&background=7c5cff&color=fff`}
+        />
+      </DropdownTrigger>
+      <DropdownMenu aria-label="Account" disabledKeys={["user"]}>
+        <DropdownItem
+          key="user"
+          className="opacity-100"
+          textValue={`Signed in as ${username}`}
+        >
+          <p className="text-xs text-foreground/50">Signed in as</p>
+          <p className="font-semibold">{username}</p>
+        </DropdownItem>
+        <DropdownItem
+          key={"logout"}
+          color="danger"
+          className="text-danger"
+          startContent={<ArrowRightStartOnRectangleIcon className="size-4" />}
+          onClick={handleLogout}
+        >
+          Logout
+        </DropdownItem>
+      </DropdownMenu>
+    </Dropdown>
+  )
+
+  // On mobile the player docks its own controls at the bottom
+  const showTabBar = isLoggedIn && !isPlayer
+
   return (
-    <div className="min-h-screen bg-[#E4F4F8] dark:bg-black flex flex-col">
-      <nav className="fixed top-0 left-0 right-0 z-50 p-4 border-b h-[75px] flex bg-[#E4F4F8] dark:bg-black">
-        <div className="flex justify-between items-center container mx-auto">
-          <NavLink to="/" className={link}>
-            <div className="flex gap-2 items-center">
-              {isPlayer ? (
-                <ArrowLeftIcon className="size-6 cursor-pointer" />
-              ) : (
-                ""
-              )}
-              <img src="/VOCODEX.png" className="me-1 w-10 h-auto" />
-              VOCODEX
-            </div>
+    <div className="isolate min-h-dvh flex flex-col text-foreground">
+      <div
+        aria-hidden
+        className="fixed inset-0 -z-10 overflow-hidden pointer-events-none"
+      >
+        <div className="aurora-blob -top-40 -left-32 size-[32rem] bg-violet-500/35 dark:bg-violet-600/30" />
+        <div
+          className="aurora-blob top-1/3 -right-40 size-[28rem] bg-sky-400/30 dark:bg-sky-500/20"
+          style={{ animationDelay: "-6s" }}
+        />
+        <div
+          className="aurora-blob -bottom-40 left-1/4 size-[30rem] bg-pink-400/25 dark:bg-fuchsia-600/15"
+          style={{ animationDelay: "-12s" }}
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(rgba(127,127,127,0.14)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:linear-gradient(to_bottom,black,transparent_70%)]" />
+      </div>
+
+      <nav className="fixed top-0 inset-x-0 z-50 safe-top glass !border-x-0 !border-t-0 !shadow-none">
+        <div className="container mx-auto px-4 h-14 md:h-16 flex justify-between items-center">
+          <NavLink
+            to="/"
+            className="flex gap-2.5 items-center font-extrabold tracking-[0.18em] text-sm md:text-base"
+          >
+            {isPlayer && (
+              <span className="grid place-items-center size-9 -ml-1 rounded-full hover:bg-foreground/5 transition-colors">
+                <ArrowLeftIcon className="size-5" />
+              </span>
+            )}
+            <img
+              src="/VOCODEX.png"
+              alt=""
+              className="w-8 md:w-9 h-auto drop-shadow-[0_0_12px_rgba(139,108,255,0.55)]"
+            />
+            <span className="text-gradient">VOCODEX</span>
           </NavLink>
 
-          <div className="flex items-center gap-5">
-            <div className="w-6 h-6 overflow-hidden cursor-pointer">
-              <AnimatePresence mode="popLayout">
-                {isDarkMode ? (
-                  <motion.div
-                    key="moon"
-                    initial={{ y: -10, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: -10, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    onClick={() => {
-                      dispatch(setDarkMode(false))
-                      window.localStorage.setItem("dark-mode", "false")
-                    }}
-                  >
-                    <MoonIcon className="size-6" />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key={"sun"}
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: 20, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    onClick={() => {
-                      dispatch(setDarkMode(true))
-                      window.localStorage.setItem("dark-mode", "true")
-                    }}
-                  >
-                    <SunIcon className="size-6 cursor-pointer text-gray-500" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {isLoggedIn ? (
-              <>
-                <Dropdown>
-                  <DropdownTrigger className="cursor-pointer">
-                    <Avatar
-                      src={`https://ui-avatars.com/api/?name=${username}`}
-                    />
-                  </DropdownTrigger>
-                  <DropdownMenu>
-                    <DropdownItem key={"logout"} onClick={handleLogout}>
-                      <a className="cursor-pointer">Logout</a>
-                    </DropdownItem>
-                  </DropdownMenu>
-                </Dropdown>
-              </>
-            ) : (
-              <></>
-            )}
+          <div
+            className={`items-center gap-3 ${showTabBar ? "hidden md:flex" : "flex"}`}
+          >
+            {themeToggle}
+            {isLoggedIn && accountMenu}
           </div>
         </div>
       </nav>
-      <main className="flex flex-1 pt-[75px]">
-        <div
-          className="w-full relative"
-          style={{
-            backgroundImage: isDarkMode ? darkBg : lightBg,
-            backgroundRepeat: "no-repeat"
-          }}
+
+      <main
+        className={`flex-1 pt-[calc(env(safe-area-inset-top)+3.5rem)] md:pt-16 ${
+          showTabBar
+            ? "pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-10"
+            : "pb-10"
+        }`}
+      >
+        <motion.div
+          key={location.pathname}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="container mx-auto px-4 pt-6 md:pt-10"
         >
-          <div className="pt-6 container mx-auto">
-            <Outlet />
-          </div>
-        </div>
+          <Outlet />
+        </motion.div>
       </main>
+
+      {showTabBar && (
+        <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 glass !border-x-0 !border-b-0 safe-bottom">
+          <div className="grid grid-cols-3 h-16">
+            <NavLink
+              to="/"
+              className={({ isActive }) =>
+                `flex flex-col items-center justify-center gap-0.5 text-[11px] font-semibold transition-colors ${
+                  isActive ? "text-primary" : "text-foreground/60"
+                }`
+              }
+            >
+              <BookOpenIcon className="size-6" />
+              Library
+            </NavLink>
+            <div className="flex items-center justify-center">
+              {themeToggle}
+            </div>
+            <div className="flex items-center justify-center">
+              {accountMenu}
+            </div>
+          </div>
+        </nav>
+      )}
     </div>
   )
 }

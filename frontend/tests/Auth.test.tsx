@@ -181,7 +181,7 @@ describe("Registration", () => {
       screen.getByLabelText("Repeat Password"),
       "password123"
     )
-    await userEvent.click(screen.getByRole("button", { name: /Register!/i }))
+    await userEvent.click(screen.getByRole("button", { name: /^Register$/i }))
 
     expect(global.fetch).toHaveBeenCalledWith(
       expect.stringContaining("/auth/register"),
