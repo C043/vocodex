@@ -1,4 +1,5 @@
 import { createContext, useContext } from "react"
+import type { RefObject } from "react"
 import type { PDFDocumentProxy } from "pdfjs-dist"
 import type { PdfPage, PageSize } from "../hooks/usePdfDocument"
 
@@ -42,6 +43,8 @@ export type PdfState = {
 }
 
 interface PlayerContextType {
+  audioRef: RefObject<HTMLAudioElement | null>
+
   // State
   isPlaying: boolean
   isLoading: boolean

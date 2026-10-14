@@ -30,6 +30,11 @@ const renderControls = (overrides: Partial<PlayerValue> = {}) => {
       }
     ],
     speedOptions: [{ key: "+0%", label: "1x" }],
+    audioRef: { current: null },
+    kind: "text",
+    currentIndex: -1,
+    sentencesMap: new Map(),
+    pdf: { numPages: 0, pages: new Map() },
     ...overrides
   } as PlayerValue
   render(
@@ -68,5 +73,19 @@ describe("PlayerControls keyboard shortcuts", () => {
     expect(value.handlePause).not.toHaveBeenCalled()
     expect(value.handleForward).not.toHaveBeenCalled()
     expect(value.handleBackwards).not.toHaveBeenCalled()
+  })
+})
+
+describe("PlayerControls reading progress", () => {
+  it("shows the progress bar above the commands", () => {
+    renderControls()
+    const bar = screen.getByRole("progressbar", { name: "Reading progress" })
+    const play = screen.getByRole("button", { name: "Play" })
+
+    expect(
+      bar.compareDocumentPosition(play) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+    expect(screen.getByLabelText("Time read")).toHaveTextContent("0:00")
+    expect(screen.getByLabelText("Time left")).toHaveTextContent("-0:00")
   })
 })

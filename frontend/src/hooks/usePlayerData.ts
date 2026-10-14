@@ -10,6 +10,7 @@ import {
 import { audio } from "framer-motion/m"
 import { splitIntoChunks } from "../utils/splitIntoChunks"
 import { playAudio } from "../utils/playAudio"
+import { speedRate } from "../utils/readingTime"
 import { useAutoScroll } from "./useAutoScroll"
 import { usePdfDocument } from "./usePdfDocument"
 import { openPdf } from "../utils/pdf"
@@ -176,22 +177,7 @@ export const usePlayerData = (id: string | undefined) => {
 
   const handleVoiceSpeed = () => {
     if (audioRef.current) {
-      let speed = null
-      switch (currentSpeed) {
-        case "-50%":
-          speed = 0.5
-          break
-        case "+50%":
-          speed = 1.5
-          break
-        case "+100%":
-          speed = 2
-          break
-        default:
-          speed = 1
-      }
-
-      audioRef.current.playbackRate = speed
+      audioRef.current.playbackRate = speedRate(currentSpeed)
     }
   }
 
