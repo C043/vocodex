@@ -69,3 +69,24 @@ def test_format_voices_prefers_multilingual_duplicate():
         "en-US-AvaMultilingualNeural",
         "en-US-EmmaMultilingualNeural",
     ]
+
+
+async def test_get_voices_fetches_edge_tts_once(monkeypatch):
+    from app.controllers import voicesController
+
+    calls = 0
+
+    async def fakeListVoices():
+        nonlocal calls
+        calls += 1
+        return [_voice("en-GB-LibbyNeural", "en-GB", "English (United Kingdom)")]
+
+    monkeypatch.setattr(voicesController, "_voicesCache", None)
+    monkeypatch.setattr(voicesController.edge_tts, "list_voices", fakeListVoices)
+
+    first = await voicesController.getVoices()
+    second = await voicesController.getVoices()
+
+    assert calls == 1
+    assert first == second
+    assert [v["name"] for v in first] == ["Libby"]

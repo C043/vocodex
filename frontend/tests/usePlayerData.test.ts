@@ -111,3 +111,64 @@ describe("usePlayerData hook", () => {
     )
   })
 })
+
+describe("usePlayerData voices", () => {
+  const voices = [
+    {
+      key: "en-GB-LibbyNeural",
+      name: "Libby",
+      locale: "en-GB",
+      language: "English (United Kingdom)"
+    }
+  ]
+
+  const mockFetch = (voicesResponse: Response) =>
+    vi.spyOn(window, "fetch").mockImplementation(async input => {
+      if (String(input).endsWith("/voices")) return voicesResponse
+      // Entry/synthesis calls aren't under test here
+      return new Response(null, { status: 404 })
+    })
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.spyOn(window.localStorage.__proto__, "getItem").mockReturnValue(
+      "fake-token"
+    )
+    vi.spyOn(console, "error").mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it("fetches the voice list on mount", async () => {
+    const fetchSpy = mockFetch(
+      new Response(JSON.stringify(voices), { status: 200 })
+    )
+
+    const { result } = renderHook(() => usePlayerData("test-id"))
+
+    await waitFor(() => expect(result.current.voiceOptions).toEqual(voices))
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/\/voices$/),
+      expect.objectContaining({
+        method: "GET",
+        headers: { Authorization: "Bearer fake-token" }
+      })
+    )
+  })
+
+  it("keeps an empty voice list when the request fails", async () => {
+    const fetchSpy = mockFetch(new Response(null, { status: 500 }))
+
+    const { result } = renderHook(() => usePlayerData("test-id"))
+
+    await waitFor(() =>
+      expect(fetchSpy).toHaveBeenCalledWith(
+        expect.stringMatching(/\/voices$/),
+        expect.any(Object)
+      )
+    )
+    expect(result.current.voiceOptions).toEqual([])
+  })
+})

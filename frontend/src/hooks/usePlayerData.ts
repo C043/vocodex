@@ -10,7 +10,6 @@ import {
 import { audio } from "framer-motion/m"
 import { splitIntoChunks } from "../utils/splitIntoChunks"
 import { useAutoScroll } from "./useAutoScroll"
-import { isTypingTarget } from "../utils/isTypingTarget"
 
 type State = {
   darkMode: {
@@ -382,7 +381,6 @@ export const usePlayerData = (id: string | undefined) => {
   // Adds keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (isTypingTarget(event.target)) return
       switch (event.key) {
         case "Enter":
         case " ": // spacebar

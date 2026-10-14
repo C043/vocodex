@@ -10,7 +10,6 @@ import {
 } from "@heroicons/react/24/solid"
 import { useDispatch } from "react-redux"
 import { setUserPreferences } from "../../redux/reducer/authSlice"
-import { isTypingTarget } from "../../utils/isTypingTarget"
 import { VoiceSelect } from "./VoiceSelect"
 
 export const PlayerControls = () => {
@@ -109,7 +108,6 @@ export const PlayerControls = () => {
   // Adds keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (isTypingTarget(event.target)) return
       switch (event.key) {
         case "Enter":
         case " ": // spacebar
