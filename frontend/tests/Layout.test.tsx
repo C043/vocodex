@@ -17,7 +17,13 @@ const topBar = () => screen.getByText("VOCODEX").closest("nav")!
 describe("Layout top bar in focus mode", () => {
   beforeEach(() => {
     vi.mocked(checkAuthentication).mockReturnValue(true)
-    vi.mocked(parseJwt).mockReturnValue({ username: "me", preferences: {} })
+    vi.mocked(parseJwt).mockReturnValue({
+      sub: 1,
+      username: "me",
+      preferences: {},
+      iat: 0,
+      exp: 0
+    })
     window.localStorage.setItem("vocodex-jwt", "token")
     global.fetch = vi.fn().mockResolvedValue({ ok: false })
     vi.spyOn(console, "error").mockImplementation(() => {})

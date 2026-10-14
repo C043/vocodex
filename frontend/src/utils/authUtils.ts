@@ -1,9 +1,11 @@
 import { jwtDecode } from "jwt-decode"
+import type { UserPreferences } from "../redux/reducer/authSlice"
 
 interface MyJwtPayload {
   sub: number
   username: string
-  preferences: UserPreferences
+  // Tokens issued before a preference existed lack it
+  preferences: Partial<UserPreferences>
   iat: number
   exp: number
 }

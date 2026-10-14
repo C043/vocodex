@@ -241,7 +241,7 @@ describe("usePlayerData zoom", () => {
           : new Promise(() => {})
       )
 
-  const savedZoom = (fetchSpy: ReturnType<typeof vi.spyOn>) =>
+  const savedZoom = (fetchSpy: ReturnType<typeof mockPreferencesFetch>) =>
     fetchSpy.mock.calls
       .filter(([url]) => String(url).endsWith("/me/preferences"))
       .map(([, init]) => JSON.parse(String((init as RequestInit).body)))

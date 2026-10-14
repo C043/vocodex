@@ -32,7 +32,11 @@ const page2: PdfPage = {
   pageNumber: 2,
   width: 500,
   height: 700,
-  text: { text: page2Text, itemStarts: [0, -1, 6] },
+  text: {
+    text: page2Text,
+    itemStarts: [0, -1, 6],
+    blocks: [{ start: 0, end: page2Text.length, kind: "paragraph" }]
+  },
   itemStrs: ["Hello ", "Header", "world. Bye now."],
   chunks: chunkPageText(2, page2Text, 12)
 }

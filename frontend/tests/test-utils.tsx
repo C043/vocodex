@@ -4,16 +4,32 @@ import { Provider } from "react-redux"
 import { BrowserRouter } from "react-router-dom"
 import { HeroUIProvider } from "@heroui/react"
 import { configureStore } from "@reduxjs/toolkit"
-import authReducer from "../src/redux/reducer/authSlice"
+import authReducer, { UserPreferences } from "../src/redux/reducer/authSlice"
 import themeModeSlice from "../src/redux/reducer/themeModeSlice"
 import focusModeReducer from "../src/redux/reducer/focusModeSlice"
 
-export function createTestStore() {
+type UserState = ReturnType<typeof authReducer>
+
+// Fields not given keep the slice's initial values
+type PreloadedUser = Partial<Omit<UserState, "preferences">> & {
+  preferences?: Partial<UserPreferences>
+}
+
+export function createTestStore(user?: PreloadedUser) {
+  const initialUser = authReducer(undefined, { type: "@@INIT" })
+
   return configureStore({
     reducer: {
       user: authReducer,
       darkMode: themeModeSlice,
       focusMode: focusModeReducer
+    },
+    preloadedState: user && {
+      user: {
+        ...initialUser,
+        ...user,
+        preferences: { ...initialUser.preferences, ...user.preferences }
+      }
     }
   })
 }

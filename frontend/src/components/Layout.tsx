@@ -85,14 +85,12 @@ const Layout = () => {
     const token = window.localStorage.getItem("vocodex-jwt")
     const isAuthenticated = checkAuthentication(token)
     if (isAuthenticated && token) {
-      let { username, preferences } = parseJwt(token)
-      ;(async () => {
-        preferences = await fetchPreferences()
-      })().catch(console.error)
+      const { username, preferences } = parseJwt(token)
       dispatch(setIsLoggedIn(true))
       dispatch(setUsername(username))
-      console.log(preferences)
       dispatch(setUserPreferences(preferences))
+      // The token's copy can be stale: the saved preferences replace it
+      fetchPreferences()
     } else {
       dispatch(setIsLoggedIn(false))
       handleLogout()

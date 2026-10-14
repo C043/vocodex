@@ -1,11 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import "@testing-library/jest-dom"
-import { render, screen } from "./test-utils"
+import { render, screen, createTestStore } from "./test-utils"
 import Home from "../src/pages/Home"
 import AuthPage from "../src/pages/AuthPage"
-import { configureStore } from "@reduxjs/toolkit"
-import authReducer from "../src/redux/reducer/authSlice"
-import themeModeSlice from "../src/redux/reducer/themeModeSlice"
 import { checkAuthentication, parseJwt } from "../src/utils/authUtils"
 
 const mockNavigate = vi.fn()
@@ -31,19 +28,11 @@ describe("User not authenticated", () => {
   })
 
   it("gets redirected to login page if no jwt is found", () => {
-    const testStore = configureStore({
-      reducer: {
-        user: authReducer,
-        darkMode: themeModeSlice
-      },
-      preloadedState: {
-        user: {
+    const testStore = createTestStore({
           isLoggedIn: false,
           userId: -1,
           username: ""
-        }
-      }
-    })
+        })
 
     render(<Home />, { store: testStore })
 
@@ -134,13 +123,7 @@ describe("Authenticated user", () => {
   })
 
   it("should already be redirected to home page if jwt is present", () => {
-    const testStore = configureStore({
-      reducer: {
-        user: authReducer,
-        darkMode: themeModeSlice
-      },
-      preloadedState: {
-        user: {
+    const testStore = createTestStore({
           isLoggedIn: true,
           userId: 1,
           username: "TestUser",
@@ -148,9 +131,7 @@ describe("Authenticated user", () => {
             voice: "",
             speed: "+0%"
           }
-        }
-      }
-    })
+        })
     render(<AuthPage />, { store: testStore })
 
     expect(mockNavigate).toHaveBeenCalledWith("/")

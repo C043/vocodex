@@ -1,10 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { render, screen } from "./test-utils"
+import { render, screen, createTestStore } from "./test-utils"
 import "@testing-library/jest-dom"
 import Home from "../src/pages/Home"
-import { configureStore } from "@reduxjs/toolkit"
-import authReducer from "../src/redux/reducer/authSlice"
-import themeModeSlice from "../src/redux/reducer/themeModeSlice"
 import { checkAuthentication, parseJwt } from "../src/utils/authUtils"
 
 vi.mock("react-router-dom", async () => {
@@ -29,19 +26,11 @@ describe("Home Page", () => {
   it("renders Welcome heading with username", () => {
     const testUsername = "testuser"
 
-    const testStore = configureStore({
-      reducer: {
-        user: authReducer,
-        darkMode: themeModeSlice
-      },
-      preloadedState: {
-        user: {
+    const testStore = createTestStore({
           isLoggedIn: true,
           userId: 1,
           username: testUsername
-        }
-      }
-    })
+        })
 
     render(<Home />, { store: testStore })
 
@@ -65,12 +54,7 @@ describe("Upload text", () => {
       })
     ) as any
 
-    const testStore = configureStore({
-      reducer: { user: authReducer, darkMode: themeModeSlice },
-      preloadedState: {
-        user: { isLoggedIn: true, userId: 1, username: "testuser" }
-      }
-    })
+    const testStore = createTestStore({ isLoggedIn: true, userId: 1, username: "testuser" })
 
     render(<Home />, { store: testStore })
 
@@ -108,12 +92,7 @@ describe("Entries", () => {
       })
     ) as any
 
-    const testStore = configureStore({
-      reducer: { user: authReducer, darkMode: themeModeSlice },
-      preloadedState: {
-        user: { isLoggedIn: true, userId: 1, username: "testuser" }
-      }
-    })
+    const testStore = createTestStore({ isLoggedIn: true, userId: 1, username: "testuser" })
 
     render(<Home />, { store: testStore })
 
@@ -134,12 +113,7 @@ describe("Entries", () => {
     ) as any
     window.confirm = vi.fn(() => true)
 
-    const testStore = configureStore({
-      reducer: { user: authReducer, darkMode: themeModeSlice },
-      preloadedState: {
-        user: { isLoggedIn: true, userId: 1, username: "testuser" }
-      }
-    })
+    const testStore = createTestStore({ isLoggedIn: true, userId: 1, username: "testuser" })
 
     render(<Home />, { store: testStore })
 
@@ -161,12 +135,7 @@ describe("Entries", () => {
 
 describe("Import website", () => {
   const renderHome = () => {
-    const testStore = configureStore({
-      reducer: { user: authReducer, darkMode: themeModeSlice },
-      preloadedState: {
-        user: { isLoggedIn: true, userId: 1, username: "testuser" }
-      }
-    })
+    const testStore = createTestStore({ isLoggedIn: true, userId: 1, username: "testuser" })
 
     render(<Home />, { store: testStore })
   }

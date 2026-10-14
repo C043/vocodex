@@ -27,13 +27,14 @@ const pdfPage = (pageNumber: number, seconds: number[]): PdfPage => ({
   pageNumber,
   width: 600,
   height: 800,
-  text: { text: "", itemStarts: [] },
+  text: { text: "", itemStarts: [], blocks: [] },
   itemStrs: [],
   chunks: seconds.map((s, idx) => ({
     id: (pageNumber - 1) * 10000 + idx,
     text: textOf(s),
     start: 0,
-    end: 0
+    end: 0,
+    block: 0
   }))
 })
 
