@@ -35,11 +35,40 @@ Components:
 
 - Multi user
 - Text uploading
+- Website import: paste a URL and the article is turned into an entry
+- `PDF` uploading and reading, page by page, with the original layout
+- Text view for `PDF`s: read the extracted text, with headings and paragraphs, instead of the pages (easier on small screens)
 - Speed control
-- `TTS` with a few natural voices from `edge-tts`
-- Paragraph highlighting
+- `TTS` with the full voice list from `edge-tts`, with search
+- Text highlighting in sync with the voice, for plain text and `PDF`s, with the reader following along as it plays
+- Reading progress bar with time read and time left
 - Audio control (play, pause, forward, backward) with keyboard shortcuts too
-- Font size control
+- Font size control, and zoom for `PDF` pages, saved per mode in the user preferences
+- Light and dark theme
+- Mobile app-style layout with a compact player bar and an options panel for voice, speed and text size
+- Installable as an app (`PWA`)
+
+## Screenshots
+
+### Desktop
+
+| Library | Reader |
+| --- | --- |
+| ![Library](docs/screenshots/home-desktop.png) | ![Reader](docs/screenshots/player-text-desktop.png) |
+
+| Player options | Dark theme |
+| --- | --- |
+| ![Player options](docs/screenshots/player-options-desktop.png) | ![Dark theme](docs/screenshots/player-text-dark.png) |
+
+| PDF reader | Login |
+| --- | --- |
+| ![PDF reader](docs/screenshots/player-pdf-desktop.png) | ![Login](docs/screenshots/login-desktop.png) |
+
+### Mobile
+
+| Library | Reader | Player options | PDF text view |
+| --- | --- | --- | --- |
+| ![Library](docs/screenshots/home-mobile.png) | ![Reader](docs/screenshots/player-text-mobile.png) | ![Player options](docs/screenshots/player-options-mobile.png) | ![PDF text view](docs/screenshots/player-pdf-textview-mobile.png) |
 
 ## Prerequisites
 
@@ -103,6 +132,13 @@ sudo docker compose up
 Once the server is running with `docker compose`, this command will test the backend
 ```bash
 sudo docker compose exec backend pytest
+```
+
+### How to test the frontend
+```bash
+cd frontend
+npx vitest --run
+npm run typecheck
 ```
 
 ### API Documentation
