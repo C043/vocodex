@@ -33,6 +33,9 @@ type State = {
   darkMode: {
     value: boolean
   }
+  focusMode: {
+    isChromeHidden: boolean
+  }
 }
 
 const Layout = () => {
@@ -44,6 +47,11 @@ const Layout = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const isPlayer = location.pathname.includes("/player/")
+  // The player's focus mode hides the top bar along with its controls
+  const isChromeHidden = useSelector(
+    (state: State) => state.focusMode.isChromeHidden
+  )
+  const isTopBarHidden = isPlayer && isChromeHidden
 
   const env = import.meta.env
   const token = window.localStorage.getItem("vocodex-jwt")
@@ -197,7 +205,11 @@ const Layout = () => {
         <div className="absolute inset-0 bg-[radial-gradient(rgba(127,127,127,0.14)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:linear-gradient(to_bottom,black,transparent_70%)]" />
       </div>
 
-      <nav className="fixed top-0 inset-x-0 z-50 safe-top glass !border-x-0 !border-t-0 !shadow-none">
+      <nav
+        aria-hidden={isTopBarHidden || undefined}
+        inert={isTopBarHidden}
+        className={`fixed top-0 inset-x-0 z-50 safe-top glass !border-x-0 !border-t-0 !shadow-none transition duration-300 ${isTopBarHidden ? "-translate-y-full opacity-0" : ""}`}
+      >
         <div className="container mx-auto px-4 h-14 md:h-16 flex justify-between items-center">
           <NavLink
             to="/"

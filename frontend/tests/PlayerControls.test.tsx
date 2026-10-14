@@ -1,16 +1,20 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import type { ComponentProps } from "react"
 import userEvent from "@testing-library/user-event"
-import { render, screen, fireEvent } from "./test-utils"
+import { render, screen, fireEvent, act, createTestStore } from "./test-utils"
 import { PlayerControls } from "../src/components/player/PlayerControls"
 import { PlayerContext } from "../src/contexts/PlayerContext"
+import { showChrome } from "../src/redux/reducer/focusModeSlice"
 import { setScreenWidth, resetScreenWidth } from "./mediaQuery"
 
 type PlayerValue = NonNullable<
   ComponentProps<typeof PlayerContext.Provider>["value"]
 >
 
-const renderControls = (overrides: Partial<PlayerValue> = {}) => {
+const renderControls = (
+  overrides: Partial<PlayerValue> = {},
+  store = createTestStore()
+) => {
   const value = {
     isPlaying: false,
     isLoading: false,
@@ -44,7 +48,8 @@ const renderControls = (overrides: Partial<PlayerValue> = {}) => {
   render(
     <PlayerContext.Provider value={value}>
       <PlayerControls />
-    </PlayerContext.Provider>
+    </PlayerContext.Provider>,
+    { store }
   )
   return value
 }
@@ -321,5 +326,63 @@ describe("PlayerControls selects while auto scrolling", () => {
     fireEvent.scroll(document)
 
     expect(trigger).toHaveAttribute("aria-expanded", "true")
+  })
+})
+
+describe("PlayerControls focus mode", () => {
+  const focusButton = () => screen.getByRole("button", { name: "Focus mode" })
+  const bar = () => focusButton().closest("[data-player-controls]")!
+
+  it("is off by default", () => {
+    renderControls()
+
+    expect(focusButton()).toHaveAttribute("aria-pressed", "false")
+    expect(bar()).not.toHaveAttribute("aria-hidden")
+  })
+
+  it("hides the controls when turned on", async () => {
+    const store = createTestStore()
+    renderControls({}, store)
+
+    await userEvent.click(focusButton())
+
+    expect(store.getState().focusMode.isEnabled).toBe(true)
+    const hidden = document.querySelector("[data-player-controls]")!
+    expect(hidden).toHaveAttribute("aria-hidden", "true")
+    expect(hidden).toHaveAttribute("inert")
+  })
+
+  it("shows the controls again while focus mode is on", async () => {
+    const store = createTestStore()
+    renderControls({}, store)
+    await userEvent.click(focusButton())
+
+    act(() => {
+      fireEvent.mouseMove(window)
+    })
+
+    expect(store.getState().focusMode.isChromeHidden).toBe(true)
+    // The page runs the idle timer; the bar only follows the store
+    act(() => {
+      store.dispatch(showChrome())
+    })
+    expect(focusButton()).toHaveAttribute("aria-pressed", "true")
+    expect(bar()).not.toHaveAttribute("aria-hidden")
+  })
+
+  it("turns off when clicked again", async () => {
+    const store = createTestStore()
+    renderControls({}, store)
+    await userEvent.click(focusButton())
+    act(() => {
+      store.dispatch(showChrome())
+    })
+
+    await userEvent.click(focusButton())
+
+    expect(store.getState().focusMode).toEqual({
+      isEnabled: false,
+      isChromeHidden: false
+    })
   })
 })

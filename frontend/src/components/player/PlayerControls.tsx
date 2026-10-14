@@ -5,13 +5,15 @@ import { addToast, Select, SelectItem, Spinner } from "@heroui/react"
 import {
   AdjustmentsHorizontalIcon,
   BackwardIcon,
+  EyeSlashIcon,
   ForwardIcon,
   PauseIcon,
   PlayIcon,
   ViewfinderCircleIcon
 } from "@heroicons/react/24/solid"
-import { useDispatch } from "react-redux"
+import { useDispatch, useSelector } from "react-redux"
 import { setUserPreferences } from "../../redux/reducer/authSlice"
+import { toggleFocusMode } from "../../redux/reducer/focusModeSlice"
 import { VoiceSelect } from "./VoiceSelect"
 import { ReadingProgress } from "./ReadingProgress"
 import FontSizeControls from "./FontSizeControls"
@@ -46,6 +48,10 @@ export const PlayerControls = () => {
   const hasReaderFont = kind !== "pdf" || isPdfText
 
   const dispatch = useDispatch()
+  const { isEnabled: isFocusMode, isChromeHidden } = useSelector(
+    (state: { focusMode: { isEnabled: boolean; isChromeHidden: boolean } }) =>
+      state.focusMode
+  )
   const isDesktop = useIsDesktop()
   // Mobile keeps the settings in a sheet that slides out of the bar
   const [isOptionsOpen, setIsOptionsOpen] = useState(false)
@@ -302,11 +308,14 @@ export const PlayerControls = () => {
     // A compact bar, docked on mobile and floating on desktop, the settings
     // slide out of it
     <div
-      className={
+      data-player-controls
+      aria-hidden={isChromeHidden || undefined}
+      inert={isChromeHidden}
+      className={`transition duration-300 ${
         isDesktop
           ? "fixed z-50 left-1/2 -translate-x-1/2 bottom-6 w-[26rem]"
           : "fixed z-50 inset-x-0 bottom-0"
-      }
+      } ${isChromeHidden ? "translate-y-full opacity-0" : ""}`}
     >
       {isOptionsOpen && (
         <div
@@ -352,29 +361,48 @@ export const PlayerControls = () => {
         </AnimatePresence>
         <ReadingProgress />
         <div className="flex items-center justify-between">
-          <button
-            type="button"
-            aria-label="Auto scroll"
-            aria-pressed={isAutoScroll}
-            title={isAutoScroll ? "Auto scroll on" : "Auto scroll off"}
-            onMouseDown={ev => ev.preventDefault()}
-            onClick={toggleAutoScroll}
-            className={`${barButton} ${isAutoScroll ? barButtonOn : "text-foreground/50 hover:bg-foreground/10"}`}
-          >
-            <ViewfinderCircleIcon className="size-5" />
-          </button>
+          <div className="flex flex-1 gap-1">
+            <button
+              type="button"
+              aria-label="Auto scroll"
+              aria-pressed={isAutoScroll}
+              title={isAutoScroll ? "Auto scroll on" : "Auto scroll off"}
+              onMouseDown={ev => ev.preventDefault()}
+              onClick={toggleAutoScroll}
+              className={`${barButton} ${isAutoScroll ? barButtonOn : "text-foreground/50 hover:bg-foreground/10"}`}
+            >
+              <ViewfinderCircleIcon className="size-5" />
+            </button>
+            <button
+              type="button"
+              aria-label="Focus mode"
+              aria-pressed={isFocusMode}
+              title={
+                isFocusMode
+                  ? "Focus mode on: controls hide when the mouse rests"
+                  : "Hide the controls and top bar"
+              }
+              onMouseDown={ev => ev.preventDefault()}
+              onClick={() => dispatch(toggleFocusMode())}
+              className={`${barButton} ${isFocusMode ? barButtonOn : "text-foreground/50 hover:bg-foreground/10"}`}
+            >
+              <EyeSlashIcon className="size-5" />
+            </button>
+          </div>
           {transport("gap-5")}
-          <button
-            type="button"
-            aria-label="Player options"
-            aria-expanded={isOptionsOpen}
-            aria-controls="player-options"
-            onMouseDown={ev => ev.preventDefault()}
-            onClick={() => setIsOptionsOpen(open => !open)}
-            className={`${barButton} ${isOptionsOpen ? barButtonOn : "text-foreground/60 hover:bg-foreground/10"}`}
-          >
-            <AdjustmentsHorizontalIcon className="size-5" />
-          </button>
+          <div className="flex flex-1 justify-end">
+            <button
+              type="button"
+              aria-label="Player options"
+              aria-expanded={isOptionsOpen}
+              aria-controls="player-options"
+              onMouseDown={ev => ev.preventDefault()}
+              onClick={() => setIsOptionsOpen(open => !open)}
+              className={`${barButton} ${isOptionsOpen ? barButtonOn : "text-foreground/60 hover:bg-foreground/10"}`}
+            >
+              <AdjustmentsHorizontalIcon className="size-5" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

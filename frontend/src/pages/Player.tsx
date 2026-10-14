@@ -5,10 +5,12 @@ import EntryContent from "../components/player/EntryContent"
 import PdfContent from "../components/player/PdfContent"
 import PdfTextContent from "../components/player/PdfTextContent"
 import { usePlayerData } from "../hooks/usePlayerData"
+import { useFocusMode } from "../hooks/useFocusMode"
 
 const Player = () => {
   const { id } = useParams()
   const playerData = usePlayerData(id)
+  useFocusMode()
   return (
     <PlayerContext.Provider value={playerData}>
       <div>

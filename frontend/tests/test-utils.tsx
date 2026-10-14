@@ -6,12 +6,14 @@ import { HeroUIProvider } from "@heroui/react"
 import { configureStore } from "@reduxjs/toolkit"
 import authReducer from "../src/redux/reducer/authSlice"
 import themeModeSlice from "../src/redux/reducer/themeModeSlice"
+import focusModeReducer from "../src/redux/reducer/focusModeSlice"
 
-function createTestStore() {
+export function createTestStore() {
   return configureStore({
     reducer: {
       user: authReducer,
-      darkMode: themeModeSlice
+      darkMode: themeModeSlice,
+      focusMode: focusModeReducer
     }
   })
 }

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import type { Mock } from "vitest"
-import { render, screen } from "./test-utils"
+import { render, screen, act, fireEvent, createTestStore } from "./test-utils"
+import { toggleFocusMode } from "../src/redux/reducer/focusModeSlice"
 import Player from "../src/pages/Player"
 import { usePlayerData } from "../src/hooks/usePlayerData"
 import { useParams } from "react-router-dom"
@@ -141,5 +142,34 @@ describe("Player component", () => {
     ;(useParams as Mock).mockReturnValue({ id: "other-id" })
     rerender(<Player />)
     expect(usePlayerData).toHaveBeenLastCalledWith("other-id")
+  })
+
+  it("reveals the hidden chrome on mouse move in focus mode", () => {
+    const store = createTestStore()
+    render(<Player />, { store })
+    act(() => {
+      store.dispatch(toggleFocusMode())
+    })
+
+    act(() => {
+      fireEvent.mouseMove(window)
+    })
+
+    expect(store.getState().focusMode).toEqual({
+      isEnabled: true,
+      isChromeHidden: false
+    })
+  })
+
+  it("turns focus mode off when leaving the player", () => {
+    const store = createTestStore()
+    const { unmount } = render(<Player />, { store })
+    act(() => {
+      store.dispatch(toggleFocusMode())
+    })
+
+    unmount()
+
+    expect(store.getState().focusMode.isEnabled).toBe(false)
   })
 })
