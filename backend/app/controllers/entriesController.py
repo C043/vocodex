@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy import Delete, Select, select, update
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
+from app.controllers import websiteController
 from app.models.entry import Entries
 from app.models.user import Users
 from app.schemas.entriesSchemas import (
@@ -124,8 +125,13 @@ async def getProgress(entry_id: int, current_user: Users, session: AsyncSession)
 async def uploadWebsite(
     data: UploadWebsiteIn, current_user: Users, session: AsyncSession
 ) -> Entries:
+    html = await websiteController.fetchWebsite(str(data.url))
+    parsed = websiteController.parseWebsite(html)
+
     try:
-        entry = Entries(title=data.url, user_id=current_user.id, content="test")
+        entry = Entries(
+            title=parsed.title, user_id=current_user.id, content=parsed.content
+        )
         session.add(entry)
         await session.commit()
         return entry

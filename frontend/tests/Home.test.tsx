@@ -74,7 +74,7 @@ describe("Upload text", () => {
 
     render(<Home />, { store: testStore })
 
-    await userEvent.click(screen.getByRole("button"))
+    await userEvent.click(screen.getByRole("button", { name: /Upload Text/i }))
     await userEvent.type(screen.getByLabelText(/title/i), "title")
     await userEvent.type(screen.getByLabelText(/content/i), "content")
     await userEvent.click(screen.getByRole("button", { name: /Upload/i }))
@@ -156,5 +156,110 @@ describe("Entries", () => {
         method: "DELETE"
       })
     )
+  })
+})
+
+describe("Import website", () => {
+  const renderHome = () => {
+    const testStore = configureStore({
+      reducer: { user: authReducer, darkMode: themeModeSlice },
+      preloadedState: {
+        user: { isLoggedIn: true, userId: 1, username: "testuser" }
+      }
+    })
+
+    render(<Home />, { store: testStore })
+  }
+
+  const mockApi = (importResponse: { ok: boolean; json: () => Promise<any> }) => {
+    global.fetch = vi.fn((url: string) =>
+      Promise.resolve(
+        url.includes("/entries/website")
+          ? importResponse
+          : { ok: true, json: () => Promise.resolve({ entries: [] }) }
+      )
+    ) as any
+  }
+
+  const importUrl = async (url: string) => {
+    const { userEvent } = await import("@testing-library/user-event")
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /Import Website/i })
+    )
+    await userEvent.type(screen.getByLabelText(/url/i), url)
+    await userEvent.click(screen.getByRole("button", { name: /^Import$/i }))
+  }
+
+  beforeEach(() => {
+    vi.mocked(checkAuthentication).mockReturnValue(true)
+    window.localStorage.setItem("vocodex-jwt", "test-token")
+  })
+
+  it("should call the website import endpoint with the url", async () => {
+    mockApi({ ok: true, json: () => Promise.resolve({ id: 7 }) })
+    renderHome()
+
+    await importUrl("https://blog.test/article")
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/entries/website"),
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          Authorization: "Bearer test-token"
+        }),
+        body: JSON.stringify({ url: "https://blog.test/article" })
+      })
+    )
+  })
+
+  it("should refresh the entries and close the form after importing", async () => {
+    const { waitFor } = await import("@testing-library/react")
+    mockApi({ ok: true, json: () => Promise.resolve({ id: 7 }) })
+    renderHome()
+
+    await importUrl("https://blog.test/article")
+
+    await waitFor(() => {
+      expect(screen.queryByLabelText(/url/i)).not.toBeInTheDocument()
+    })
+    const listCalls = vi
+      .mocked(global.fetch)
+      .mock.calls.filter(([url]) => String(url).includes("/entries/list/me"))
+    expect(listCalls).toHaveLength(2)
+  })
+
+  it("should keep the form open and show the backend error", async () => {
+    mockApi({
+      ok: false,
+      json: () =>
+        Promise.resolve({ detail: "No readable content found on the website" })
+    })
+    renderHome()
+
+    await importUrl("https://spa.test")
+
+    expect(
+      await screen.findByText("No readable content found on the website")
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText(/url/i)).toHaveValue("https://spa.test")
+  })
+
+  it("should explain when the backend rejects the url", async () => {
+    mockApi({
+      ok: false,
+      json: () =>
+        Promise.resolve({
+          detail: [{ type: "url_scheme", loc: ["body", "url"], msg: "..." }]
+        })
+    })
+    renderHome()
+
+    await importUrl("ftp://files.test/doc.html")
+
+    expect(
+      await screen.findByText("Enter a valid http or https link.")
+    ).toBeInTheDocument()
   })
 })

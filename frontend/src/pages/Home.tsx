@@ -55,6 +55,10 @@ const Home = () => {
   const [textTitle, setTextTitle] = useState("")
   const [textContent, setTextContent] = useState("")
 
+  const [websiteUrl, setWebsiteUrl] = useState("")
+  const [isImporting, setIsImporting] = useState(false)
+  const [importError, setImportError] = useState("")
+
   const [entries, setEntries] = useState<Entry[]>([])
 
   const [isLoading, setIsLoading] = useState(true)
@@ -106,6 +110,50 @@ const Home = () => {
       setIsLoading(false)
       setTextTitle("")
       setTextContent("")
+    }
+  }
+
+  const handleImportWebsite = async (
+    ev: FormEvent<HTMLFormElement>,
+    onClose: () => void
+  ) => {
+    ev.preventDefault()
+
+    try {
+      setIsImporting(true)
+      setImportError("")
+      const url = `${env.VITE_API_URL}/entries/website`
+      const headers = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      }
+
+      const resp = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ url: websiteUrl })
+      })
+
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => null)
+        // Validation errors come as a list, the other errors as a string
+        const detail = Array.isArray(data?.detail)
+          ? "Enter a valid http or https link."
+          : typeof data?.detail === "string"
+            ? data.detail
+            : "The website could not be imported."
+        setImportError(detail)
+        return
+      }
+
+      setWebsiteUrl("")
+      onClose()
+      await getUserEntries()
+    } catch (err) {
+      console.error(err)
+      setImportError("The website could not be imported. Retry later.")
+    } finally {
+      setIsImporting(false)
     }
   }
 
@@ -204,6 +252,11 @@ const Home = () => {
   }, [])
 
   const { isOpen, onOpen, onOpenChange } = useDisclosure()
+  const {
+    isOpen: isImportOpen,
+    onOpen: onImportOpen,
+    onOpenChange: onImportOpenChange
+  } = useDisclosure()
 
   const columns: Column[] = [
     {
@@ -242,9 +295,22 @@ const Home = () => {
   return (
     <>
       <h1 className="text-2xl font-bold mb-5">Welcome, {username}</h1>
-      <Button className="max-w-fit mb-5" color="primary" onPress={onOpen}>
-        Upload Text
-      </Button>
+      <div className="flex gap-3 mb-5">
+        <Button className="max-w-fit" color="primary" onPress={onOpen}>
+          Upload Text
+        </Button>
+        <Button
+          className="max-w-fit"
+          color="primary"
+          variant="bordered"
+          onPress={() => {
+            setImportError("")
+            onImportOpen()
+          }}
+        >
+          Import Website
+        </Button>
+      </div>
 
       <Table
         aria-label="entries table"
@@ -333,6 +399,52 @@ const Home = () => {
                 </Button>
               </ModalFooter>
             </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={isImportOpen}
+        size="3xl"
+        placement="center"
+        onOpenChange={onImportOpenChange}
+      >
+        <ModalContent>
+          {onClose => (
+            <Form
+              className="block"
+              onSubmit={ev => handleImportWebsite(ev, onClose)}
+            >
+              <ModalHeader className="flex flex-col gap-1">
+                Import Website
+              </ModalHeader>
+              <ModalBody>
+                <p>
+                  Paste the link of an article: its text will be saved as a
+                  new entry.
+                </p>
+                <Input
+                  label="URL"
+                  type="url"
+                  placeholder="https://example.com/article"
+                  name="websiteUrl"
+                  value={websiteUrl}
+                  onChange={ev => {
+                    setWebsiteUrl(ev.target.value)
+                    setImportError("")
+                  }}
+                  isInvalid={importError !== ""}
+                  errorMessage={importError}
+                  isDisabled={isImporting}
+                  isRequired
+                />
+              </ModalBody>
+              <ModalFooter>
+                <Button color="primary" type="submit" isLoading={isImporting}>
+                  Import
+                </Button>
+              </ModalFooter>
+            </Form>
           )}
         </ModalContent>
       </Modal>

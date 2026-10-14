@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 
 
 class UploadTextIn(BaseModel):
@@ -34,7 +34,7 @@ class UpdateEntryOut(BaseModel):
 
 
 class UploadWebsiteIn(BaseModel):
-    url: str
+    url: HttpUrl
 
 
 class UploadWebsiteOut(BaseModel):
