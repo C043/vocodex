@@ -1,4 +1,6 @@
 import { createContext, useContext } from "react"
+import type { PDFDocumentProxy } from "pdfjs-dist"
+import type { PdfPage, PageSize } from "../hooks/usePdfDocument"
 
 export type boundaryObj = {
   text: string
@@ -31,6 +33,14 @@ export type VoiceOption = {
   language: string
 }
 
+export type PdfState = {
+  doc: PDFDocumentProxy | null
+  numPages: number
+  pages: Map<number, PdfPage>
+  defaultPageSize: PageSize | null
+  loadPage: (page: number) => Promise<PdfPage | null>
+}
+
 interface PlayerContextType {
   // State
   isPlaying: boolean
@@ -39,6 +49,8 @@ interface PlayerContextType {
   activeWordIndex: number
   sentencesMap: Map<number, SentenceObj>
   title: string
+  kind: "text" | "pdf"
+  pdf: PdfState
   currentFontSize: number
   voiceOptions: VoiceOption[]
   currentVoice: string

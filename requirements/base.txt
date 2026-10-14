@@ -9,3 +9,5 @@ edge-tts
 alembic>=1.13
 httpx>=0.27
 trafilatura>=2.0
+pypdf>=5.0
+python-multipart>=0.0.9

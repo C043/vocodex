@@ -19,6 +19,8 @@ import {
 } from "@heroui/react"
 import {
   ChevronRightIcon,
+  DocumentArrowUpIcon,
+  DocumentIcon,
   DocumentTextIcon,
   GlobeAltIcon,
   SpeakerWaveIcon,
@@ -29,6 +31,7 @@ import { motion } from "framer-motion"
 type Entry = {
   id: number
   title: string
+  kind: "text" | "pdf"
   date: string
 }
 
@@ -53,6 +56,9 @@ const Home = () => {
   const [websiteUrl, setWebsiteUrl] = useState("")
   const [isImporting, setIsImporting] = useState(false)
   const [importError, setImportError] = useState("")
+
+  const [isUploadingPdf, setIsUploadingPdf] = useState(false)
+  const pdfInputRef = useRef<HTMLInputElement>(null)
 
   const [entries, setEntries] = useState<Entry[]>([])
 
@@ -149,6 +155,44 @@ const Home = () => {
       setImportError("The website could not be imported. Retry later.")
     } finally {
       setIsImporting(false)
+    }
+  }
+
+  const handlePdfUpload = async (file: File) => {
+    try {
+      setIsUploadingPdf(true)
+      const body = new FormData()
+      body.append("file", file)
+
+      const resp = await fetch(`${env.VITE_API_URL}/entries/pdf`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body
+      })
+
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => null)
+        addToast({
+          title: "The PDF could not be uploaded.",
+          description:
+            typeof data?.detail === "string" ? data.detail : "Retry later.",
+          color: "danger"
+        })
+        return
+      }
+
+      await getUserEntries()
+    } catch (err) {
+      console.error(err)
+      addToast({
+        title: "The PDF could not be uploaded.",
+        description: "Retry later.",
+        color: "danger"
+      })
+    } finally {
+      setIsUploadingPdf(false)
+      // Choosing the same file again still triggers an upload
+      if (pdfInputRef.current) pdfInputRef.current.value = ""
     }
   }
 
@@ -289,7 +333,7 @@ const Home = () => {
         </h1>
       </header>
 
-      <div className="grid grid-cols-2 gap-3 md:gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-8">
         <Button className={actionTile} onPress={onOpen}>
           <span className="grid place-items-center size-11 rounded-2xl bg-brand text-white shadow-lg shadow-violet-500/30 group-hover:scale-105 transition-transform">
             <DocumentTextIcon className="size-6" />
@@ -322,6 +366,35 @@ const Home = () => {
             </span>
           </span>
         </Button>
+        <Button
+          className={`${actionTile} col-span-2 md:col-span-1`}
+          isDisabled={isUploadingPdf}
+          onPress={() => pdfInputRef.current?.click()}
+        >
+          <span className="grid place-items-center size-11 rounded-2xl bg-gradient-to-br from-fuchsia-500 to-pink-500 text-white shadow-lg shadow-pink-500/30 group-hover:scale-105 transition-transform">
+            <DocumentArrowUpIcon className="size-6" />
+          </span>
+          <span>
+            <span className="block font-bold text-base md:text-lg">
+              Upload PDF
+            </span>
+            <span className="block text-xs md:text-sm text-foreground/60">
+              {isUploadingPdf ? "Uploading…" : "Listen to documents and books"}
+            </span>
+          </span>
+        </Button>
+        <input
+          ref={pdfInputRef}
+          type="file"
+          accept="application/pdf,.pdf"
+          aria-label="PDF file"
+          className="sr-only"
+          tabIndex={-1}
+          onChange={ev => {
+            const file = ev.target.files?.[0]
+            if (file) handlePdfUpload(file)
+          }}
+        />
       </div>
 
       <div className="flex items-baseline justify-between mb-3 px-1">
@@ -352,7 +425,7 @@ const Home = () => {
           </span>
           <p className="font-bold text-lg">No entries found.</p>
           <p className="text-sm text-foreground/60 max-w-xs">
-            Upload a text or import a website to start listening.
+            Upload a text or a PDF, or import a website, to start listening.
           </p>
         </div>
       ) : (
@@ -373,12 +446,22 @@ const Home = () => {
                 <span
                   className={`shrink-0 grid place-items-center size-12 rounded-2xl bg-gradient-to-br text-white ${coverGradients[entry.id % coverGradients.length]}`}
                 >
-                  <SpeakerWaveIcon className="size-5" />
+                  {entry.kind === "pdf" ? (
+                    <DocumentIcon className="size-5" />
+                  ) : (
+                    <SpeakerWaveIcon className="size-5" />
+                  )}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-semibold truncate">{entry.title}</span>
-                  {entry.date && (
+                  {(entry.date || entry.kind === "pdf") && (
                     <span className="block text-xs text-foreground/50 mt-0.5">
+                      {entry.kind === "pdf" && (
+                        <span className="font-semibold text-foreground/60">
+                          PDF
+                        </span>
+                      )}
+                      {entry.kind === "pdf" && entry.date && " · "}
                       {entry.date}
                     </span>
                   )}

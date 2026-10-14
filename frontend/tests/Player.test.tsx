@@ -25,6 +25,14 @@ vi.mock("../src/components/player/EntryContent", () => {
   return { default: ContextConsumer }
 })
 
+vi.mock("../src/components/player/PdfContent", () => {
+  const ContextConsumer = () => {
+    const playerData = useContext(PlayerContext)
+    return <div>PDF: {playerData?.title}</div>
+  }
+  return { default: ContextConsumer }
+})
+
 vi.mock("../src/components/player/FontSizeControls", () => ({
   default: () => <div>FontSizeControls</div>
 }))
@@ -33,9 +41,10 @@ vi.mock("../src/components/player/PlayerControls", () => ({
   PlayerControls: () => <div>PlayerControls</div>
 }))
 
-const makePlayerData = (title = "My test Title") => ({
+const makePlayerData = (title = "My test Title", kind = "text") => ({
   audioRef: { current: null as HTMLAudioElement | null },
-  title
+  title,
+  kind
 })
 
 describe("Player component", () => {
@@ -96,6 +105,13 @@ describe("Player component", () => {
     rerender(<Player />)
     expect(screen.getByText("Title: Updated Title")).toBeInTheDocument()
     expect(screen.queryByText("Title: My test Title")).not.toBeInTheDocument()
+  })
+
+  it("should show the pages of a PDF entry", () => {
+    ;(usePlayerData as Mock).mockReturnValue(makePlayerData("A book", "pdf"))
+    render(<Player />)
+    expect(screen.getByText("PDF: A book")).toBeInTheDocument()
+    expect(screen.queryByText("Title: A book")).not.toBeInTheDocument()
   })
 
   it("should request new player data when the route id changes", () => {

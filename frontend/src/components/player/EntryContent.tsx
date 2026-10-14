@@ -1,9 +1,7 @@
 import { Fragment, useEffect, useRef } from "react"
 import { usePlayer } from "../../contexts/PlayerContext"
 import type { SentenceObj } from "../../contexts/PlayerContext"
-
-// How long auto scroll stays paused after the user scrolls by hand
-const USER_SCROLL_PAUSE_MS = 4000
+import { useUserScrollPause } from "../../hooks/useUserScrollPause"
 
 const EntryContent = () => {
   const {
@@ -19,24 +17,11 @@ const EntryContent = () => {
 
   const chunkRefs = useRef(new Map<number, HTMLSpanElement>())
   const hasScrolled = useRef(false)
-  const pausedUntil = useRef(0)
-
-  // Let the user scroll freely: pause following while they touch or wheel
-  useEffect(() => {
-    const pause = () => {
-      pausedUntil.current = Date.now() + USER_SCROLL_PAUSE_MS
-    }
-    window.addEventListener("wheel", pause, { passive: true })
-    window.addEventListener("touchmove", pause, { passive: true })
-    return () => {
-      window.removeEventListener("wheel", pause)
-      window.removeEventListener("touchmove", pause)
-    }
-  }, [])
+  const isUserScrolling = useUserScrollPause()
 
   // Keep the chunk being read in the middle of the screen
   useEffect(() => {
-    if (!isAutoScroll || isLoading || Date.now() < pausedUntil.current) return
+    if (!isAutoScroll || isLoading || isUserScrolling()) return
     const el = chunkRefs.current.get(currentIndex)
     if (!el) return
 

@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, Header, UploadFile
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from app.db import get_session
@@ -13,6 +14,7 @@ from app.schemas.entriesSchemas import (
     UpdateEntryOut,
     UploadWebsiteIn,
     UploadWebsiteOut,
+    UploadPdfOut,
 )
 
 from app.controllers import entriesController
@@ -112,5 +114,48 @@ async def uploadWebsite(
     try:
         entry = await entriesController.uploadWebsite(data, current_user, session)
         return UploadWebsiteOut(id=entry.id)
+    except Exception:
+        raise
+
+
+@router.post("/pdf", status_code=201)
+async def uploadPdf(
+    file: UploadFile = File(...),
+    current_user: Users = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> UploadPdfOut:
+    try:
+        data = await file.read()
+        entry = await entriesController.uploadPdf(
+            data, file.filename, current_user, session
+        )
+        return UploadPdfOut(id=entry.id)
+    except Exception:
+        raise
+
+
+@router.get("/{entry_id}/file", status_code=200)
+async def getEntryFile(
+    entry_id: int,
+    range: str | None = Header(default=None),
+    current_user: Users = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    try:
+        data, total, byteRange = await entriesController.getEntryFile(
+            entry_id, current_user, session, range
+        )
+        headers = {"Accept-Ranges": "bytes"}
+        if byteRange is None:
+            return Response(content=data, media_type="application/pdf", headers=headers)
+
+        start, end = byteRange
+        headers["Content-Range"] = f"bytes {start}-{end}/{total}"
+        return Response(
+            content=data,
+            status_code=206,
+            media_type="application/pdf",
+            headers=headers,
+        )
     except Exception:
         raise

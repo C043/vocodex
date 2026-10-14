@@ -10,8 +10,11 @@ const FontSizeControls = () => {
     handleFontSizeUp,
     handleFontSizeDown,
     isAutoScroll,
-    toggleAutoScroll
+    toggleAutoScroll,
+    kind
   } = usePlayer()
+  // The same buttons zoom the pages of a PDF
+  const isPdf = kind === "pdf"
 
   const button =
     "grid place-items-center size-9 rounded-full hover:bg-foreground/10 active:scale-90 transition cursor-pointer"
@@ -22,7 +25,7 @@ const FontSizeControls = () => {
       <div className="glass flex flex-col items-center gap-1 p-1 rounded-full">
         <button
           type="button"
-          aria-label="Increase font size"
+          aria-label={isPdf ? "Zoom in" : "Increase font size"}
           onMouseDown={ev => ev.preventDefault()}
           onClick={handleFontSizeUp}
           className={button}
@@ -30,11 +33,11 @@ const FontSizeControls = () => {
           <PlusIcon className="size-4" />
         </button>
         <span className="text-[10px] font-bold text-foreground/50 select-none">
-          Aa
+          {isPdf ? "Zoom" : "Aa"}
         </span>
         <button
           type="button"
-          aria-label="Decrease font size"
+          aria-label={isPdf ? "Zoom out" : "Decrease font size"}
           onMouseDown={ev => ev.preventDefault()}
           onClick={handleFontSizeDown}
           className={button}

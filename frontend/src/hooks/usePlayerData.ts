@@ -11,6 +11,12 @@ import { audio } from "framer-motion/m"
 import { splitIntoChunks } from "../utils/splitIntoChunks"
 import { playAudio } from "../utils/playAudio"
 import { useAutoScroll } from "./useAutoScroll"
+import { usePdfDocument } from "./usePdfDocument"
+import { openPdf } from "../utils/pdf"
+import { pageOfChunk } from "../utils/pdfText"
+import type { PDFDocumentProxy } from "pdfjs-dist"
+
+export type EntryKind = "text" | "pdf"
 
 type State = {
   darkMode: {
@@ -39,6 +45,11 @@ export const usePlayerData = (id: string | undefined) => {
   const [currentSpeed, setSpeed] = useState(userSpeed)
   const [currentVoice, setVoice] = useState(userVoice)
   const [title, setTitle] = useState("")
+  const [kind, setKind] = useState<EntryKind>("text")
+  const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null)
+  // Saved progress of a PDF, waiting for the document to open
+  const [pdfStart, setPdfStart] = useState<number | null>(null)
+  const pdf = usePdfDocument(pdfDoc)
   const [currentIndex, setCurrentIndex] = useState<number>(-1)
   const [activeWordIndex, setActiveWordIndex] = useState(-1)
   const [currentFontSize, setFontSize] = useState(1)
@@ -87,9 +98,16 @@ export const usePlayerData = (id: string | undefined) => {
       }
 
       const data = await resp.json()
+      setTitle(data.title)
+
+      if (data.kind === "pdf") {
+        setKind("pdf")
+        setPdfStart(data.progress)
+        setPdfDoc(await openPdf(id as string))
+        return
+      }
 
       splitIntoSentences(data.content, data.progress)
-      setTitle(data.title)
     } catch (err) {
       console.error(err)
       navigate("/")
@@ -177,12 +195,23 @@ export const usePlayerData = (id: string | undefined) => {
     }
   }
 
+  // Ids of the chunks read after a chunk, among the ones already known
+  const followingIds = (fromIndex: number, count: number) => {
+    if (kind === "text") {
+      return Array.from({ length: count }, (_, i) => fromIndex + i + 1)
+    }
+    // PDF ids jump between pages, and pages are added as they load
+    return [...sentencesMap.keys()]
+      .filter(key => key > fromIndex)
+      .sort((a, b) => a - b)
+      .slice(0, count)
+  }
+
   const prefetchNextSentences = async (
     fromIndex: number,
     count: number = 3
   ) => {
-    for (let i = 1; i <= count; i++) {
-      const targetIndex = fromIndex + i
+    for (const targetIndex of followingIds(fromIndex, count)) {
       const sentence = sentencesMap.get(targetIndex)
 
       if (
@@ -285,12 +314,22 @@ export const usePlayerData = (id: string | undefined) => {
 
   const handleForward = async () => {
     if (isLoading) return
+    if (kind === "pdf") {
+      const nextIndex = await pdf.adjacentChunk(currentIndex, 1)
+      if (nextIndex !== null) setCurrentIndex(nextIndex)
+      return
+    }
     const nextIndex = currentIndex + 1
     setCurrentIndex(nextIndex)
   }
 
   const handleBackwards = async () => {
     if (isLoading) return
+    if (kind === "pdf") {
+      const prevIndex = await pdf.adjacentChunk(currentIndex, -1)
+      if (prevIndex !== null) setCurrentIndex(prevIndex)
+      return
+    }
     const prevIndex = currentIndex - 1
     setCurrentIndex(prevIndex)
   }
@@ -363,6 +402,51 @@ export const usePlayerData = (id: string | undefined) => {
       if (track) track.removeEventListener("cuechange", handleCueChange)
     }
   }, [])
+
+  // Start a PDF where it was left, once the document is open
+  useEffect(() => {
+    if (!pdfDoc || pdfStart === null) return
+    let cancelled = false
+    ;(async () => {
+      const start = await pdf.resolveChunk(pdfStart)
+      if (!cancelled && start !== null) setCurrentIndex(start)
+    })().catch(console.error)
+    return () => {
+      cancelled = true
+    }
+  }, [pdfDoc, pdfStart])
+
+  // Keep the text of the page being read and of the pages around it ready
+  useEffect(() => {
+    if (kind !== "pdf" || currentIndex === -1) return
+    const page = pageOfChunk(currentIndex)
+    for (const p of [page, page + 1, page - 1]) {
+      pdf.loadPage(p).catch(console.error)
+    }
+  }, [kind, pdfDoc, currentIndex])
+
+  // Add the chunks of the PDF pages as they load
+  useEffect(() => {
+    if (pdf.pages.size === 0) return
+    setSentencesMap(prev => {
+      let updated: Map<number, SentenceObj> | null = null
+      for (const page of pdf.pages.values()) {
+        for (const chunk of page.chunks) {
+          if (prev.has(chunk.id)) continue
+          updated ??= new Map(prev)
+          updated.set(chunk.id, {
+            id: chunk.id,
+            boundaries: [],
+            text: chunk.text,
+            prev: null,
+            audio: { voice: null, url: null },
+            next: null
+          })
+        }
+      }
+      return updated ?? prev
+    })
+  }, [pdf.pages])
 
   // Handle voices list fetch
   useEffect(() => {
@@ -566,6 +650,8 @@ export const usePlayerData = (id: string | undefined) => {
     activeWordIndex,
     sentencesMap,
     title,
+    kind,
+    pdf,
     currentFontSize,
     isAutoScroll,
     currentSpeed,

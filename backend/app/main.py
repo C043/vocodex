@@ -51,7 +51,12 @@ from app.errorHandler.errorHandler import registerExceptionHandlers
 registerExceptionHandlers(app)
 
 app.add_middleware(
-    CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    # The PDF reader reads the file size from partial responses
+    expose_headers=["Content-Range"],
 )
 app.add_middleware(AuthMiddleware, protected_paths=("/upload",))
 

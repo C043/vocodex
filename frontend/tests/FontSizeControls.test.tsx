@@ -49,3 +49,25 @@ describe("FontSizeControls auto scroll button", () => {
     expect(value.toggleAutoScroll).toHaveBeenCalledTimes(1)
   })
 })
+
+describe("FontSizeControls size buttons", () => {
+  it("change the font size of a text", () => {
+    const value = renderControls({ kind: "text" })
+
+    fireEvent.click(screen.getByRole("button", { name: "Increase font size" }))
+    fireEvent.click(screen.getByRole("button", { name: "Decrease font size" }))
+
+    expect(value.handleFontSizeUp).toHaveBeenCalledTimes(1)
+    expect(value.handleFontSizeDown).toHaveBeenCalledTimes(1)
+  })
+
+  it("zoom the pages of a PDF", () => {
+    const value = renderControls({ kind: "pdf" })
+
+    fireEvent.click(screen.getByRole("button", { name: "Zoom in" }))
+    fireEvent.click(screen.getByRole("button", { name: "Zoom out" }))
+
+    expect(value.handleFontSizeUp).toHaveBeenCalledTimes(1)
+    expect(value.handleFontSizeDown).toHaveBeenCalledTimes(1)
+  })
+})

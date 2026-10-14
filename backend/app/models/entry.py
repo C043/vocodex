@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import String, func, ForeignKey, text
 from sqlalchemy.orm import declarative_base, mapped_column, relationship
 from sqlalchemy.orm.base import Mapped
-from sqlalchemy.types import DateTime, Integer
+from sqlalchemy.types import DateTime, Integer, LargeBinary
 from app.models.base import Base
 
 if TYPE_CHECKING:
@@ -20,6 +20,10 @@ class Entries(Base):
     )
     title: Mapped[str] = mapped_column(String(1200))
     content: Mapped[str] = mapped_column(String(), nullable=False)
+    # "text" for pasted text and websites, "pdf" when the entry is a PDF file
+    kind: Mapped[str] = mapped_column(
+        String(16), default="text", server_default=text("'text'"), nullable=False
+    )
     progress: Mapped[int] = mapped_column(
         Integer, default=0, server_default=text("0"), nullable=False
     )
@@ -28,3 +32,17 @@ class Entries(Base):
     )
 
     user: Mapped["Users"] = relationship(back_populates="entries", passive_deletes=True)
+
+
+class EntryFiles(Base):
+    """
+    The original file of an entry (e.g. the PDF), kept in its own table so
+    reading or listing entries never loads the file bytes.
+    """
+
+    __tablename__ = "entry_files"
+
+    entry_id: Mapped[int] = mapped_column(
+        ForeignKey("entries.id", ondelete="CASCADE"), primary_key=True
+    )
+    data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)

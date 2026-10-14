@@ -19,6 +19,7 @@
     "@tailwindcss/vite": "^4.1.13",
     "framer-motion": "^12.23.19",
     "jwt-decode": "^4.0.0",
+    "pdfjs-dist": "6.3.289",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-redux": "^9.2.0",

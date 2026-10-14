@@ -14,6 +14,7 @@ class UploadTextOut(BaseModel):
 class EntrySummary(BaseModel):
     id: int
     title: str
+    kind: str
     date: datetime
 
 
@@ -38,4 +39,8 @@ class UploadWebsiteIn(BaseModel):
 
 
 class UploadWebsiteOut(BaseModel):
+    id: int
+
+
+class UploadPdfOut(BaseModel):
     id: int
