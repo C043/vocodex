@@ -1,10 +1,6 @@
 # VOCODEX
 
 <div align="center">
-  <img src="VOCODEX.png" alt="vocodex-logo" width="400">
-</div>
-
-<div align="center">
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)

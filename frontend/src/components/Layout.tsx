@@ -208,11 +208,6 @@ const Layout = () => {
                 <ArrowLeftIcon className="size-5" />
               </span>
             )}
-            <img
-              src="/VOCODEX.png"
-              alt=""
-              className="w-8 md:w-9 h-auto drop-shadow-[0_0_12px_rgba(139,108,255,0.55)]"
-            />
             <span className="text-gradient">VOCODEX</span>
           </NavLink>
 

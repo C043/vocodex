@@ -185,11 +185,6 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
     <div className="min-h-[calc(100dvh-10rem)] flex items-center justify-center">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center text-center mb-6">
-          <img
-            src="/VOCODEX.png"
-            alt=""
-            className="w-16 h-auto mb-4 drop-shadow-[0_0_24px_rgba(139,108,255,0.6)]"
-          />
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
             {isLogin === "login" ? "Welcome back" : "Create account"}
           </h1>
