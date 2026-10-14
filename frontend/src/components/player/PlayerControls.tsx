@@ -338,7 +338,7 @@ export const PlayerControls = () => {
                 </div>
                 <div className="flex gap-2">
                   <div className="flex-1">
-                    <FontSizeControls inline />
+                    <FontSizeControls />
                   </div>
                   {textViewButton()}
                 </div>

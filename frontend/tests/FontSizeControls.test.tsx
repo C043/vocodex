@@ -12,8 +12,6 @@ const renderControls = (overrides: Partial<PlayerValue> = {}) => {
   const value = {
     handleFontSizeUp: vi.fn(),
     handleFontSizeDown: vi.fn(),
-    isAutoScroll: true,
-    toggleAutoScroll: vi.fn(),
     togglePdfView: vi.fn(),
     ...overrides
   } as PlayerValue
@@ -24,32 +22,6 @@ const renderControls = (overrides: Partial<PlayerValue> = {}) => {
   )
   return value
 }
-
-describe("FontSizeControls auto scroll button", () => {
-  it("shows auto scroll as pressed when enabled", () => {
-    renderControls({ isAutoScroll: true })
-
-    expect(
-      screen.getByRole("button", { name: "Auto scroll" })
-    ).toHaveAttribute("aria-pressed", "true")
-  })
-
-  it("shows auto scroll as not pressed when disabled", () => {
-    renderControls({ isAutoScroll: false })
-
-    expect(
-      screen.getByRole("button", { name: "Auto scroll" })
-    ).toHaveAttribute("aria-pressed", "false")
-  })
-
-  it("toggles auto scroll when clicked", () => {
-    const value = renderControls()
-
-    fireEvent.click(screen.getByRole("button", { name: "Auto scroll" }))
-
-    expect(value.toggleAutoScroll).toHaveBeenCalledTimes(1)
-  })
-})
 
 describe("FontSizeControls size buttons", () => {
   it("change the font size of a text", () => {
@@ -94,24 +66,15 @@ describe("FontSizeControls text view switch", () => {
   })
 })
 
-describe("FontSizeControls inline", () => {
-  it("lays the size buttons in a row without auto scroll", () => {
-    const value = {
-      handleFontSizeUp: vi.fn(),
-      handleFontSizeDown: vi.fn(),
-      kind: "pdf",
-      pdfView: "pdf"
-    } as unknown as PlayerValue
-    const { container } = render(
-      <PlayerContext.Provider value={value}>
-        <FontSizeControls inline />
-      </PlayerContext.Provider>
-    )
+describe("FontSizeControls layout", () => {
+  // Auto scroll lives in the player bar
+  it("lays the size buttons in a row inside the player options", () => {
+    renderControls({ kind: "pdf", pdfView: "pdf" })
 
     expect(screen.getByRole("button", { name: "Zoom in" })).toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: "Auto scroll" })
     ).not.toBeInTheDocument()
-    expect(container.querySelector(".fixed")).toBeNull()
+    expect(document.querySelector(".fixed")).toBeNull()
   })
 })
