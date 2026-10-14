@@ -296,6 +296,7 @@ export const PlayerControls = () => {
 
   const barButton =
     "grid place-items-center size-10 shrink-0 rounded-full active:scale-90 transition cursor-pointer"
+  const barButtonOn = "bg-brand text-white shadow-md shadow-violet-500/40"
 
   return (
     // A compact bar, docked on mobile and floating on desktop, the settings
@@ -358,7 +359,7 @@ export const PlayerControls = () => {
             title={isAutoScroll ? "Auto scroll on" : "Auto scroll off"}
             onMouseDown={ev => ev.preventDefault()}
             onClick={toggleAutoScroll}
-            className={`${barButton} ${isAutoScroll ? "text-primary bg-primary/10" : "text-foreground/50 hover:bg-foreground/10"}`}
+            className={`${barButton} ${isAutoScroll ? barButtonOn : "text-foreground/50 hover:bg-foreground/10"}`}
           >
             <ViewfinderCircleIcon className="size-5" />
           </button>
@@ -370,7 +371,7 @@ export const PlayerControls = () => {
             aria-controls="player-options"
             onMouseDown={ev => ev.preventDefault()}
             onClick={() => setIsOptionsOpen(open => !open)}
-            className={`${barButton} ${isOptionsOpen ? "text-primary bg-primary/10" : "text-foreground/60 hover:bg-foreground/10"}`}
+            className={`${barButton} ${isOptionsOpen ? barButtonOn : "text-foreground/60 hover:bg-foreground/10"}`}
           >
             <AdjustmentsHorizontalIcon className="size-5" />
           </button>
