@@ -161,9 +161,9 @@ export const PlayerControls = () => {
       <div className="glass rounded-t-[2rem] md:rounded-[2rem] px-5 pt-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:p-3 md:pt-4 md:px-4 flex flex-col gap-3">
         <ReadingProgress />
         <div className="flex flex-col-reverse md:flex-row items-center gap-3 md:gap-4">
-          <div className="flex w-full md:w-auto gap-3 md:contents">
+          <div className="flex w-full md:w-auto justify-center gap-3 md:contents">
             <VoiceSelect
-              className="flex-1 md:flex-none md:w-44 md:order-1"
+              className="w-32 md:order-1"
               voices={voiceOptions}
               selectedVoice={currentVoice}
               onChange={selected => {

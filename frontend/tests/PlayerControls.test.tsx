@@ -89,3 +89,15 @@ describe("PlayerControls reading progress", () => {
     expect(screen.getByLabelText("Time left")).toHaveTextContent("-0:00")
   })
 })
+
+describe("PlayerControls voice select", () => {
+  it("keeps the voice select compact instead of stretching", () => {
+    renderControls()
+    const input = screen.getByRole("combobox", { name: "Select Voice" })
+    const root = input.closest(".md\\:order-1")
+
+    expect(root).toHaveClass("w-32")
+    expect(root).not.toHaveClass("flex-1")
+    expect(root).not.toHaveClass("md:w-44")
+  })
+})
