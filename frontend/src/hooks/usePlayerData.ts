@@ -23,6 +23,7 @@ import {
   type ZoomPreferences
 } from "../redux/reducer/authSlice"
 import { DEFAULT_FONT } from "../utils/fonts"
+import { useMediaSession } from "./useMediaSession"
 
 export type EntryKind = "text" | "pdf"
 
@@ -44,6 +45,15 @@ type State = {
 
 const MIN_ZOOM = 1
 const MAX_ZOOM = 4
+
+// Sentences synthesized ahead of the one being read. A minimized app gets
+// its network throttled, so it keeps a longer queue to play without gaps
+const PREFETCH_VISIBLE = 5
+const PREFETCH_HIDDEN = 20
+const prefetchCount = () =>
+  document.hidden ? PREFETCH_HIDDEN : PREFETCH_VISIBLE
+
+type SentenceAudio = { audioUrl: string; boundaries: boundaryObj[] }
 
 export const usePlayerData = (id: string | undefined) => {
   const env = import.meta.env
@@ -86,6 +96,11 @@ export const usePlayerData = (id: string | undefined) => {
   )
 
   const audioRef = useRef<HTMLAudioElement>(null)
+  // Latest sentences, for prefetch loops that outlive their render
+  const sentencesRef = useRef(sentencesMap)
+  sentencesRef.current = sentencesMap
+  // Synthesis requests still on their way, so a sentence is asked only once
+  const pendingAudio = useRef(new Map<string, Promise<SentenceAudio>>())
 
   const speedOptions: SpeedOption[] = [
     { key: "+100%", label: "2x" },
@@ -233,7 +248,7 @@ export const usePlayerData = (id: string | undefined) => {
       return Array.from({ length: count }, (_, i) => fromIndex + i + 1)
     }
     // PDF ids jump between pages, and pages are added as they load
-    return [...sentencesMap.keys()]
+    return [...sentencesRef.current.keys()]
       .filter(key => key > fromIndex)
       .sort((a, b) => a - b)
       .slice(0, count)
@@ -244,13 +259,14 @@ export const usePlayerData = (id: string | undefined) => {
     count: number = 3
   ) => {
     for (const targetIndex of followingIds(fromIndex, count)) {
-      const sentence = sentencesMap.get(targetIndex)
+      const sentence = sentencesRef.current.get(targetIndex)
 
       if (
         (sentence && !sentence.audio.url) ||
         (sentence && sentence.audio.voice !== currentVoice)
       ) {
-        const { audioUrl, boundaries } = await fetchSentenceAudio(
+        const { audioUrl, boundaries } = await requestSentenceAudio(
+          targetIndex,
           sentence.text,
           currentVoice
         )
@@ -262,7 +278,22 @@ export const usePlayerData = (id: string | undefined) => {
     }
   }
 
-  const fetchSentenceAudio = async (text: string, voice: string) => {
+  // Shares the request of a sentence already being synthesized
+  const requestSentenceAudio = (index: number, text: string, voice: string) => {
+    const key = `${voice}|${index}`
+    const pending = pendingAudio.current.get(key)
+    if (pending) return pending
+    const request = fetchSentenceAudio(text, voice).finally(() =>
+      pendingAudio.current.delete(key)
+    )
+    pendingAudio.current.set(key, request)
+    return request
+  }
+
+  const fetchSentenceAudio = async (
+    text: string,
+    voice: string
+  ): Promise<SentenceAudio> => {
     try {
       const url = `${env.VITE_API_URL}/synthesis/GET`
       const method = "POST"
@@ -388,10 +419,12 @@ export const usePlayerData = (id: string | undefined) => {
         progress: currentIndex
       }
 
+      // keepalive lets the save finish when a minimized app gets frozen
       const resp = await fetch(url, {
         method,
         headers,
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
+        keepalive: true
       })
 
       if (!resp.ok) throw new Error("Progress saving failed")
@@ -622,7 +655,7 @@ export const usePlayerData = (id: string | undefined) => {
         const text = sentencesMap.get(currentIndex)?.text
         if (text) {
           const { audioUrl: fetchedAudioUrl, boundaries } =
-            await fetchSentenceAudio(text, currentVoice)
+            await requestSentenceAudio(currentIndex, text, currentVoice)
           if (fetchedAudioUrl) {
             updateSentence(
               fetchedAudioUrl,
@@ -668,7 +701,7 @@ export const usePlayerData = (id: string | undefined) => {
     // Add the cue event listener
     track.addEventListener("cuechange", handleCueChange)
 
-    prefetchNextSentences(currentIndex, 5)
+    prefetchNextSentences(currentIndex, prefetchCount())
 
     return () => {
       cancelled = true
@@ -680,6 +713,27 @@ export const usePlayerData = (id: string | undefined) => {
   useEffect(() => {
     handleVoiceSpeed()
   }, [currentSpeed])
+
+  // Fill the longer queue as soon as the app is minimized
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && currentIndex !== -1) {
+        prefetchNextSentences(currentIndex, PREFETCH_HIDDEN)
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+  }, [currentIndex, currentVoice, kind])
+
+  useMediaSession({
+    title,
+    isPlaying,
+    onPlay: handlePlay,
+    onPause: handlePause,
+    onNext: handleForward,
+    onPrevious: handleBackwards
+  })
 
   return {
     audioRef,

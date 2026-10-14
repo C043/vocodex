@@ -43,6 +43,7 @@ Components:
 - Text highlighting in sync with the voice, for plain text and `PDF`s, with the reader following along as it plays
 - Reading progress bar with time read and time left
 - Audio control (play, pause, forward, backward) with keyboard shortcuts too
+- Keeps reading with the app minimized or the screen locked, with play, pause, next and previous on the lock screen and notification controls
 - Font size control, and zoom for `PDF` pages, saved per mode in the user preferences
 - Light and dark theme
 - Mobile app-style layout with a compact player bar and an options panel for voice, speed and text size

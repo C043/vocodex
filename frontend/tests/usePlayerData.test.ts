@@ -354,3 +354,130 @@ describe("usePlayerData font", () => {
     expect(saved).toEqual([{ font: "inter" }])
   })
 })
+
+describe("usePlayerData in the background", () => {
+  // Sentences long enough to each make their own chunk
+  const sentence = (i: number) =>
+    `Sentence number ${i} is long enough to be read on its own, so it fills a whole chunk of the text by itself here.`
+  const content = Array.from({ length: 30 }, (_, i) => sentence(i)).join(" ")
+
+  // Answers the entry and the synthesis; synthesis of the sentences in
+  // `pending` never answers, as if the network were still busy
+  const mockBackend = (pending: (text: string) => boolean = () => false) =>
+    vi.spyOn(window, "fetch").mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url.endsWith("/entries/long-id"))
+        return new Response(
+          JSON.stringify({ title: "Long", content, progress: 0 }),
+          { status: 200 }
+        )
+      if (url.endsWith("/synthesis/GET")) {
+        const { text } = JSON.parse(String(init?.body))
+        if (pending(text)) return new Promise<Response>(() => {})
+        return new Response(
+          JSON.stringify({ audio: btoa("audio"), boundaries: [] }),
+          { status: 200 }
+        )
+      }
+      return new Response(JSON.stringify([]), { status: 200 })
+    })
+
+  const synthesizedTexts = (fetchSpy: ReturnType<typeof mockBackend>) =>
+    fetchSpy.mock.calls
+      .filter(([url]) => String(url).endsWith("/synthesis/GET"))
+      .map(([, init]) => JSON.parse(String(init?.body)).text as string)
+
+  const setHidden = (hidden: boolean) =>
+    Object.defineProperty(document, "hidden", {
+      value: hidden,
+      configurable: true
+    })
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.spyOn(window.localStorage.__proto__, "getItem").mockReturnValue(
+      "fake-token"
+    )
+    vi.spyOn(console, "error").mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    Reflect.deleteProperty(document, "hidden")
+  })
+
+  const startPlayer = async () => {
+    const { result } = renderHook(() => usePlayerData("long-id"))
+    result.current.audioRef.current = createMockAudio()
+    await waitFor(() => expect(result.current.isPlaying).toBe(true))
+    return result
+  }
+
+  it("prefetches further ahead while the app is minimized", async () => {
+    setHidden(true)
+    const fetchSpy = mockBackend()
+
+    await startPlayer()
+
+    await waitFor(() =>
+      expect(synthesizedTexts(fetchSpy)).toContain(sentence(15))
+    )
+  })
+
+  it("prefetches only a few sentences while the app is visible", async () => {
+    setHidden(false)
+    const fetchSpy = mockBackend()
+
+    await startPlayer()
+
+    await waitFor(() =>
+      expect(synthesizedTexts(fetchSpy)).toContain(sentence(5))
+    )
+    expect(synthesizedTexts(fetchSpy)).not.toContain(sentence(6))
+  })
+
+  it("prefetches further ahead as soon as the app is minimized", async () => {
+    setHidden(false)
+    const fetchSpy = mockBackend()
+    await startPlayer()
+    await waitFor(() =>
+      expect(synthesizedTexts(fetchSpy)).toContain(sentence(5))
+    )
+
+    setHidden(true)
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange"))
+    })
+
+    await waitFor(() =>
+      expect(synthesizedTexts(fetchSpy)).toContain(sentence(15))
+    )
+  })
+
+  it("does not ask twice for a sentence already being synthesized", async () => {
+    const fetchSpy = mockBackend(text => text === sentence(1))
+    const result = await startPlayer()
+
+    act(() => result.current.setCurrentIndex(1))
+    // Let the new sentence's requests go out
+    await waitFor(() =>
+      expect(synthesizedTexts(fetchSpy)).toContain(sentence(1))
+    )
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    expect(
+      synthesizedTexts(fetchSpy).filter(text => text === sentence(1))
+    ).toHaveLength(1)
+  })
+
+  it("saves progress with a request that outlives a frozen page", async () => {
+    const fetchSpy = mockBackend()
+
+    await startPlayer()
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining("/entries/text/long-id/progress"),
+      expect.objectContaining({ method: "POST", keepalive: true })
+    )
+  })
+})
