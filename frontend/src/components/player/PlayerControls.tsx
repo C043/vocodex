@@ -29,8 +29,12 @@ export const PlayerControls = () => {
     setSpeed,
     currentSpeed,
     voiceOptions,
-    speedOptions
+    speedOptions,
+    kind,
+    pdfView,
+    togglePdfView
   } = usePlayer()
+  const isPdfText = kind === "pdf" && pdfView === "text"
 
   const dispatch = useDispatch()
 
@@ -194,6 +198,22 @@ export const PlayerControls = () => {
             >
               {speed => <SelectItem>{speed.label}</SelectItem>}
             </Select>
+            {/* A PDF can be read as plain text, easier on small screens */}
+            {kind === "pdf" && (
+              <button
+                type="button"
+                aria-label="Text view"
+                aria-pressed={isPdfText}
+                title={isPdfText ? "Show the pages" : "Show the text only"}
+                onMouseDown={ev => ev.preventDefault()}
+                onClick={togglePdfView}
+                className={`grid place-items-center size-10 shrink-0 rounded-full active:scale-90 transition cursor-pointer md:order-4 ${isPdfText ? "bg-brand text-white shadow-md shadow-violet-500/40" : "bg-foreground/5 hover:bg-foreground/10 text-foreground/60"}`}
+              >
+                <span aria-hidden className="text-sm font-bold select-none">
+                  Aa
+                </span>
+              </button>
+            )}
           </div>
 
           <div className="flex items-center justify-center gap-6 md:gap-2 md:order-2">

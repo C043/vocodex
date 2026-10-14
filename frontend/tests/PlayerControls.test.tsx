@@ -35,6 +35,7 @@ const renderControls = (overrides: Partial<PlayerValue> = {}) => {
     currentIndex: -1,
     sentencesMap: new Map(),
     pdf: { numPages: 0, pages: new Map() },
+    togglePdfView: vi.fn(),
     ...overrides
   } as PlayerValue
   render(
@@ -99,5 +100,47 @@ describe("PlayerControls voice select", () => {
     expect(root).toHaveClass("w-32")
     expect(root).not.toHaveClass("flex-1")
     expect(root).not.toHaveClass("md:w-44")
+  })
+})
+
+describe("PlayerControls text view switch", () => {
+  it("is not shown for a text entry", () => {
+    renderControls({ kind: "text" })
+
+    expect(
+      screen.queryByRole("button", { name: "Text view" })
+    ).not.toBeInTheDocument()
+  })
+
+  it("shows an Aa icon for a PDF", () => {
+    renderControls({ kind: "pdf", pdfView: "pdf" })
+
+    expect(screen.getByRole("button", { name: "Text view" })).toHaveTextContent(
+      "Aa"
+    )
+  })
+
+  it("is not pressed while a PDF shows its pages", () => {
+    renderControls({ kind: "pdf", pdfView: "pdf" })
+
+    expect(
+      screen.getByRole("button", { name: "Text view" })
+    ).toHaveAttribute("aria-pressed", "false")
+  })
+
+  it("is pressed while a PDF is read as text", () => {
+    renderControls({ kind: "pdf", pdfView: "text" })
+
+    expect(
+      screen.getByRole("button", { name: "Text view" })
+    ).toHaveAttribute("aria-pressed", "true")
+  })
+
+  it("switches the view of a PDF when clicked", async () => {
+    const value = renderControls({ kind: "pdf", pdfView: "pdf" })
+
+    await userEvent.click(screen.getByRole("button", { name: "Text view" }))
+
+    expect(value.togglePdfView).toHaveBeenCalledTimes(1)
   })
 })

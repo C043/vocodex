@@ -1,5 +1,4 @@
 import {
-  DocumentTextIcon,
   MinusIcon,
   PlusIcon,
   ViewfinderCircleIcon
@@ -13,8 +12,7 @@ const FontSizeControls = () => {
     isAutoScroll,
     toggleAutoScroll,
     kind,
-    pdfView,
-    togglePdfView
+    pdfView
   } = usePlayer()
   const isPdf = kind === "pdf"
   const isPdfText = isPdf && pdfView === "text"
@@ -61,20 +59,6 @@ const FontSizeControls = () => {
         >
           <ViewfinderCircleIcon className="size-4" />
         </button>
-        {/* A PDF can be read as plain text, easier on small screens */}
-        {isPdf && (
-          <button
-            type="button"
-            aria-label="Text view"
-            aria-pressed={isPdfText}
-            title={isPdfText ? "Show the pages" : "Show the text only"}
-            onMouseDown={ev => ev.preventDefault()}
-            onClick={togglePdfView}
-            className={`${button} ${isPdfText ? "bg-brand text-white shadow-md shadow-violet-500/40 hover:bg-brand" : "text-foreground/50"}`}
-          >
-            <DocumentTextIcon className="size-4" />
-          </button>
-        )}
       </div>
     </div>
   )

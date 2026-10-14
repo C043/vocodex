@@ -74,35 +74,12 @@ describe("FontSizeControls size buttons", () => {
 })
 
 describe("FontSizeControls text view switch", () => {
-  it("is not shown for a text entry", () => {
-    renderControls({ kind: "text" })
+  it("is not shown here, it lives in the player controls", () => {
+    renderControls({ kind: "pdf", pdfView: "pdf" })
 
     expect(
       screen.queryByRole("button", { name: "Text view" })
     ).not.toBeInTheDocument()
-  })
-
-  it("shows whether a PDF is read as text", () => {
-    renderControls({ kind: "pdf", pdfView: "pdf" })
-    expect(
-      screen.getByRole("button", { name: "Text view" })
-    ).toHaveAttribute("aria-pressed", "false")
-  })
-
-  it("is pressed while a PDF is read as text", () => {
-    renderControls({ kind: "pdf", pdfView: "text" })
-
-    expect(
-      screen.getByRole("button", { name: "Text view" })
-    ).toHaveAttribute("aria-pressed", "true")
-  })
-
-  it("switches the view of a PDF when clicked", () => {
-    const value = renderControls({ kind: "pdf", pdfView: "pdf" })
-
-    fireEvent.click(screen.getByRole("button", { name: "Text view" }))
-
-    expect(value.togglePdfView).toHaveBeenCalledTimes(1)
   })
 
   it("lets the size buttons change the font size of a PDF read as text", () => {
