@@ -93,3 +93,25 @@ describe("FontSizeControls text view switch", () => {
     ).toBeInTheDocument()
   })
 })
+
+describe("FontSizeControls inline", () => {
+  it("lays the size buttons in a row without auto scroll", () => {
+    const value = {
+      handleFontSizeUp: vi.fn(),
+      handleFontSizeDown: vi.fn(),
+      kind: "pdf",
+      pdfView: "pdf"
+    } as unknown as PlayerValue
+    const { container } = render(
+      <PlayerContext.Provider value={value}>
+        <FontSizeControls inline />
+      </PlayerContext.Provider>
+    )
+
+    expect(screen.getByRole("button", { name: "Zoom in" })).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Auto scroll" })
+    ).not.toBeInTheDocument()
+    expect(container.querySelector(".fixed")).toBeNull()
+  })
+})

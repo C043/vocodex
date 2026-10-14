@@ -1,9 +1,10 @@
-import { describe, it, expect, vi } from "vitest"
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import type { ComponentProps } from "react"
 import userEvent from "@testing-library/user-event"
 import { render, screen } from "./test-utils"
 import { PlayerControls } from "../src/components/player/PlayerControls"
 import { PlayerContext } from "../src/contexts/PlayerContext"
+import { setScreenWidth, resetScreenWidth } from "./mediaQuery"
 
 type PlayerValue = NonNullable<
   ComponentProps<typeof PlayerContext.Provider>["value"]
@@ -142,5 +143,94 @@ describe("PlayerControls text view switch", () => {
     await userEvent.click(screen.getByRole("button", { name: "Text view" }))
 
     expect(value.togglePdfView).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe("PlayerControls on mobile", () => {
+  beforeEach(() => setScreenWidth(390))
+  afterEach(resetScreenWidth)
+
+  const openOptions = () =>
+    userEvent.click(screen.getByRole("button", { name: "Player options" }))
+
+  it("keeps only the playback commands in the bar", () => {
+    renderControls({ kind: "pdf", pdfView: "pdf" })
+
+    expect(screen.getByRole("button", { name: "Play" })).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Player options" })
+    ).toHaveAttribute("aria-expanded", "false")
+    expect(
+      screen.queryByRole("combobox", { name: "Select Voice" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Text view" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Zoom in" })
+    ).not.toBeInTheDocument()
+  })
+
+  it("toggles auto scroll from the bar", async () => {
+    const value = renderControls({ isAutoScroll: true, toggleAutoScroll: vi.fn() })
+    const button = screen.getByRole("button", { name: "Auto scroll" })
+
+    expect(button).toHaveAttribute("aria-pressed", "true")
+    await userEvent.click(button)
+    expect(value.toggleAutoScroll).toHaveBeenCalledTimes(1)
+  })
+
+  it("shows voice, speed, zoom and text view in the options", async () => {
+    const value = renderControls({
+      kind: "pdf",
+      pdfView: "pdf",
+      handleFontSizeUp: vi.fn(),
+      handleFontSizeDown: vi.fn()
+    })
+    await openOptions()
+
+    expect(
+      screen.getByRole("button", { name: "Player options" })
+    ).toHaveAttribute("aria-expanded", "true")
+    expect(
+      screen.getByRole("combobox", { name: "Select Voice" })
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText("Select Speed")).toBeInTheDocument()
+    await userEvent.click(screen.getByRole("button", { name: "Zoom in" }))
+    await userEvent.click(screen.getByRole("button", { name: "Zoom out" }))
+    await userEvent.click(screen.getByRole("button", { name: "Text view" }))
+
+    expect(value.handleFontSizeUp).toHaveBeenCalledTimes(1)
+    expect(value.handleFontSizeDown).toHaveBeenCalledTimes(1)
+    expect(value.togglePdfView).toHaveBeenCalledTimes(1)
+  })
+
+  it("shows the font size buttons for a text entry", async () => {
+    renderControls({ kind: "text" })
+    await openOptions()
+
+    expect(
+      screen.getByRole("button", { name: "Increase font size" })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Text view" })
+    ).not.toBeInTheDocument()
+  })
+})
+
+describe("PlayerControls on desktop", () => {
+  beforeEach(() => setScreenWidth(1280))
+  afterEach(resetScreenWidth)
+
+  it("shows every control without an options button", () => {
+    renderControls({ kind: "pdf", pdfView: "pdf" })
+
+    expect(
+      screen.queryByRole("button", { name: "Player options" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("combobox", { name: "Select Voice" })
+    ).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Text view" })).toBeInTheDocument()
   })
 })

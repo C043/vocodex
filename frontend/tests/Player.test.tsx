@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest"
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import type { Mock } from "vitest"
 import { render, screen } from "./test-utils"
 import Player from "../src/pages/Player"
@@ -6,6 +6,7 @@ import { usePlayerData } from "../src/hooks/usePlayerData"
 import { useParams } from "react-router-dom"
 import { useContext } from "react"
 import { PlayerContext } from "../src/contexts/PlayerContext"
+import { setScreenWidth, resetScreenWidth } from "./mediaQuery"
 
 vi.mock("react-router-dom", async importOriginal => {
   const actual = (await importOriginal()) as typeof import("react-router-dom")
@@ -141,5 +142,16 @@ describe("Player component", () => {
     ;(useParams as Mock).mockReturnValue({ id: "other-id" })
     rerender(<Player />)
     expect(usePlayerData).toHaveBeenLastCalledWith("other-id")
+  })
+
+  describe("on mobile", () => {
+    beforeEach(() => setScreenWidth(390))
+    afterEach(resetScreenWidth)
+
+    it("leaves the font size controls to the player options", () => {
+      render(<Player />)
+      expect(screen.queryByText("FontSizeControls")).not.toBeInTheDocument()
+      expect(screen.getByText("PlayerControls")).toBeInTheDocument()
+    })
   })
 })
