@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { renderHook, waitFor, act } from "@testing-library/react"
 import { usePlayerData } from "../src/hooks/usePlayerData"
+import { setUserPreferences } from "../src/redux/reducer/authSlice"
 import { openPdf, readPageText } from "../src/utils/pdf"
 import type { PdfTextItem } from "../src/utils/pdfText"
 
@@ -17,11 +18,16 @@ vi.mock("react-router-dom", () => ({
 const mockState = {
   darkMode: { value: false },
   user: {
-    preferences: { speed: "+0%", voice: "en-GB-AdaMultilingualNeural" }
+    preferences: {
+      speed: "+0%",
+      voice: "en-GB-AdaMultilingualNeural",
+      zoom: {} as Record<string, number>
+    }
   }
 }
+const mockDispatch = vi.fn()
 vi.mock("react-redux", () => ({
-  useDispatch: () => vi.fn(),
+  useDispatch: () => mockDispatch,
   useSelector: (selector: (state: typeof mockState) => unknown) =>
     selector(mockState)
 }))
@@ -112,6 +118,7 @@ const loadedPages = () =>
 describe("usePlayerData with a PDF entry", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockState.user.preferences.zoom = {}
     synthesized.length = 0
     vi.spyOn(window.localStorage.__proto__, "getItem").mockReturnValue(
       "fake-token"
@@ -205,5 +212,57 @@ describe("usePlayerData with a PDF entry", () => {
     })
 
     expect(result.current.currentIndex).toBe((NUM_PAGES - 1) * 10000)
+  })
+
+  it("uses and saves the zoom of PDFs, apart from the text one", async () => {
+    mockState.user.preferences.zoom = { text: 1, pdf: 3 }
+    const fetchSpy = mockFetch(0)
+    const { result } = renderPlayer()
+    await waitFor(() => expect(result.current.kind).toBe("pdf"))
+
+    expect(result.current.currentFontSize).toBe(3)
+
+    act(() => result.current.handleFontSizeDown())
+
+    expect(mockDispatch).toHaveBeenCalledWith(
+      setUserPreferences({ zoom: { pdf: 2 } })
+    )
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining("/me/preferences"),
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ zoom: { pdf: 2 } })
+      })
+    )
+  })
+
+  it("switches a PDF between its pages and its text", async () => {
+    mockFetch(0)
+    const { result } = renderPlayer()
+    await waitFor(() => expect(result.current.kind).toBe("pdf"))
+
+    expect(result.current.pdfView).toBe("pdf")
+    act(() => result.current.togglePdfView())
+    expect(result.current.pdfView).toBe("text")
+  })
+
+  it("uses and saves the text size while a PDF is read as text", async () => {
+    mockState.user.preferences.zoom = { text: 2, pdf: 4 }
+    const fetchSpy = mockFetch(0)
+    const { result } = renderPlayer()
+    await waitFor(() => expect(result.current.kind).toBe("pdf"))
+    act(() => result.current.togglePdfView())
+
+    expect(result.current.currentFontSize).toBe(2)
+
+    act(() => result.current.handleFontSizeUp())
+
+    expect(mockDispatch).toHaveBeenCalledWith(
+      setUserPreferences({ zoom: { text: 3 } })
+    )
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining("/me/preferences"),
+      expect.objectContaining({ body: JSON.stringify({ zoom: { text: 3 } }) })
+    )
   })
 })

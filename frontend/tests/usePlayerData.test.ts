@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import { renderHook, waitFor } from "@testing-library/react"
+import { renderHook, waitFor, act } from "@testing-library/react"
 import { usePlayerData } from "../src/hooks/usePlayerData"
+import { setUserPreferences } from "../src/redux/reducer/authSlice"
 
 const mockNavigate = vi.fn()
 vi.mock("react-router-dom", () => ({
@@ -10,7 +11,11 @@ vi.mock("react-router-dom", () => ({
 const mockState = {
   darkMode: { value: false },
   user: {
-    preferences: { speed: "+0%", voice: "en-GB-AdaMultilingualNeural" }
+    preferences: {
+      speed: "+0%",
+      voice: "en-GB-AdaMultilingualNeural",
+      zoom: {} as Record<string, number>
+    }
   }
 }
 const mockDispatch = vi.fn()
@@ -64,6 +69,7 @@ const createMockAudio = () => {
 describe("usePlayerData hook", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockState.user.preferences.zoom = {}
     vi.spyOn(window.localStorage.__proto__, "getItem").mockReturnValue(
       "fake-token"
     )
@@ -207,5 +213,90 @@ describe("usePlayerData voices", () => {
       )
     )
     expect(result.current.voiceOptions).toEqual([])
+  })
+})
+
+describe("usePlayerData zoom", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockState.user.preferences.zoom = {}
+    vi.spyOn(window.localStorage.__proto__, "getItem").mockReturnValue(
+      "fake-token"
+    )
+    vi.spyOn(console, "error").mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // Only saving preferences answers; the entry stays loading
+  const mockPreferencesFetch = () =>
+    vi
+      .spyOn(window, "fetch")
+      .mockImplementation(input =>
+        String(input).endsWith("/me/preferences")
+          ? Promise.resolve(new Response("{}", { status: 200 }))
+          : new Promise(() => {})
+      )
+
+  const savedZoom = (fetchSpy: ReturnType<typeof vi.spyOn>) =>
+    fetchSpy.mock.calls
+      .filter(([url]) => String(url).endsWith("/me/preferences"))
+      .map(([, init]) => JSON.parse(String((init as RequestInit).body)))
+
+  it("starts at 1 when no zoom was saved", () => {
+    vi.spyOn(window, "fetch").mockReturnValue(new Promise(() => {}))
+
+    const { result } = renderHook(() => usePlayerData("test-id"))
+
+    expect(result.current.currentFontSize).toBe(1)
+  })
+
+  it("starts at the zoom saved for text", () => {
+    mockState.user.preferences.zoom = { text: 3, pdf: 2 }
+    vi.spyOn(window, "fetch").mockReturnValue(new Promise(() => {}))
+
+    const { result } = renderHook(() => usePlayerData("test-id"))
+
+    expect(result.current.currentFontSize).toBe(3)
+  })
+
+  it("saves the text zoom when it changes", () => {
+    mockState.user.preferences.zoom = { text: 2 }
+    const fetchSpy = mockPreferencesFetch()
+    const { result } = renderHook(() => usePlayerData("test-id"))
+
+    act(() => result.current.handleFontSizeUp())
+
+    expect(mockDispatch).toHaveBeenCalledWith(
+      setUserPreferences({ zoom: { text: 3 } })
+    )
+    expect(savedZoom(fetchSpy)).toEqual([{ zoom: { text: 3 } }])
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining("/me/preferences"),
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          Authorization: "Bearer fake-token"
+        })
+      })
+    )
+  })
+
+  it("does not save past the largest or smallest zoom", () => {
+    mockState.user.preferences.zoom = { text: 4 }
+    const fetchSpy = mockPreferencesFetch()
+    const { result, rerender } = renderHook(() => usePlayerData("test-id"))
+
+    act(() => result.current.handleFontSizeUp())
+    mockState.user.preferences.zoom = { text: 1 }
+    rerender()
+    act(() => result.current.handleFontSizeDown())
+
+    expect(mockDispatch).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: setUserPreferences.type })
+    )
+    expect(savedZoom(fetchSpy)).toEqual([])
   })
 })

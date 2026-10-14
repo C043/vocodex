@@ -10,7 +10,21 @@ async def updatePreferences(
     data: UserPreferencesIn, current_user: Users, session: AsyncSession
 ):
     try:
-        userPreferences = {"speed": data.speed, "voice": data.voice}
+        current = (
+            await session.execute(
+                Select(Users.preferences).where(Users.id == current_user.id)
+            )
+        ).scalar_one_or_none()
+        if current is None:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Merge what was sent into the saved preferences, zoom mode by mode
+        userPreferences = {**current, **data.model_dump(exclude_none=True)}
+        if data.zoom is not None:
+            userPreferences["zoom"] = {
+                **current.get("zoom", {}),
+                **data.zoom.model_dump(exclude_none=True),
+            }
 
         stmt = (
             update(Users)

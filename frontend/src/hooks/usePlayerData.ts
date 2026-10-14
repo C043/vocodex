@@ -12,10 +12,15 @@ import { splitIntoChunks } from "../utils/splitIntoChunks"
 import { playAudio } from "../utils/playAudio"
 import { speedRate } from "../utils/readingTime"
 import { useAutoScroll } from "./useAutoScroll"
+import { usePdfView } from "./usePdfView"
 import { usePdfDocument } from "./usePdfDocument"
 import { openPdf } from "../utils/pdf"
 import { pageOfChunk } from "../utils/pdfText"
 import type { PDFDocumentProxy } from "pdfjs-dist"
+import {
+  setUserPreferences,
+  type ZoomPreferences
+} from "../redux/reducer/authSlice"
 
 export type EntryKind = "text" | "pdf"
 
@@ -27,9 +32,13 @@ type State = {
     preferences: {
       speed: string
       voice: string
+      zoom?: ZoomPreferences
     }
   }
 }
+
+const MIN_ZOOM = 1
+const MAX_ZOOM = 4
 
 export const usePlayerData = (id: string | undefined) => {
   const env = import.meta.env
@@ -53,7 +62,13 @@ export const usePlayerData = (id: string | undefined) => {
   const pdf = usePdfDocument(pdfDoc)
   const [currentIndex, setCurrentIndex] = useState<number>(-1)
   const [activeWordIndex, setActiveWordIndex] = useState(-1)
-  const [currentFontSize, setFontSize] = useState(1)
+  const { pdfView, togglePdfView } = usePdfView()
+  // Each kind of entry keeps its own saved zoom; a PDF read as text uses
+  // the font size of texts
+  const zoomMode: EntryKind = pdfView === "text" ? "text" : kind
+  const currentFontSize = useSelector(
+    (state: State) => state.user.preferences.zoom?.[zoomMode] ?? MIN_ZOOM
+  )
   const { isAutoScroll, toggleAutoScroll } = useAutoScroll()
   const [sentencesMap, setSentencesMap] = useState<Map<number, SentenceObj>>(
     new Map()
@@ -68,16 +83,31 @@ export const usePlayerData = (id: string | undefined) => {
   ]
   const [voiceOptions, setVoiceOptions] = useState<VoiceOption[]>([])
 
-  const handleFontSizeUp = () => {
-    if (currentFontSize <= 3) {
-      setFontSize(currentFontSize + 1)
+  const saveZoom = async (zoom: ZoomPreferences) => {
+    try {
+      const url = `${env.VITE_API_URL}/me/preferences`
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        "Content-type": "application/json"
+      }
+      const body = JSON.stringify({ zoom })
+
+      const resp = await fetch(url, { method: "POST", headers, body })
+
+      if (!resp.ok) throw new Error("Saving the zoom failed")
+    } catch (err) {
+      console.error(err)
     }
   }
-  const handleFontSizeDown = () => {
-    if (currentFontSize >= 2) {
-      setFontSize(currentFontSize - 1)
-    }
+
+  const setFontSize = (size: number) => {
+    if (size < MIN_ZOOM || size > MAX_ZOOM) return
+    const zoom = { [zoomMode]: size }
+    dispatch(setUserPreferences({ zoom }))
+    saveZoom(zoom)
   }
+  const handleFontSizeUp = () => setFontSize(currentFontSize + 1)
+  const handleFontSizeDown = () => setFontSize(currentFontSize - 1)
 
   const fetchEntry = async () => {
     try {

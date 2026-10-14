@@ -1,8 +1,19 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit"
 
-type UserPreferences = {
+// The player's zoom is saved apart for each kind of entry
+export type ZoomMode = "text" | "pdf"
+export type ZoomPreferences = Partial<Record<ZoomMode, number>>
+
+export type UserPreferences = {
   speed: string
   voice: string
+  zoom: ZoomPreferences
+}
+
+const initialPreferences: UserPreferences = {
+  speed: "+0%",
+  voice: "",
+  zoom: {}
 }
 
 export const authSlice = createSlice({
@@ -11,10 +22,7 @@ export const authSlice = createSlice({
     isLoggedIn: false,
     userId: -1,
     username: "",
-    preferences: {
-      speed: "+0%",
-      voice: ""
-    }
+    preferences: initialPreferences
   },
 
   reducers: {
@@ -27,9 +35,15 @@ export const authSlice = createSlice({
     setUsername: (state, action: PayloadAction<string>) => {
       state.username = action.payload
     },
-    setUserPreferences: (state, action: PayloadAction<UserPreferences>) => {
-      state.preferences.speed = action.payload.speed
-      state.preferences.voice = action.payload.voice
+    // Only the preferences given are changed
+    setUserPreferences: (
+      state,
+      action: PayloadAction<Partial<UserPreferences> | null | undefined>
+    ) => {
+      const { speed, voice, zoom } = action.payload ?? {}
+      if (speed !== undefined) state.preferences.speed = speed
+      if (voice !== undefined) state.preferences.voice = voice
+      if (zoom) state.preferences.zoom = { ...state.preferences.zoom, ...zoom }
     }
   }
 })
