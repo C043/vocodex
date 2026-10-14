@@ -70,7 +70,10 @@ describe("service worker", () => {
   type Listener = (event: unknown) => void
   const ORIGIN = "https://vocodex.test"
 
-  function loadWorker(network: (req: Request) => Promise<Response>) {
+  function loadWorker(
+    network: (req: Request) => Promise<Response>,
+    cacheNames: string[] = []
+  ) {
     const listeners: Record<string, Listener> = {}
     const store = new Map<string, Response>()
     const cache = {
@@ -93,7 +96,7 @@ describe("service worker", () => {
     }
     const caches = {
       open: vi.fn(() => Promise.resolve(cache)),
-      keys: vi.fn(() => Promise.resolve([])),
+      keys: vi.fn(() => Promise.resolve(cacheNames)),
       delete: vi.fn()
     }
     new Function("self", "caches", "fetch", read("public/sw.js"))(
@@ -111,7 +114,12 @@ describe("service worker", () => {
       })
       return responded
     }
-    return { dispatch, store }
+    const activate = () => {
+      let done: Promise<unknown> | undefined
+      listeners.activate({ waitUntil: (p: Promise<unknown>) => (done = p) })
+      return done
+    }
+    return { dispatch, store, activate, caches }
   }
 
   it("leaves API calls to other origins alone", () => {
@@ -146,5 +154,11 @@ describe("service worker", () => {
     const again = await dispatch(new Request(url))
     expect(await again!.text()).toBe("js")
     expect(network).toHaveBeenCalledTimes(1)
+  })
+
+  it("drops the v1 cache, which kept the PDF.js worker with a wrong MIME type", async () => {
+    const { activate, caches } = loadWorker(vi.fn(), ["vocodex-v1"])
+    await activate()
+    expect(caches.delete).toHaveBeenCalledWith("vocodex-v1")
   })
 })

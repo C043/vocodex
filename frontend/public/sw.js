@@ -1,6 +1,8 @@
 // VOCODEX service worker: keeps the app shell and built assets available
 // offline. API calls (another origin) and non-GET requests are never touched.
-const CACHE = "vocodex-v1"
+// v2: v1 kept the PDF.js worker as application/octet-stream, so PDFs
+// never opened until that cache is dropped
+const CACHE = "vocodex-v2"
 const SHELL = ["/", "/manifest.webmanifest", "/icon.svg", "/icon-192.png"]
 
 self.addEventListener("install", event => {
