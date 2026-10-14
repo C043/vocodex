@@ -9,6 +9,7 @@ import {
 } from "../contexts/PlayerContext"
 import { audio } from "framer-motion/m"
 import { splitIntoChunks } from "../utils/splitIntoChunks"
+import { playAudio } from "../utils/playAudio"
 import { useAutoScroll } from "./useAutoScroll"
 
 type State = {
@@ -277,7 +278,7 @@ export const usePlayerData = (id: string | undefined) => {
 
   const handlePlay = () => {
     if (!isPlaying && audioRef.current) {
-      audioRef.current.play()
+      playAudio(audioRef.current, () => setIsPlaying(false))
       setIsPlaying(true)
     }
   }
@@ -453,7 +454,7 @@ export const usePlayerData = (id: string | undefined) => {
         audio.src = audioUrl
         handleVoiceSpeed()
         setIsPlaying(true)
-        audio.play()
+        playAudio(audio, () => setIsPlaying(false))
       } catch (err) {
         console.error(err)
         setIsPlaying(false)
@@ -483,6 +484,10 @@ export const usePlayerData = (id: string | undefined) => {
     updateProgress()
     setActiveWordIndex(-1)
 
+    // Set on cleanup so a stale run (e.g. after skipping ahead) doesn't
+    // overwrite the src or start playback for a sentence we've left
+    let cancelled = false
+
     // Fast Forward to the sentence if we have the audio, if not, we fetch it
     ;(async () => {
       let audioUrl = sentencesMap.get(currentIndex)?.audio.url
@@ -505,10 +510,11 @@ export const usePlayerData = (id: string | undefined) => {
         }
         setIsLoading(false)
       }
+      if (cancelled) return
       if (audioUrl && audioRef.current) {
         audioRef.current.src = audioUrl
         handleVoiceSpeed()
-        audioRef.current.play()
+        playAudio(audioRef.current, () => setIsPlaying(false))
         setIsPlaying(true)
       }
     })()
@@ -540,6 +546,7 @@ export const usePlayerData = (id: string | undefined) => {
     prefetchNextSentences(currentIndex, 5)
 
     return () => {
+      cancelled = true
       track.removeEventListener("cuechange", handleCueChange)
     }
   }, [currentIndex, sentencesMap.get(currentIndex)?.boundaries])
