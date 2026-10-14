@@ -320,6 +320,48 @@ describe("PdfContent", () => {
     expect(value.setCurrentIndex).toHaveBeenCalledTimes(1)
   })
 
+  it("highlights the chunk of the hovered text, as clicking goes there", () => {
+    // Reading "Bye now."
+    renderContent(makeValue({ currentIndex: 10001 }))
+
+    act(() => pageProps.get(2)!.onTextHover(0))
+
+    // "Hello world." spans the first item and the start of the third
+    expect(pageProps.get(2)!.hoverRanges).toEqual([
+      { item: 0, from: 0, to: 6 },
+      { item: 2, from: 0, to: 6 }
+    ])
+    expect(pageProps.get(1)!.hoverRanges).toEqual([])
+
+    act(() => pageProps.get(2)!.onTextHover(null))
+
+    expect(pageProps.get(2)!.hoverRanges).toEqual([])
+  })
+
+  it("does not highlight the hovered text of the chunk being read", () => {
+    renderContent(makeValue())
+
+    act(() => pageProps.get(2)!.onTextHover(2))
+
+    expect(pageProps.get(2)!.hoverRanges).toEqual([])
+  })
+
+  it("does not highlight hovered text that is not read", () => {
+    renderContent(makeValue({ currentIndex: 10001 }))
+
+    act(() => pageProps.get(2)!.onTextHover(1))
+
+    expect(pageProps.get(2)!.hoverRanges).toEqual([])
+  })
+
+  it("does not highlight hovered text while the audio loads", () => {
+    renderContent(makeValue({ currentIndex: 10001, isLoading: true }))
+
+    act(() => pageProps.get(2)!.onTextHover(0))
+
+    expect(pageProps.get(2)!.hoverRanges).toEqual([])
+  })
+
   it("follows the highlighted chunk when auto scroll is on", () => {
     renderContent(makeValue())
     const highlight = document.createElement("div")

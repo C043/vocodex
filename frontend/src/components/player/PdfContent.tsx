@@ -167,15 +167,51 @@ const PdfContent = () => {
     if (el) follow(el)
   }, [isAutoScroll])
 
-  const handleTextClick = (pageNumber: number, item: number) => {
-    if (isLoading) return
+  // The chunk a text item belongs to
+  const chunkAtItem = (pageNumber: number, item: number) => {
     const page = pdf.pages.get(pageNumber)
     const offset = page?.text.itemStarts[item] ?? -1
     // Running headers and page numbers are not read
-    if (!page || offset < 0) return
-    const chunk = chunkAtOffset(page.chunks, offset)
+    if (!page || offset < 0) return null
+    return chunkAtOffset(page.chunks, offset) ?? null
+  }
+
+  const handleTextClick = (pageNumber: number, item: number) => {
+    if (isLoading) return
+    const chunk = chunkAtItem(pageNumber, item)
     if (chunk) setCurrentIndex(chunk.id)
   }
+
+  // Hovering the text shows the chunk a click would go to
+  const [hovered, setHovered] = useState<{
+    pageNumber: number
+    chunkId: number
+  } | null>(null)
+
+  const handleTextHover = (pageNumber: number, item: number | null) => {
+    const chunk = item === null ? null : chunkAtItem(pageNumber, item)
+    setHovered(prev => {
+      if (!chunk) return prev?.pageNumber === pageNumber ? null : prev
+      if (prev?.pageNumber === pageNumber && prev.chunkId === chunk.id) {
+        return prev
+      }
+      return { pageNumber, chunkId: chunk.id }
+    })
+  }
+
+  const hoveredPage = hovered && pdf.pages.get(hovered.pageNumber)
+  const hoverRanges = useMemo(() => {
+    const chunk = hoveredPage?.chunks.find(c => c.id === hovered?.chunkId)
+    if (!hoveredPage || !chunk || isLoading || chunk.id === currentIndex) {
+      return NO_RANGES
+    }
+    return textRangeToItems(
+      hoveredPage.text.itemStarts,
+      hoveredPage.itemStrs,
+      chunk.start,
+      chunk.end
+    )
+  }, [hoveredPage, hovered, isLoading, currentIndex])
 
   const pageNumbers = Array.from({ length: pdf.numPages }, (_, i) => i + 1)
 
@@ -218,7 +254,11 @@ const PdfContent = () => {
                     ? currentWordRanges
                     : NO_RANGES
                 }
+                hoverRanges={
+                  hovered?.pageNumber === pageNumber ? hoverRanges : NO_RANGES
+                }
                 onTextClick={item => handleTextClick(pageNumber, item)}
+                onTextHover={item => handleTextHover(pageNumber, item)}
                 onChunkShown={handleChunkShown}
                 pageRef={pageRef(pageNumber)}
               />

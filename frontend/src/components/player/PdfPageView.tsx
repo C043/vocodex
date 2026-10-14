@@ -16,7 +16,11 @@ type PdfPageViewProps = {
   isActive: boolean
   chunkRanges: ItemRange[]
   wordRanges: ItemRange[]
+  // The chunk a click on the hovered text would go to
+  hoverRanges: ItemRange[]
   onTextClick: (item: number) => void
+  // Called with the text item under the pointer, or null when leaving it
+  onTextHover: (item: number | null) => void
   // Called with the highlight of a new chunk, once it is drawn
   onChunkShown?: (el: HTMLElement) => void
   pageRef?: (el: HTMLElement | null) => void
@@ -25,11 +29,17 @@ type PdfPageViewProps = {
 type Highlights = {
   chunk: Box[]
   word: Box[]
+  hover: Box[]
   // The chunk the boxes were measured for
   chunkRanges: ItemRange[] | null
 }
 
-const NO_HIGHLIGHTS: Highlights = { chunk: [], word: [], chunkRanges: null }
+const NO_HIGHLIGHTS: Highlights = {
+  chunk: [],
+  word: [],
+  hover: [],
+  chunkRanges: null
+}
 
 const boxStyle = (box: Box) => ({
   left: `${box.left}px`,
@@ -47,7 +57,9 @@ const PdfPageView = ({
   isActive,
   chunkRanges,
   wordRanges,
+  hoverRanges,
   onTextClick,
+  onTextHover,
   onChunkShown,
   pageRef
 }: PdfPageViewProps) => {
@@ -114,10 +126,15 @@ const PdfPageView = ({
     }
   }, [doc, pageNumber, scale, isActive])
 
-  // Measure where the chunk and the word being read are drawn
+  // Measure where the chunk and the word being read are drawn, and the
+  // chunk under the pointer
   useLayoutEffect(() => {
     const root = rootRef.current
-    if (!root || textDivs.length === 0 || chunkRanges.length === 0) {
+    if (
+      !root ||
+      textDivs.length === 0 ||
+      (chunkRanges.length === 0 && hoverRanges.length === 0)
+    ) {
       setHighlights(NO_HIGHLIGHTS)
       return
     }
@@ -125,9 +142,10 @@ const PdfPageView = ({
     setHighlights({
       chunk: measureRanges(textDivs, chunkRanges, origin),
       word: measureRanges(textDivs, wordRanges, origin),
-      chunkRanges
+      hover: measureRanges(textDivs, hoverRanges, origin),
+      chunkRanges: chunkRanges.length > 0 ? chunkRanges : null
     })
-  }, [textDivs, chunkRanges, wordRanges])
+  }, [textDivs, chunkRanges, wordRanges, hoverRanges])
 
   // Zooming moves the chunk on screen: tell it again once redrawn
   useEffect(() => {
@@ -164,6 +182,14 @@ const PdfPageView = ({
         <>
           <canvas ref={canvasRef} className="absolute inset-0 size-full" />
           <div className="absolute inset-0 pointer-events-none">
+            {highlights.hover.map((box, idx) => (
+              <div
+                key={`hover-${idx}`}
+                data-highlight="hover"
+                className="absolute rounded-sm bg-violet-500/10"
+                style={boxStyle(box)}
+              />
+            ))}
             {highlights.chunk.map((box, idx) => (
               <div
                 key={`chunk-${idx}`}
@@ -197,6 +223,11 @@ const PdfPageView = ({
               const item = textDivs.indexOf(ev.target as HTMLElement)
               if (item !== -1) onTextClick(item)
             }}
+            onMouseOver={ev => {
+              const item = textDivs.indexOf(ev.target as HTMLElement)
+              onTextHover(item === -1 ? null : item)
+            }}
+            onMouseLeave={() => onTextHover(null)}
           />
         </>
       )}

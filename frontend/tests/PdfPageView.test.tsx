@@ -60,7 +60,9 @@ const makeProps = (overrides: Partial<Props> = {}): Props => ({
   isActive: true,
   chunkRanges: [],
   wordRanges: [],
+  hoverRanges: [],
   onTextClick: vi.fn(),
+  onTextHover: vi.fn(),
   ...overrides
 })
 
@@ -113,6 +115,56 @@ describe("PdfPageView", () => {
     fireEvent.click(screen.getByText("world"))
 
     expect(onTextClick).toHaveBeenCalledWith(1)
+  })
+
+  it("tells which text item is hovered, and when none is", async () => {
+    const onTextHover = vi.fn()
+    const { container } = render(
+      <PdfPageView {...makeProps({ onTextHover })} />
+    )
+    await waitFor(() => expect(textLayers[0]?.textDivs).toHaveLength(2))
+
+    fireEvent.mouseOver(screen.getByText("world"))
+    expect(onTextHover).toHaveBeenLastCalledWith(1)
+
+    fireEvent.mouseOver(container.querySelector(".textLayer")!)
+    expect(onTextHover).toHaveBeenLastCalledWith(null)
+
+    fireEvent.mouseOver(screen.getByText("Hello"))
+    fireEvent.mouseLeave(container.querySelector(".textLayer")!)
+    expect(onTextHover).toHaveBeenLastCalledWith(null)
+  })
+
+  it("highlights the chunk of the hovered text", async () => {
+    vi.mocked(measureRanges).mockImplementation((_, ranges) =>
+      ranges.map(range => ({
+        left: range.item * 100,
+        top: 10,
+        width: 50,
+        height: 12
+      }))
+    )
+    const { container } = render(
+      <PdfPageView
+        {...makeProps({
+          hoverRanges: [
+            { item: 0, from: 0, to: 5 },
+            { item: 1, from: 0, to: 6 }
+          ]
+        })}
+      />
+    )
+
+    await waitFor(() =>
+      expect(container.querySelectorAll("[data-highlight=hover]")).toHaveLength(
+        2
+      )
+    )
+    const hover = container.querySelector<HTMLElement>("[data-highlight=hover]")
+    expect(hover?.style.left).toBe("0px")
+    expect(hover).toHaveClass("bg-violet-500/10")
+    // Not the chunk being read: following it would scroll on hover
+    expect(container.querySelector("[data-highlight=chunk]")).toBeNull()
   })
 
   it("highlights the chunk and the word being read", async () => {
