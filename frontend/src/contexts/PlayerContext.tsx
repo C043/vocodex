@@ -2,6 +2,7 @@ import { createContext, useContext } from "react"
 import type { RefObject } from "react"
 import type { PDFDocumentProxy } from "pdfjs-dist"
 import type { PdfPage, PageSize } from "../hooks/usePdfDocument"
+import type { PdfView } from "../hooks/usePdfView"
 
 export type boundaryObj = {
   text: string
@@ -54,6 +55,7 @@ interface PlayerContextType {
   title: string
   kind: "text" | "pdf"
   pdf: PdfState
+  pdfView: PdfView
   currentFontSize: number
   voiceOptions: VoiceOption[]
   currentVoice: string
@@ -66,6 +68,7 @@ interface PlayerContextType {
   handleFontSizeUp: () => void
   handleFontSizeDown: () => void
   toggleAutoScroll: () => void
+  togglePdfView: () => void
   handlePause: () => void
   handlePlay: () => void
   handleForward: () => void

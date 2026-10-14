@@ -1,4 +1,5 @@
 import {
+  DocumentTextIcon,
   MinusIcon,
   PlusIcon,
   ViewfinderCircleIcon
@@ -11,10 +12,14 @@ const FontSizeControls = () => {
     handleFontSizeDown,
     isAutoScroll,
     toggleAutoScroll,
-    kind
+    kind,
+    pdfView,
+    togglePdfView
   } = usePlayer()
-  // The same buttons zoom the pages of a PDF
   const isPdf = kind === "pdf"
+  const isPdfText = isPdf && pdfView === "text"
+  // The same buttons zoom the pages of a PDF
+  const isZoom = isPdf && !isPdfText
 
   const button =
     "grid place-items-center size-9 rounded-full hover:bg-foreground/10 active:scale-90 transition cursor-pointer"
@@ -25,7 +30,7 @@ const FontSizeControls = () => {
       <div className="glass flex flex-col items-center gap-1 p-1 rounded-full">
         <button
           type="button"
-          aria-label={isPdf ? "Zoom in" : "Increase font size"}
+          aria-label={isZoom ? "Zoom in" : "Increase font size"}
           onMouseDown={ev => ev.preventDefault()}
           onClick={handleFontSizeUp}
           className={button}
@@ -33,11 +38,11 @@ const FontSizeControls = () => {
           <PlusIcon className="size-4" />
         </button>
         <span className="text-[10px] font-bold text-foreground/50 select-none">
-          {isPdf ? "Zoom" : "Aa"}
+          {isZoom ? "Zoom" : "Aa"}
         </span>
         <button
           type="button"
-          aria-label={isPdf ? "Zoom out" : "Decrease font size"}
+          aria-label={isZoom ? "Zoom out" : "Decrease font size"}
           onMouseDown={ev => ev.preventDefault()}
           onClick={handleFontSizeDown}
           className={button}
@@ -56,6 +61,20 @@ const FontSizeControls = () => {
         >
           <ViewfinderCircleIcon className="size-4" />
         </button>
+        {/* A PDF can be read as plain text, easier on small screens */}
+        {isPdf && (
+          <button
+            type="button"
+            aria-label="Text view"
+            aria-pressed={isPdfText}
+            title={isPdfText ? "Show the pages" : "Show the text only"}
+            onMouseDown={ev => ev.preventDefault()}
+            onClick={togglePdfView}
+            className={`${button} ${isPdfText ? "bg-brand text-white shadow-md shadow-violet-500/40 hover:bg-brand" : "text-foreground/50"}`}
+          >
+            <DocumentTextIcon className="size-4" />
+          </button>
+        )}
       </div>
     </div>
   )

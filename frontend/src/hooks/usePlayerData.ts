@@ -685,6 +685,8 @@ export const usePlayerData = (id: string | undefined) => {
     setSpeed,
     handleFontSizeUp,
     handleFontSizeDown,
-    toggleAutoScroll
+    toggleAutoScroll,
+    pdfView,
+    togglePdfView
   }
 }

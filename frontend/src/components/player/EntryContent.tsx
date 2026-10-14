@@ -2,6 +2,8 @@ import { Fragment, useEffect, useRef } from "react"
 import { usePlayer } from "../../contexts/PlayerContext"
 import type { SentenceObj } from "../../contexts/PlayerContext"
 import { useUserScrollPause } from "../../hooks/useUserScrollPause"
+import { fontSizeClasses } from "../../utils/fontSize"
+import ReadingChunk from "./ReadingChunk"
 
 const EntryContent = () => {
   const {
@@ -35,17 +37,7 @@ const EntryContent = () => {
     hasScrolled.current = true
   }, [currentIndex, isLoading, isAutoScroll])
 
-  // Map font size to complete Tailwind classes
-  const getFontSizeClasses = (size: number) => {
-    const sizeMap: Record<number, string> = {
-      1: "text-lg md:text-xl",
-      2: "text-xl md:text-2xl",
-      3: "text-2xl md:text-3xl",
-      4: "text-3xl md:text-4xl"
-    }
-    return sizeMap[size] || sizeMap[1]
-  }
-  const fontClasses = getFontSizeClasses(currentFontSize)
+  const fontClasses = fontSizeClasses(currentFontSize)
 
   // Chunks flow inline, and only break where the original text had a paragraph
   const paragraphs: SentenceObj[][] = []
@@ -57,78 +49,22 @@ const EntryContent = () => {
   }
 
   const renderChunk = (sentence: SentenceObj) => {
-    const boundaries = sentence.boundaries ?? []
     const isCurrent = !isLoading && currentIndex === sentence.id
-    let wordCounter = 0
-
-    const tokens = sentence.text
-      .split(/(\s+)/)
-      .filter(t => t.length > 0)
-      .map(token => {
-        const isWord = /[A-Za-z0-9'’]+/.test(token)
-
-        if (isWord) {
-          const idx = wordCounter
-          wordCounter += 1
-          return { text: token, wordIndex: idx }
-        }
-
-        return { text: token, wordIndex: null }
-      })
-
+    const hasWordTiming = (sentence.boundaries ?? []).length > 0
     return (
-      <span
+      <ReadingChunk
         key={sentence.id}
-        data-chunk-id={sentence.id}
-        aria-current={isCurrent ? "true" : undefined}
-        ref={el => {
+        id={sentence.id}
+        text={sentence.text}
+        isCurrent={isCurrent}
+        activeWordIndex={hasWordTiming ? activeWordIndex : -1}
+        isLoading={isLoading}
+        onSelect={() => setCurrentIndex(sentence.id)}
+        chunkRef={el => {
           if (el) chunkRefs.current.set(sentence.id, el)
           else chunkRefs.current.delete(sentence.id)
         }}
-        onClick={() => {
-          if (!isLoading) {
-            setCurrentIndex(sentence.id)
-          }
-        }}
-        className={`
-          rounded-lg
-          px-1
-          -mx-1
-          py-0.5
-          box-decoration-clone
-          transition-colors
-          duration-500
-          scroll-mb-40
-          md:scroll-mb-0
-          ${isCurrent ? "bg-violet-500/15 text-foreground dark:bg-violet-500/20" : "text-foreground/55"}
-          ${isLoading || isCurrent ? "" : "cursor-pointer hover:text-foreground/90"}
-        `}
-      >
-        {tokens.map((token, idx) => {
-          if (token.wordIndex === null) return token.text
-
-          const isActive =
-            isCurrent &&
-            boundaries.length > 0 &&
-            token.wordIndex === activeWordIndex
-
-          // Painted on the word itself: positioned, z-indexed overlays
-          // changing word by word make the glass bars lose their blur
-          return (
-            <span
-              key={`${sentence.id}-${idx}`}
-              className={`
-                rounded-md
-                box-decoration-clone
-                transition-colors
-                ${isActive ? "bg-brand text-white px-1 -mx-1 py-0.5 shadow-md shadow-violet-500/40" : ""}
-              `}
-            >
-              {token.text}
-            </span>
-          )
-        })}
-      </span>
+      />
     )
   }
 
