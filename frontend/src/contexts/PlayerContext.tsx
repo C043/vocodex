@@ -3,6 +3,7 @@ import type { RefObject } from "react"
 import type { PDFDocumentProxy } from "pdfjs-dist"
 import type { PdfPage, PageSize } from "../hooks/usePdfDocument"
 import type { PdfView } from "../hooks/usePdfView"
+import type { PageJump } from "../hooks/usePlayerData"
 
 export type boundaryObj = {
   text: string
@@ -64,6 +65,8 @@ interface PlayerContextType {
   currentSpeed: string
   isDarkMode: boolean
   isAutoScroll: boolean
+  // The PDF page last jumped to, for the views to scroll to
+  pageJump: PageJump | null
 
   // Functions
   handleFontSizeUp: () => void
@@ -71,6 +74,7 @@ interface PlayerContextType {
   setFont: (font: string) => void
   toggleAutoScroll: () => void
   togglePdfView: () => void
+  goToPage: (page: number) => Promise<void>
   handlePause: () => void
   handlePlay: () => void
   handleForward: () => void

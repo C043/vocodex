@@ -18,6 +18,7 @@ import { VoiceSelect } from "./VoiceSelect"
 import { ReadingProgress } from "./ReadingProgress"
 import FontSizeControls from "./FontSizeControls"
 import { FontSelect } from "./FontSelect"
+import PageJump from "./PageJump"
 import { useIsDesktop } from "../../hooks/useIsDesktop"
 
 export const PlayerControls = () => {
@@ -355,6 +356,7 @@ export const PlayerControls = () => {
                   {textViewButton()}
                 </div>
                 {hasReaderFont && <FontSelect />}
+                {kind === "pdf" && <PageJump />}
               </div>
             </motion.div>
           )}

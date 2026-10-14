@@ -82,6 +82,30 @@ describe("PdfContent", () => {
     vi.unstubAllGlobals()
   })
 
+  it("scrolls to the top of a page jumped to, even with auto scroll off", () => {
+    const { update } = renderContent(makeValue({ isAutoScroll: false }))
+    scrollIntoView.mockClear()
+
+    update(makeValue({ isAutoScroll: false, pageJump: { page: 4 } }))
+
+    const page = screen.getByRole("region", { name: "Page 4" })
+    expect(scrollIntoView).toHaveBeenCalledWith(
+      expect.objectContaining({ block: "start" })
+    )
+    expect(scrollIntoView.mock.contexts.at(-1)).toBe(page)
+  })
+
+  it("scrolls again when jumping to the same page twice", () => {
+    const { update } = renderContent(
+      makeValue({ isAutoScroll: false, pageJump: { page: 4 } })
+    )
+    scrollIntoView.mockClear()
+
+    update(makeValue({ isAutoScroll: false, pageJump: { page: 4 } }))
+
+    expect(scrollIntoView).toHaveBeenCalledTimes(1)
+  })
+
   it("shows the title and every page, one under the other", () => {
     renderContent(makeValue())
 

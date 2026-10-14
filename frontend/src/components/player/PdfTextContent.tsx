@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { usePlayer } from "../../contexts/PlayerContext"
 import { useUserScrollPause } from "../../hooks/useUserScrollPause"
+import { usePageJumpScroll } from "../../hooks/usePageJumpScroll"
 import { pageOfChunk } from "../../utils/pdfText"
 import type { BlockKind } from "../../utils/pdfText"
 import { fontSizeClasses } from "../../utils/fontSize"
@@ -34,7 +35,8 @@ const PdfTextContent = () => {
     isLoading,
     currentFontSize,
     currentFont,
-    isAutoScroll
+    isAutoScroll,
+    pageJump
   } = usePlayer()
 
   const chunkRefs = useRef(new Map<number, HTMLSpanElement>())
@@ -89,6 +91,8 @@ const PdfTextContent = () => {
     return () => observer.current?.disconnect()
   }, [])
 
+  usePageJumpScroll(pageJump, pageEls)
+
   useEffect(() => {
     visiblePages.forEach(page => pdf.loadPage(page).catch(console.error))
   }, [visiblePages])
@@ -132,8 +136,9 @@ const PdfTextContent = () => {
               key={pageNumber}
               aria-label={`Page ${pageNumber}`}
               ref={pageRef(pageNumber)}
-              // Pages not loaded yet keep some room, so they get scrolled to
-              className={page ? "mb-8" : "mb-8 min-h-[50vh]"}
+              // Pages not loaded yet keep some room, so they get scrolled to,
+              // and jumping to them stops below the top bar
+              className={`mb-8 scroll-mt-[calc(env(safe-area-inset-top)+4.5rem)] md:scroll-mt-20 ${page ? "" : "min-h-[50vh]"}`}
             >
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-foreground/40 mb-3 select-none">
                 Page {pageNumber}

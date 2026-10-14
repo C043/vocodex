@@ -150,6 +150,98 @@ describe("PlayerControls text view switch", () => {
   })
 })
 
+describe("PlayerControls page jump", () => {
+  const pdfValue = (overrides: Partial<PlayerValue> = {}) =>
+    ({
+      kind: "pdf",
+      pdfView: "pdf",
+      // Page 3 of 120
+      currentIndex: 20004,
+      pdf: { numPages: 120, pages: new Map() },
+      goToPage: vi.fn(async () => {}),
+      ...overrides
+    }) as Partial<PlayerValue>
+
+  const pageInput = () => screen.getByRole("spinbutton", { name: "Page number" })
+
+  it("is not shown for a text entry", async () => {
+    renderControls({ kind: "text" })
+    await openOptions()
+
+    expect(
+      screen.queryByRole("spinbutton", { name: "Page number" })
+    ).not.toBeInTheDocument()
+  })
+
+  it("shows the page being read out of the page count", async () => {
+    renderControls(pdfValue())
+    await openOptions()
+
+    expect(pageInput()).toHaveValue(3)
+    expect(pageInput()).toHaveAttribute("min", "1")
+    expect(pageInput()).toHaveAttribute("max", "120")
+    expect(pageInput()).toHaveAttribute("inputmode", "numeric")
+    expect(screen.getByRole("form", { name: "Go to page" })).toHaveTextContent(
+      "of 120"
+    )
+  })
+
+  it("goes to the page typed, with Enter, without the player shortcuts", async () => {
+    const value = renderControls(pdfValue())
+    await openOptions()
+
+    await userEvent.clear(pageInput())
+    await userEvent.type(pageInput(), " ")
+    await userEvent.type(pageInput(), "42{ArrowLeft}{ArrowRight}{Enter}")
+
+    expect(value.goToPage).toHaveBeenCalledWith(42)
+    expect(value.handlePlay).not.toHaveBeenCalled()
+    expect(value.handleForward).not.toHaveBeenCalled()
+    expect(value.handleBackwards).not.toHaveBeenCalled()
+  })
+
+  it("goes to the page typed with the Go button", async () => {
+    const value = renderControls(pdfValue())
+    await openOptions()
+
+    await userEvent.clear(pageInput())
+    await userEvent.type(pageInput(), "7")
+    await userEvent.click(screen.getByRole("button", { name: "Go to page" }))
+
+    expect(value.goToPage).toHaveBeenCalledWith(7)
+  })
+
+  it("ignores an empty page and shows the page being read again", async () => {
+    const value = renderControls(pdfValue())
+    await openOptions()
+
+    await userEvent.clear(pageInput())
+    await userEvent.type(pageInput(), "{Enter}")
+
+    expect(value.goToPage).not.toHaveBeenCalled()
+    expect(pageInput()).toHaveValue(3)
+  })
+
+  it("puts back the page being read with Escape", async () => {
+    const value = renderControls(pdfValue())
+    await openOptions()
+
+    await userEvent.clear(pageInput())
+    await userEvent.type(pageInput(), "9{Escape}")
+
+    expect(value.goToPage).not.toHaveBeenCalled()
+    expect(pageInput()).toHaveValue(3)
+  })
+
+  it("cannot be used while a sentence loads", async () => {
+    renderControls(pdfValue({ isLoading: true }))
+    await openOptions()
+
+    expect(pageInput()).toBeDisabled()
+    expect(screen.getByRole("button", { name: "Go to page" })).toBeDisabled()
+  })
+})
+
 // Desktop has the same commands and options as mobile, in a floating card
 describe.each([
   ["mobile", 390],

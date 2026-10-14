@@ -15,7 +15,7 @@ import { useAutoScroll } from "./useAutoScroll"
 import { usePdfView } from "./usePdfView"
 import { usePdfDocument } from "./usePdfDocument"
 import { openPdf } from "../utils/pdf"
-import { pageOfChunk } from "../utils/pdfText"
+import { chunkId, pageOfChunk } from "../utils/pdfText"
 import type { PDFDocumentProxy } from "pdfjs-dist"
 import {
   setUserPreferences,
@@ -25,6 +25,8 @@ import {
 import { DEFAULT_FONT } from "../utils/fonts"
 
 export type EntryKind = "text" | "pdf"
+
+export type PageJump = { page: number }
 
 type State = {
   darkMode: {
@@ -64,6 +66,9 @@ export const usePlayerData = (id: string | undefined) => {
   const [pdfStart, setPdfStart] = useState<number | null>(null)
   const pdf = usePdfDocument(pdfDoc)
   const [currentIndex, setCurrentIndex] = useState<number>(-1)
+  // The last page asked for, a new object each time so the views scroll to
+  // it even when it is the same page again
+  const [pageJump, setPageJump] = useState<PageJump | null>(null)
   const [activeWordIndex, setActiveWordIndex] = useState(-1)
   const { pdfView, togglePdfView } = usePdfView()
   // Each kind of entry keeps its own saved zoom; a PDF read as text uses
@@ -359,6 +364,15 @@ export const usePlayerData = (id: string | undefined) => {
     }
     const prevIndex = currentIndex - 1
     setCurrentIndex(prevIndex)
+  }
+
+  // Read a PDF from the start of a page, or from the next page with text
+  const goToPage = async (page: number) => {
+    if (kind !== "pdf" || isLoading || pdf.numPages === 0) return
+    const target = Math.min(Math.max(Math.round(page), 1), pdf.numPages)
+    setPageJump({ page: target })
+    const start = await pdf.resolveChunk(chunkId(target, 0))
+    if (start !== null) setCurrentIndex(start)
   }
 
   const updateProgress = async () => {
@@ -700,6 +714,8 @@ export const usePlayerData = (id: string | undefined) => {
     setFont,
     toggleAutoScroll,
     pdfView,
-    togglePdfView
+    togglePdfView,
+    pageJump,
+    goToPage
   }
 }

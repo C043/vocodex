@@ -167,7 +167,8 @@ const PdfPageView = ({
       aria-label={`Page ${pageNumber}`}
       data-page-number={pageNumber}
       ref={setRoot}
-      className="relative isolate mx-auto bg-white rounded-sm shadow-lg shadow-black/20 overflow-hidden"
+      // Jumping to the page stops it below the top bar
+      className="scroll-mt-[calc(env(safe-area-inset-top)+4.5rem)] md:scroll-mt-20 relative isolate mx-auto bg-white rounded-sm shadow-lg shadow-black/20 overflow-hidden"
       style={
         {
           width: `${width * scale}px`,

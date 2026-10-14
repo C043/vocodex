@@ -214,6 +214,57 @@ describe("usePlayerData with a PDF entry", () => {
     expect(result.current.currentIndex).toBe((NUM_PAGES - 1) * 10000)
   })
 
+  it("jumps to the start of a chosen page", async () => {
+    mockFetch(0)
+    const { result } = renderPlayer()
+    await waitFor(() => expect(result.current.currentIndex).toBe(0))
+
+    await act(async () => {
+      await result.current.goToPage(7)
+    })
+
+    expect(result.current.currentIndex).toBe(60000)
+    expect(result.current.pageJump?.page).toBe(7)
+    await waitFor(() =>
+      expect(result.current.sentencesMap.get(60000)?.text).toContain("Page 7")
+    )
+  })
+
+  it("keeps a page jump inside the document", async () => {
+    mockFetch(0)
+    const { result } = renderPlayer()
+    await waitFor(() => expect(result.current.currentIndex).toBe(0))
+
+    await act(async () => {
+      await result.current.goToPage(NUM_PAGES + 50)
+    })
+    expect(result.current.currentIndex).toBe((NUM_PAGES - 1) * 10000)
+    expect(result.current.pageJump?.page).toBe(NUM_PAGES)
+
+    await act(async () => {
+      await result.current.goToPage(-3)
+    })
+    expect(result.current.currentIndex).toBe(0)
+    expect(result.current.pageJump?.page).toBe(1)
+  })
+
+  it("asks to scroll again when jumping to the same page twice", async () => {
+    mockFetch(0)
+    const { result } = renderPlayer()
+    await waitFor(() => expect(result.current.currentIndex).toBe(0))
+
+    await act(async () => {
+      await result.current.goToPage(4)
+    })
+    const first = result.current.pageJump
+
+    await act(async () => {
+      await result.current.goToPage(4)
+    })
+    expect(result.current.pageJump).not.toBe(first)
+    expect(result.current.pageJump?.page).toBe(4)
+  })
+
   it("uses and saves the zoom of PDFs, apart from the text one", async () => {
     mockState.user.preferences.zoom = { text: 1, pdf: 3 }
     const fetchSpy = mockFetch(0)

@@ -83,6 +83,38 @@ describe("PdfTextContent", () => {
     vi.unstubAllGlobals()
   })
 
+  it("scrolls to the top of a page jumped to, even with auto scroll off", () => {
+    const { update } = renderContent(makeValue({ isAutoScroll: false }))
+    scrollIntoView.mockClear()
+
+    update(makeValue({ isAutoScroll: false, pageJump: { page: 3 } }))
+
+    const page = screen.getByRole("region", { name: "Page 3" })
+    expect(scrollIntoView).toHaveBeenCalledWith(
+      expect.objectContaining({ block: "start" })
+    )
+    expect(scrollIntoView.mock.contexts.at(-1)).toBe(page)
+  })
+
+  it("stops a page below the top bar when scrolled to", () => {
+    renderContent(makeValue())
+
+    expect(screen.getByRole("region", { name: "Page 3" }).className).toMatch(
+      /scroll-mt-/
+    )
+  })
+
+  it("scrolls again when jumping to the same page twice", () => {
+    const { update } = renderContent(
+      makeValue({ isAutoScroll: false, pageJump: { page: 3 } })
+    )
+    scrollIntoView.mockClear()
+
+    update(makeValue({ isAutoScroll: false, pageJump: { page: 3 } }))
+
+    expect(scrollIntoView).toHaveBeenCalledTimes(1)
+  })
+
   it("shows the title and every page, in order", () => {
     renderContent(makeValue())
 

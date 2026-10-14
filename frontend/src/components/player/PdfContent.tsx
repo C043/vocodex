@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { usePlayer } from "../../contexts/PlayerContext"
 import { useUserScrollPause } from "../../hooks/useUserScrollPause"
+import { usePageJumpScroll } from "../../hooks/usePageJumpScroll"
 import {
   chunkAtOffset,
   pageOfChunk,
@@ -25,7 +26,8 @@ const PdfContent = () => {
     setCurrentIndex,
     isLoading,
     currentFontSize,
-    isAutoScroll
+    isAutoScroll,
+    pageJump
   } = usePlayer()
 
   const columnRef = useRef<HTMLDivElement>(null)
@@ -105,6 +107,8 @@ const PdfContent = () => {
     }
     return ref
   }
+
+  usePageJumpScroll(pageJump, pageEls)
 
   useEffect(() => {
     visiblePages.forEach(page => pdf.loadPage(page).catch(console.error))

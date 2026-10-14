@@ -82,6 +82,14 @@ describe("PdfPageView", () => {
     expect(doc.getPage).not.toHaveBeenCalled()
   })
 
+  it("stops below the top bar when scrolled to", () => {
+    render(<PdfPageView {...makeProps({ isActive: false })} />)
+
+    expect(screen.getByRole("region", { name: "Page 4" }).className).toMatch(
+      /scroll-mt-/
+    )
+  })
+
   it("draws the page and its text layer when shown", async () => {
     const { container } = render(<PdfPageView {...makeProps({ scale: 2 })} />)
 
