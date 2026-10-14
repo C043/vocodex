@@ -10,9 +10,12 @@ export const splitIntoChunks = (
   content: string,
   maxChars = 200
 ): TextChunk[] => {
-  const sentences = content.match(/[^.!?]+(?:[!?]|\.(?=\s|$)|$)/g) || [
-    content
-  ]
+  // A sentence ends at its punctuation, with any closing quotes or brackets,
+  // when a space or the end follows; other periods (3.5, www.site.com,
+  // ...and) stay inside it, so no text is ever left out
+  const sentences = (
+    content.match(/[^]*?(?:[.!?]+["'”’»)\]]*(?=\s|$)|$)/g) ?? []
+  ).filter(sentence => sentence !== "")
   const chunks: TextChunk[] = []
   let current = ""
 

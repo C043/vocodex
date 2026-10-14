@@ -33,6 +33,18 @@ describe("splitIntoChunks", () => {
     expect(chunks[0].paragraphStart).toBe(false)
   })
 
+  it.each([
+    ['He said "it is a gift." My turn.', ['He said "it is a gift."', "My turn."]],
+    ["Books, films, etc.) We went.", ["Books, films, etc.)", "We went."]],
+    ["I hear everything ...and then I stop.", ["I hear everything ...and then I stop."]],
+    ["See www.aspie.com for more.", ["See www.aspie.com for more."]],
+    ["It costs 3.5 euros. Cheap.", ["It costs 3.5 euros.", "Cheap."]]
+  ])("keeps the text around periods not followed by a space: %s", (content, expected) => {
+    const chunks = splitIntoChunks(content, 25)
+
+    expect(chunks.map(c => c.text)).toEqual(expected)
+  })
+
   it("drops empty chunks made only of whitespace", () => {
     const chunks = splitIntoChunks("Hello.   \n\n   ", 6)
 
