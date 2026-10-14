@@ -209,6 +209,23 @@ describe("EntryContent", () => {
     })
   })
 
+  describe("hover", () => {
+    it("tints the background of a chunk that can be selected", () => {
+      renderContent(makeValue())
+
+      expect(chunk("Second chunk.")).toHaveClass(
+        "hover:bg-violet-500/15",
+        "hover:text-foreground"
+      )
+    })
+
+    it("leaves the current chunk without a hover tint", () => {
+      renderContent(makeValue())
+
+      expect(chunk("First chunk.")).not.toHaveClass("hover:bg-violet-500/15")
+    })
+  })
+
   describe("word highlight", () => {
     // Positioned, z-indexed layers changing word by word make the browser
     // rebuild the layers under the glass bars, which then lose their blur

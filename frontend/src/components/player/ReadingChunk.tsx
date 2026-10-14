@@ -57,7 +57,7 @@ const ReadingChunk = ({
         scroll-mb-40
         md:scroll-mb-0
         ${isCurrent ? "bg-violet-500/15 text-foreground dark:bg-violet-500/20" : "text-foreground/55"}
-        ${isLoading || isCurrent ? "" : "cursor-pointer hover:text-foreground/90"}
+        ${isLoading || isCurrent ? "" : "cursor-pointer hover:text-foreground hover:bg-violet-500/15 hover:duration-150"}
       `}
     >
       {tokens.map((token, idx) => {
