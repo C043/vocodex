@@ -4,6 +4,7 @@ import { useUserScrollPause } from "../../hooks/useUserScrollPause"
 import { pageOfChunk } from "../../utils/pdfText"
 import type { BlockKind } from "../../utils/pdfText"
 import { fontSizeClasses } from "../../utils/fontSize"
+import { readerFontFamily } from "../../utils/fonts"
 import ReadingChunk from "./ReadingChunk"
 
 const BLOCK_TAGS = {
@@ -32,6 +33,7 @@ const PdfTextContent = () => {
     setCurrentIndex,
     isLoading,
     currentFontSize,
+    currentFont,
     isAutoScroll
   } = usePlayer()
 
@@ -143,7 +145,8 @@ const PdfTextContent = () => {
               )}
               {page && page.chunks.length > 0 && (
                 <div
-                  className={`font-serif break-words ${fontSizeClasses(currentFontSize)}`}
+                  className={`break-words ${fontSizeClasses(currentFontSize)}`}
+                  style={{ fontFamily: readerFontFamily(currentFont) }}
                 >
                   {page.text.blocks.map((block, blockIdx) => {
                     const chunks = page.chunks.filter(

@@ -88,3 +88,41 @@ async def test_invalid_zoom_is_rejected(client, auth_header, zoom):
 
     resp = await client.post("/me/preferences", headers=headers, json={"zoom": zoom})
     assert resp.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_font_is_saved_and_keeps_the_rest(client, auth_header):
+    if "DATABASE_URL" not in os.environ:
+        pytest.skip("DATABASE_URL not set; skipping synthesis tests")
+
+    headers, user = auth_header
+
+    await client.post(
+        "/me/preferences",
+        headers=headers,
+        json={"speed": "+50%", "voice": "v", "zoom": {"text": 2}},
+    )
+    resp = await client.post(
+        "/me/preferences", headers=headers, json={"font": "merriweather"}
+    )
+    assert resp.status_code == 200
+
+    data = (await client.get("/me/preferences", headers=headers)).json()
+    assert data == {
+        "speed": "+50%",
+        "voice": "v",
+        "zoom": {"text": 2},
+        "font": "merriweather",
+    }
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("font", ["comic-sans", "", 3])
+async def test_unknown_font_is_rejected(client, auth_header, font):
+    if "DATABASE_URL" not in os.environ:
+        pytest.skip("DATABASE_URL not set; skipping synthesis tests")
+
+    headers, user = auth_header
+
+    resp = await client.post("/me/preferences", headers=headers, json={"font": font})
+    assert resp.status_code == 422

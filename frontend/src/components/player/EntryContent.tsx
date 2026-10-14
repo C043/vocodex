@@ -3,6 +3,7 @@ import { usePlayer } from "../../contexts/PlayerContext"
 import type { SentenceObj } from "../../contexts/PlayerContext"
 import { useUserScrollPause } from "../../hooks/useUserScrollPause"
 import { fontSizeClasses } from "../../utils/fontSize"
+import { readerFontFamily } from "../../utils/fonts"
 import ReadingChunk from "./ReadingChunk"
 
 const EntryContent = () => {
@@ -14,6 +15,7 @@ const EntryContent = () => {
     setCurrentIndex,
     isLoading,
     currentFontSize,
+    currentFont,
     isAutoScroll
   } = usePlayer()
 
@@ -77,7 +79,8 @@ const EntryContent = () => {
         {title}
       </h1>
       <div
-        className={`font-serif leading-[1.8] mb-72 md:mb-52 ${fontClasses}`}
+        className={`leading-[1.8] mb-72 md:mb-52 ${fontClasses}`}
+        style={{ fontFamily: readerFontFamily(currentFont) }}
       >
         {paragraphs.map(paragraph => (
           <p

@@ -6,6 +6,7 @@ import { PlayerContext } from "../src/contexts/PlayerContext"
 import type { PdfPage } from "../src/hooks/usePdfDocument"
 import { chunkPageText } from "../src/utils/pdfText"
 import type { TextBlock } from "../src/utils/pdfText"
+import { readerFontFamily } from "../src/utils/fonts"
 
 type PlayerValue = NonNullable<
   ComponentProps<typeof PlayerContext.Provider>["value"]
@@ -50,6 +51,7 @@ const makeValue = (overrides: Partial<PlayerValue> = {}): PlayerValue =>
     setCurrentIndex: vi.fn(),
     isLoading: false,
     currentFontSize: 1,
+    currentFont: "literata",
     isAutoScroll: true,
     ...overrides
   }) as PlayerValue
@@ -170,6 +172,14 @@ describe("PdfTextContent", () => {
 
     // Headings are sized relative to it
     expect(chunk("It ends.").closest("div")).toHaveClass("text-2xl")
+  })
+
+  it("reads in the chosen font", () => {
+    renderContent(makeValue({ currentFont: "merriweather" }))
+
+    expect(chunk("It ends.").closest("div")).toHaveStyle({
+      fontFamily: readerFontFamily("merriweather")
+    })
   })
 
   it("keeps the chunk being read on screen", () => {

@@ -14,7 +14,8 @@ const mockState = {
     preferences: {
       speed: "+0%",
       voice: "en-GB-AdaMultilingualNeural",
-      zoom: {} as Record<string, number>
+      zoom: {} as Record<string, number>,
+      font: ""
     }
   }
 }
@@ -298,5 +299,58 @@ describe("usePlayerData zoom", () => {
       expect.objectContaining({ type: setUserPreferences.type })
     )
     expect(savedZoom(fetchSpy)).toEqual([])
+  })
+})
+
+describe("usePlayerData font", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockState.user.preferences.font = ""
+    vi.spyOn(window.localStorage.__proto__, "getItem").mockReturnValue(
+      "fake-token"
+    )
+    vi.spyOn(console, "error").mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it("starts at the default font when none was saved", () => {
+    vi.spyOn(window, "fetch").mockReturnValue(new Promise(() => {}))
+
+    const { result } = renderHook(() => usePlayerData("test-id"))
+
+    expect(result.current.currentFont).toBe("literata")
+  })
+
+  it("starts at the saved font", () => {
+    mockState.user.preferences.font = "lora"
+    vi.spyOn(window, "fetch").mockReturnValue(new Promise(() => {}))
+
+    const { result } = renderHook(() => usePlayerData("test-id"))
+
+    expect(result.current.currentFont).toBe("lora")
+  })
+
+  it("saves the font when it changes", () => {
+    const fetchSpy = vi
+      .spyOn(window, "fetch")
+      .mockImplementation(input =>
+        String(input).endsWith("/me/preferences")
+          ? Promise.resolve(new Response("{}", { status: 200 }))
+          : new Promise(() => {})
+      )
+    const { result } = renderHook(() => usePlayerData("test-id"))
+
+    act(() => result.current.setFont("inter"))
+
+    expect(mockDispatch).toHaveBeenCalledWith(
+      setUserPreferences({ font: "inter" })
+    )
+    const saved = fetchSpy.mock.calls
+      .filter(([url]) => String(url).endsWith("/me/preferences"))
+      .map(([, init]) => JSON.parse(String((init as RequestInit).body)))
+    expect(saved).toEqual([{ font: "inter" }])
   })
 })

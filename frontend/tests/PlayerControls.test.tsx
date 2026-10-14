@@ -180,6 +180,33 @@ describe.each([
     expect(value.toggleAutoScroll).toHaveBeenCalledTimes(1)
   })
 
+  it("fills the auto scroll button with the brand color when on", () => {
+    renderControls({ isAutoScroll: true })
+
+    expect(screen.getByRole("button", { name: "Auto scroll" })).toHaveClass(
+      "bg-brand",
+      "text-white"
+    )
+  })
+
+  it("leaves the auto scroll button unfilled when off", () => {
+    renderControls({ isAutoScroll: false })
+
+    expect(
+      screen.getByRole("button", { name: "Auto scroll" })
+    ).not.toHaveClass("bg-brand")
+  })
+
+  it("fills the options button with the brand color when open", async () => {
+    renderControls()
+    await openOptions()
+
+    expect(screen.getByRole("button", { name: "Player options" })).toHaveClass(
+      "bg-brand",
+      "text-white"
+    )
+  })
+
   it("shows voice, speed, zoom and text view in the options", async () => {
     const value = renderControls({
       kind: "pdf",
@@ -274,6 +301,7 @@ describe("PlayerControls selects while auto scrolling", () => {
 
   it("keeps the voice list open", async () => {
     renderControls()
+    await openOptions()
     const input = screen.getByRole("combobox", { name: "Select Voice" })
     await userEvent.click(input)
     expect(input).toHaveAttribute("aria-expanded", "true")
@@ -285,6 +313,7 @@ describe("PlayerControls selects while auto scrolling", () => {
 
   it("keeps the speed list open", async () => {
     renderControls()
+    await openOptions()
     const trigger = screen.getByRole("button", { name: /Select Speed/ })
     await userEvent.click(trigger)
     expect(trigger).toHaveAttribute("aria-expanded", "true")

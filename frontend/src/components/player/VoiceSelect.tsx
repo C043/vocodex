@@ -117,7 +117,11 @@ export const VoiceSelect = ({
             "bg-foreground/5 data-[hover=true]:bg-foreground/10 group-data-[focus=true]:bg-foreground/10 rounded-full min-h-10 h-10"
         }
       }}
-      popoverProps={{ classNames: { content: "min-w-64" } }}
+      // Auto scroll moves the page while reading; keep the list open
+      popoverProps={{
+        shouldCloseOnScroll: false,
+        classNames: { content: "min-w-64" }
+      }}
       listboxProps={{ emptyContent: "No voices found" }}
     >
       {section => (

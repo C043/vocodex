@@ -31,7 +31,8 @@ describe("user preferences", () => {
     expect(state.preferences).toEqual({
       speed: "+50%",
       voice: "en-GB-AdaMultilingualNeural",
-      zoom: { pdf: 4 }
+      zoom: { pdf: 4 },
+      font: ""
     })
   })
 
@@ -45,6 +46,25 @@ describe("user preferences", () => {
     expect(state.preferences).toMatchObject({
       speed: "+50%",
       voice: "a-voice"
+    })
+  })
+
+  it("start with no saved font", () => {
+    expect(initial().preferences.font).toBe("")
+  })
+
+  it("keep the rest when the font changes", () => {
+    let state = authReducer(
+      initial(),
+      setUserPreferences({ speed: "+50%", voice: "v", zoom: { text: 2 } })
+    )
+    state = authReducer(state, setUserPreferences({ font: "lora" }))
+
+    expect(state.preferences).toEqual({
+      speed: "+50%",
+      voice: "v",
+      zoom: { text: 2 },
+      font: "lora"
     })
   })
 })

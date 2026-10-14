@@ -19,8 +19,10 @@ import { pageOfChunk } from "../utils/pdfText"
 import type { PDFDocumentProxy } from "pdfjs-dist"
 import {
   setUserPreferences,
+  type UserPreferences,
   type ZoomPreferences
 } from "../redux/reducer/authSlice"
+import { DEFAULT_FONT } from "../utils/fonts"
 
 export type EntryKind = "text" | "pdf"
 
@@ -33,6 +35,7 @@ type State = {
       speed: string
       voice: string
       zoom?: ZoomPreferences
+      font?: string
     }
   }
 }
@@ -69,6 +72,9 @@ export const usePlayerData = (id: string | undefined) => {
   const currentFontSize = useSelector(
     (state: State) => state.user.preferences.zoom?.[zoomMode] ?? MIN_ZOOM
   )
+  const currentFont = useSelector(
+    (state: State) => state.user.preferences.font || DEFAULT_FONT
+  )
   const { isAutoScroll, toggleAutoScroll } = useAutoScroll()
   const [sentencesMap, setSentencesMap] = useState<Map<number, SentenceObj>>(
     new Map()
@@ -83,18 +89,18 @@ export const usePlayerData = (id: string | undefined) => {
   ]
   const [voiceOptions, setVoiceOptions] = useState<VoiceOption[]>([])
 
-  const saveZoom = async (zoom: ZoomPreferences) => {
+  const savePreferences = async (preferences: Partial<UserPreferences>) => {
     try {
       const url = `${env.VITE_API_URL}/me/preferences`
       const headers = {
         Authorization: `Bearer ${token}`,
         "Content-type": "application/json"
       }
-      const body = JSON.stringify({ zoom })
+      const body = JSON.stringify(preferences)
 
       const resp = await fetch(url, { method: "POST", headers, body })
 
-      if (!resp.ok) throw new Error("Saving the zoom failed")
+      if (!resp.ok) throw new Error("Saving the preferences failed")
     } catch (err) {
       console.error(err)
     }
@@ -104,10 +110,15 @@ export const usePlayerData = (id: string | undefined) => {
     if (size < MIN_ZOOM || size > MAX_ZOOM) return
     const zoom = { [zoomMode]: size }
     dispatch(setUserPreferences({ zoom }))
-    saveZoom(zoom)
+    savePreferences({ zoom })
   }
   const handleFontSizeUp = () => setFontSize(currentFontSize + 1)
   const handleFontSizeDown = () => setFontSize(currentFontSize - 1)
+
+  const setFont = (font: string) => {
+    dispatch(setUserPreferences({ font }))
+    savePreferences({ font })
+  }
 
   const fetchEntry = async () => {
     try {
@@ -669,6 +680,7 @@ export const usePlayerData = (id: string | undefined) => {
     kind,
     pdf,
     currentFontSize,
+    currentFont,
     isAutoScroll,
     currentSpeed,
     currentVoice,
@@ -685,6 +697,7 @@ export const usePlayerData = (id: string | undefined) => {
     setSpeed,
     handleFontSizeUp,
     handleFontSizeDown,
+    setFont,
     toggleAutoScroll,
     pdfView,
     togglePdfView

@@ -8,12 +8,15 @@ export type UserPreferences = {
   speed: string
   voice: string
   zoom: ZoomPreferences
+  // "" until one is picked: the reader uses its default font
+  font: string
 }
 
 const initialPreferences: UserPreferences = {
   speed: "+0%",
   voice: "",
-  zoom: {}
+  zoom: {},
+  font: ""
 }
 
 export const authSlice = createSlice({
@@ -40,9 +43,10 @@ export const authSlice = createSlice({
       state,
       action: PayloadAction<Partial<UserPreferences> | null | undefined>
     ) => {
-      const { speed, voice, zoom } = action.payload ?? {}
+      const { speed, voice, zoom, font } = action.payload ?? {}
       if (speed !== undefined) state.preferences.speed = speed
       if (voice !== undefined) state.preferences.voice = voice
+      if (font !== undefined) state.preferences.font = font
       if (zoom) state.preferences.zoom = { ...state.preferences.zoom, ...zoom }
     }
   }

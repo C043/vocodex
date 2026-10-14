@@ -4,6 +4,7 @@ import { render, screen, fireEvent, act } from "./test-utils"
 import EntryContent from "../src/components/player/EntryContent"
 import { PlayerContext } from "../src/contexts/PlayerContext"
 import type { SentenceObj } from "../src/contexts/PlayerContext"
+import { readerFontFamily } from "../src/utils/fonts"
 
 type PlayerValue = NonNullable<ComponentProps<typeof PlayerContext.Provider>["value"]>
 
@@ -36,6 +37,7 @@ const makeValue = (overrides: Partial<PlayerValue> = {}): PlayerValue =>
     setCurrentIndex: vi.fn(),
     isLoading: false,
     currentFontSize: 1,
+    currentFont: "literata",
     isAutoScroll: true,
     ...overrides
   }) as PlayerValue
@@ -101,6 +103,16 @@ describe("EntryContent", () => {
       fireEvent.click(chunk("Second chunk."))
 
       expect(value.setCurrentIndex).toHaveBeenCalledWith(1)
+    })
+  })
+
+  describe("font", () => {
+    it("reads in the chosen font", () => {
+      renderContent(makeValue({ currentFont: "inter" }))
+
+      expect(chunk("First chunk.").closest("div")).toHaveStyle({
+        fontFamily: readerFontFamily("inter")
+      })
     })
   })
 

@@ -194,6 +194,8 @@ export const PlayerControls = () => {
       disallowEmptySelection
       aria-label="Select Speed"
       size="sm"
+      // Auto scroll moves the page while reading; keep the list open
+      popoverProps={{ shouldCloseOnScroll: false }}
       onSelectionChange={keys => {
         const selected = Array.from(keys)[0] as string | undefined
         if (!selected) return

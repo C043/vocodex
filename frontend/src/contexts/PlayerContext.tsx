@@ -57,6 +57,7 @@ interface PlayerContextType {
   pdf: PdfState
   pdfView: PdfView
   currentFontSize: number
+  currentFont: string
   voiceOptions: VoiceOption[]
   currentVoice: string
   speedOptions: SpeedOption[]
@@ -67,6 +68,7 @@ interface PlayerContextType {
   // Functions
   handleFontSizeUp: () => void
   handleFontSizeDown: () => void
+  setFont: (font: string) => void
   toggleAutoScroll: () => void
   togglePdfView: () => void
   handlePause: () => void
