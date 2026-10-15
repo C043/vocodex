@@ -220,6 +220,15 @@ describe("chunkPageText", () => {
     expect(chunks[0].end - chunks[0].start).toBe(chunks[0].text.length)
   })
 
+  it("keeps a word broken over two lines by a hyphen whole", () => {
+    const text = "It is self-\nhosted. Next."
+    const chunks = chunkPageText(1, text)
+
+    expect(chunks.map(c => c.text)).toEqual(["It is self-\u00adhosted. Next."])
+    expect(chunks[0].start).toBe(0)
+    expect(chunks[0].end).toBe(text.length)
+  })
+
   it("never lets a chunk run over two blocks", () => {
     // A heading has no period to end it
     const text = "Chapter One\nIt begins. It ends."

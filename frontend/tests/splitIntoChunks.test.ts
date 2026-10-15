@@ -50,4 +50,21 @@ describe("splitIntoChunks", () => {
 
     expect(chunks).toEqual([{ text: "Hello.", paragraphStart: false }])
   })
+
+  it.each([
+    ["A self-\nhosted app.", "A self-\u00adhosted app."],
+    ["A docu-\n  ment here.", "A docu-\u00ad\u00ad\u00adment here."],
+    ["A self\u2010\r\nhosted app.", "A self\u2010\u00ad\u00adhosted app."],
+    ["A docu\u00ad\nment here.", "A docu\u00ad\u00adment here."]
+  ])("keeps a word broken over two lines by a hyphen whole: %j", (content, expected) => {
+    expect(splitIntoChunks(content).map(c => c.text)).toEqual([expected])
+  })
+
+  it.each([
+    "Pre- and post-war.",
+    "A list -\nnot a word.",
+    "Ends with a dash-\n\n- Next item."
+  ])("leaves hyphens that do not break a word alone: %j", content => {
+    expect(splitIntoChunks(content).map(c => c.text)).toEqual([content])
+  })
 })

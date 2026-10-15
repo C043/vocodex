@@ -1,4 +1,4 @@
-import { splitIntoChunks } from "./splitIntoChunks"
+import { joinBrokenWords, splitIntoChunks } from "./splitIntoChunks"
 
 // The parts of a pdf.js TextItem the reader needs
 export type PdfTextItem = {
@@ -216,12 +216,15 @@ export const chunkPageText = (
   blocks: TextBlock[] = [{ start: 0, end: text.length, kind: "paragraph" }]
 ): PdfChunk[] => {
   const chunks: PdfChunk[] = []
+  // Chunks come with their broken words joined, so they are found in the
+  // joined text, which is the same length as the page text
+  const joined = joinBrokenWords(text)
   blocks.forEach((block, blockIdx) => {
     let cursor = block.start
     const blockText = text.slice(block.start, block.end)
     for (const chunk of splitIntoChunks(blockText, maxChars)) {
       // Chunks are trimmed slices of the text, in order
-      const start = text.indexOf(chunk.text, cursor)
+      const start = joined.indexOf(chunk.text, cursor)
       cursor = start + chunk.text.length
       // PDF lines break mid-sentence and the voice pauses on line breaks, so
       // they become spaces: only the punctuation decides the pauses. Same
