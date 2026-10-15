@@ -15,7 +15,6 @@ import { useDispatch, useSelector } from "react-redux"
 import { setUserPreferences } from "../../redux/reducer/authSlice"
 import { toggleFocusMode } from "../../redux/reducer/focusModeSlice"
 import { VoiceSelect } from "./VoiceSelect"
-import { ReadingProgress } from "./ReadingProgress"
 import FontSizeControls from "./FontSizeControls"
 import { FontSelect } from "./FontSelect"
 import PageJump from "./PageJump"
@@ -361,7 +360,6 @@ export const PlayerControls = () => {
             </motion.div>
           )}
         </AnimatePresence>
-        <ReadingProgress />
         <div className="flex items-center justify-between">
           <div className="flex flex-1 gap-1">
             <button

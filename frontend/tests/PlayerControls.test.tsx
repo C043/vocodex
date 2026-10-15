@@ -35,7 +35,6 @@ const renderControls = (
       }
     ],
     speedOptions: [{ key: "+0%", label: "1x" }],
-    audioRef: { current: null },
     kind: "text",
     currentIndex: -1,
     sentencesMap: new Map(),
@@ -91,16 +90,12 @@ describe("PlayerControls keyboard shortcuts", () => {
 })
 
 describe("PlayerControls reading progress", () => {
-  it("shows the progress bar above the commands", () => {
+  it("does not show a progress bar or reading times", () => {
     renderControls()
-    const bar = screen.getByRole("progressbar", { name: "Reading progress" })
-    const play = screen.getByRole("button", { name: "Play" })
 
-    expect(
-      bar.compareDocumentPosition(play) & Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy()
-    expect(screen.getByLabelText("Time read")).toHaveTextContent("0:00")
-    expect(screen.getByLabelText("Time left")).toHaveTextContent("-0:00")
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument()
+    expect(screen.queryByLabelText("Time read")).not.toBeInTheDocument()
+    expect(screen.queryByLabelText("Time left")).not.toBeInTheDocument()
   })
 })
 
