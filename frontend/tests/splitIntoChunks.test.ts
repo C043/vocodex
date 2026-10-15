@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { splitIntoChunks } from "../src/utils/splitIntoChunks"
+import { splitIntoChunks, toSpeech } from "../src/utils/splitIntoChunks"
 
 describe("splitIntoChunks", () => {
   it("groups sentences into chunks no longer than maxChars", () => {
@@ -67,4 +67,22 @@ describe("splitIntoChunks", () => {
   ])("leaves hyphens that do not break a word alone: %j", content => {
     expect(splitIntoChunks(content).map(c => c.text)).toEqual([content])
   })
+})
+
+describe("toSpeech", () => {
+  it.each([
+    ["A self-­hosted app.", "A selfhosted app."],
+    ["A docu-­­­ment here.", "A document here."],
+    ["A self‐­­hosted app.", "A selfhosted app."],
+    ["A docu­­ment here.", "A document here."]
+  ])("reads a word broken over two lines without its hyphen: %j", (text, expected) => {
+    expect(toSpeech(text)).toBe(expected)
+  })
+
+  it.each(["Pre- and post-war.", "A well-known self-hosted app."])(
+    "leaves other hyphens alone: %j",
+    text => {
+      expect(toSpeech(text)).toBe(text)
+    }
+  )
 })

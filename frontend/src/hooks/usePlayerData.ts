@@ -8,7 +8,7 @@ import {
   VoiceOption
 } from "../contexts/PlayerContext"
 import { audio } from "framer-motion/m"
-import { splitIntoChunks } from "../utils/splitIntoChunks"
+import { splitIntoChunks, toSpeech } from "../utils/splitIntoChunks"
 import { playAudio } from "../utils/playAudio"
 import { alignBoundaries, wordAt } from "../utils/wordTiming"
 import { speedRate } from "../utils/speed"
@@ -309,7 +309,7 @@ export const usePlayerData = (id: string | undefined) => {
 
       const body = {
         voice,
-        text
+        text: toSpeech(text)
       }
 
       const resp = await fetch(url, {

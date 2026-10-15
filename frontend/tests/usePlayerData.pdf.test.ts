@@ -149,6 +149,20 @@ describe("usePlayerData with a PDF entry", () => {
     expect(synthesized[0]).toBe("Page 1 opens here. Page 1 ends here.")
   })
 
+  it("sends a word broken over two lines to the voice as one word", async () => {
+    vi.mocked(readPageText).mockImplementation(async () => ({
+      items: [line("It is self-"), line("hosted.")],
+      width: 600,
+      height: 800
+    }))
+    mockFetch(0)
+    const { result } = renderPlayer()
+
+    await waitFor(() => expect(result.current.isPlaying).toBe(true))
+
+    expect(synthesized[0]).toBe("It is selfhosted.")
+  })
+
   it("resumes on the saved page, loading only the pages around it", async () => {
     // Chunk 0 of page 12
     mockFetch(110000)

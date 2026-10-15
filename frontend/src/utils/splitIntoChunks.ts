@@ -14,6 +14,12 @@ const BROKEN_WORD = /(?<=[\p{L}\p{N}][-\u2010\u2011\u00ad])[^\S\n]*\r?\n[^\S\n]*
 export const joinBrokenWords = (text: string) =>
   text.replace(BROKEN_WORD, gap => "\u00ad".repeat(gap.length))
 
+// The text sent to the voice: a joined word loses its hyphen and soft
+// hyphens, or the voice still reads it as two words. Each word stays one
+// word, so the voice's word timings still point to the words on screen
+export const toSpeech = (text: string) =>
+  text.replace(/[-\u2010\u2011]?\u00ad+/g, "")
+
 // Groups sentences into chunks of at most maxChars, remembering which
 // chunks start a new paragraph so the reader can keep the original layout
 export const splitIntoChunks = (
