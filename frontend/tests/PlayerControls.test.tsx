@@ -6,6 +6,7 @@ import { PlayerControls } from "../src/components/player/PlayerControls"
 import { PlayerContext } from "../src/contexts/PlayerContext"
 import { showChrome } from "../src/redux/reducer/focusModeSlice"
 import { setScreenWidth, resetScreenWidth } from "./mediaQuery"
+import { PAGE_STRIDE } from "../src/utils/pdfText"
 
 type PlayerValue = NonNullable<
   ComponentProps<typeof PlayerContext.Provider>["value"]
@@ -89,12 +90,54 @@ describe("PlayerControls keyboard shortcuts", () => {
   })
 })
 
-describe("PlayerControls reading progress", () => {
+describe("PlayerControls page indicator", () => {
+  // Chunk ids of a PDF page start every PAGE_STRIDE
+  const chunkOfPage = (page: number) => (page - 1) * PAGE_STRIDE
+
+  it("shows the page being read of a PDF above the commands", () => {
+    renderControls({
+      kind: "pdf",
+      currentIndex: chunkOfPage(3) + 2,
+      pdf: { numPages: 120, pages: new Map() } as PlayerValue["pdf"]
+    })
+    const indicator = screen.getByLabelText("Current page")
+    const play = screen.getByRole("button", { name: "Play" })
+
+    expect(indicator).toHaveTextContent("Page 3 of 120")
+    expect(
+      indicator.compareDocumentPosition(play) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+  })
+
+  it("shows the first page before the reading starts", () => {
+    renderControls({
+      kind: "pdf",
+      currentIndex: -1,
+      pdf: { numPages: 8, pages: new Map() } as PlayerValue["pdf"]
+    })
+
+    expect(screen.getByLabelText("Current page")).toHaveTextContent(
+      "Page 1 of 8"
+    )
+  })
+
+  it("is not shown before the PDF has loaded", () => {
+    renderControls({ kind: "pdf", currentIndex: -1 })
+
+    expect(screen.queryByLabelText("Current page")).not.toBeInTheDocument()
+  })
+
+  it("is not shown for a text entry", () => {
+    renderControls({ kind: "text", currentIndex: 4 })
+
+    expect(screen.queryByLabelText("Current page")).not.toBeInTheDocument()
+  })
+
   it("does not show a progress bar or reading times", () => {
     renderControls()
 
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument()
-    expect(screen.queryByLabelText("Time read")).not.toBeInTheDocument()
     expect(screen.queryByLabelText("Time left")).not.toBeInTheDocument()
   })
 })

@@ -18,6 +18,7 @@ import { VoiceSelect } from "./VoiceSelect"
 import FontSizeControls from "./FontSizeControls"
 import { FontSelect } from "./FontSelect"
 import PageJump from "./PageJump"
+import { pageOfChunk } from "../../utils/pdfText"
 import { useIsDesktop } from "../../hooks/useIsDesktop"
 
 export const PlayerControls = () => {
@@ -38,6 +39,8 @@ export const PlayerControls = () => {
     voiceOptions,
     speedOptions,
     kind,
+    currentIndex,
+    pdf,
     pdfView,
     togglePdfView,
     isAutoScroll,
@@ -46,6 +49,9 @@ export const PlayerControls = () => {
   const isPdfText = kind === "pdf" && pdfView === "text"
   // The pages of a PDF keep their own fonts
   const hasReaderFont = kind !== "pdf" || isPdfText
+  // Shown once the PDF is open, as the page count is known only then
+  const showPage = kind === "pdf" && pdf.numPages > 0
+  const currentPage = currentIndex >= 0 ? pageOfChunk(currentIndex) : 1
 
   const dispatch = useDispatch()
   const { isEnabled: isFocusMode, isChromeHidden } = useSelector(
@@ -360,6 +366,14 @@ export const PlayerControls = () => {
             </motion.div>
           )}
         </AnimatePresence>
+        {showPage && (
+          <p
+            aria-label="Current page"
+            className="text-center text-xs tabular-nums text-foreground/60 select-none"
+          >
+            Page {currentPage} of {pdf.numPages}
+          </p>
+        )}
         <div className="flex items-center justify-between">
           <div className="flex flex-1 gap-1">
             <button

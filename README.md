@@ -41,6 +41,7 @@ Components:
 - Speed control
 - `TTS` with the full voice list from `edge-tts`, with search
 - Text highlighting in sync with the voice, for plain text and `PDF`s, with the reader following along as it plays
+- Current page of the total shown while reading a `PDF`
 - Audio control (play, pause, forward, backward) with keyboard shortcuts too
 - Keeps reading with the app minimized or the screen locked, with play, pause, next and previous on the lock screen and notification controls
 - Font size control, and zoom for `PDF` pages, saved per mode in the user preferences
