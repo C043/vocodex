@@ -258,6 +258,28 @@ describe("EntryContent", () => {
       expect(chunkEl.querySelector('[class*="z-"]')).toBeNull()
     })
 
+    // A fading highlight trails the voice and blinks at fast speeds
+    it("moves the highlight from word to word without fading", () => {
+      renderWords()
+
+      expect(screen.getByText("brave").className).not.toMatch(/transition/)
+    })
+
+    it("highlights words without ASCII letters, like Italian è", () => {
+      const italian = {
+        ...makeSentence(0, "La città è bella."),
+        boundaries: [{}, {}, {}, {}]
+      } as unknown as SentenceObj
+      renderContent(
+        makeValue({
+          sentencesMap: new Map([[0, italian]]),
+          activeWordIndex: 2
+        })
+      )
+
+      expect(screen.getByText("è")).toHaveClass("bg-brand")
+    })
+
     it("keeps the reading in its own stacking context", () => {
       const { container } = renderWords()
 

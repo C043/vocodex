@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useDispatch, useSelector } from "react-redux"
 import {
@@ -10,6 +10,7 @@ import {
 import { audio } from "framer-motion/m"
 import { splitIntoChunks } from "../utils/splitIntoChunks"
 import { playAudio } from "../utils/playAudio"
+import { alignBoundaries, wordAt } from "../utils/wordTiming"
 import { speedRate } from "../utils/readingTime"
 import { useAutoScroll } from "./useAutoScroll"
 import { usePdfView } from "./usePdfView"
@@ -79,7 +80,11 @@ export const usePlayerData = (id: string | undefined) => {
   // The last page asked for, a new object each time so the views scroll to
   // it even when it is the same page again
   const [pageJump, setPageJump] = useState<PageJump | null>(null)
-  const [activeWordIndex, setActiveWordIndex] = useState(-1)
+  // The word last heard, with the chunk it belongs to
+  const [activeWord, setActiveWord] = useState<{
+    chunk: number
+    word: number
+  } | null>(null)
   const { pdfView, togglePdfView } = usePdfView()
   // Each kind of entry keeps its own saved zoom; a PDF read as text uses
   // the font size of texts
@@ -364,7 +369,6 @@ export const usePlayerData = (id: string | undefined) => {
     if (isPlaying && audioRef.current) {
       audioRef.current.pause()
       setIsPlaying(false)
-      setActiveWordIndex(-1)
     }
   }
 
@@ -471,9 +475,6 @@ export const usePlayerData = (id: string | undefined) => {
           URL.revokeObjectURL(sentence.audio.url)
         }
       })
-
-      const track = audioRef.current?.textTracks[0]
-      if (track) track.removeEventListener("cuechange", handleCueChange)
     }
   }, [])
 
@@ -545,7 +546,6 @@ export const usePlayerData = (id: string | undefined) => {
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.onended = async () => {
-        setActiveWordIndex(-1)
         // iOS keeps a locked phone playing only if the next sentence starts
         // within this event, so it cannot wait for the sentence effect
         const next = readyNextSentence()
@@ -621,7 +621,7 @@ export const usePlayerData = (id: string | undefined) => {
     audio.pause()
     setIsPlaying(false)
     setIsLoading(true)
-    setActiveWordIndex(-1)
+    setActiveWord(null)
     ;(async () => {
       try {
         const text = sentencesMap.get(currentIndex)?.text
@@ -647,17 +647,6 @@ export const usePlayerData = (id: string | undefined) => {
     })()
   }, [currentVoice])
 
-  const handleCueChange = () => {
-    if (audioRef.current) {
-      const track =
-        audioRef.current.textTracks[0] ??
-        audioRef.current.addTextTrack("metadata")
-      const cue = track.activeCues?.[0] as VTTCue | undefined
-      const idx = cue ? Number(cue.text) : -1
-      setActiveWordIndex(Number.isNaN(idx) ? -1 : idx)
-    }
-  }
-
   // Handle sentence change
   useEffect(() => {
     if (!audioRef.current || sentencesMap.size === 0 || currentIndex === -1)
@@ -670,7 +659,7 @@ export const usePlayerData = (id: string | undefined) => {
 
     if (!handedOff) audioRef.current.pause()
     updateProgress()
-    setActiveWordIndex(-1)
+    if (!handedOff) setActiveWord(null)
 
     // Set on cleanup so a stale run (e.g. after skipping ahead) doesn't
     // overwrite the src or start playback for a sentence we've left
@@ -708,37 +697,62 @@ export const usePlayerData = (id: string | undefined) => {
       }
     })()
 
-    // Ensure the audio tag has the right settings
-    const track =
-      audioRef.current.textTracks[0] ??
-      audioRef.current.addTextTrack("metadata")
-    track.mode = "hidden"
-
-    // Remove stale cues
-    const cues = track.cues
-    if (cues) {
-      for (let i = cues.length - 1; i >= 0; i--) {
-        track.removeCue(track.cues[i])
-      }
-    }
-
-    // Add new cues
-    const boundaries = sentencesMap.get(currentIndex)?.boundaries ?? []
-    boundaries.forEach((boundary: boundaryObj, idx) => {
-      const cue = new VTTCue(boundary.start, boundary.end, String(idx))
-      track.addCue(cue)
-    })
-
-    // Add the cue event listener
-    track.addEventListener("cuechange", handleCueChange)
-
     prefetchNextSentences(currentIndex, prefetchCount())
 
     return () => {
       cancelled = true
-      track.removeEventListener("cuechange", handleCueChange)
     }
+    // A PDF chunk can become current before it is known; its boundaries
+    // turning up runs this again
   }, [currentIndex, sentencesMap.get(currentIndex)?.boundaries])
+
+  // When each word of the current sentence starts, and which word of the
+  // text it is
+  const currentSentence = sentencesMap.get(currentIndex)
+  const timeline = useMemo(() => {
+    const boundaries = currentSentence?.boundaries ?? []
+    return {
+      url: currentSentence?.audio.url ?? null,
+      starts: boundaries.map(boundary => boundary.start),
+      words: alignBoundaries(currentSentence?.text ?? "", boundaries)
+    }
+  }, [
+    currentSentence?.boundaries,
+    currentSentence?.text,
+    currentSentence?.audio.url
+  ])
+
+  // Follow the voice on every frame: cue events only come every quarter of a
+  // second or so, and leave gaps between the words
+  useEffect(() => {
+    if (!isPlaying || timeline.starts.length === 0) return
+    let frame = 0
+    const tick = () => {
+      const audio = audioRef.current
+      // Right after the ended event the next sentence plays before this
+      // one stops being current
+      if (audio && audio.src === timeline.url) {
+        const word = timeline.words[wordAt(timeline.starts, audio.currentTime)]
+        setActiveWord(prev =>
+          prev?.chunk === currentIndex && prev.word === word
+            ? prev
+            : { chunk: currentIndex, word }
+        )
+      }
+      frame = requestAnimationFrame(tick)
+    }
+    tick()
+    return () => cancelAnimationFrame(frame)
+  }, [isPlaying, timeline, currentIndex])
+
+  // A sentence shows its first word until the voice moves on, so a word is
+  // always highlighted, even between sentences and while paused
+  const activeWordIndex =
+    activeWord?.chunk === currentIndex
+      ? activeWord.word
+      : (timeline.words[0] ?? -1)
+  const setActiveWordIndex = (word: number) =>
+    setActiveWord({ chunk: currentIndex, word })
 
   // Handle voice speed change
   useEffect(() => {

@@ -270,6 +270,16 @@ describe("wordRanges", () => {
       "42!"
     ])
   })
+
+  it("counts words without ASCII letters, like Italian è", () => {
+    const text = "La città è bella"
+    expect(wordRanges(text).map(r => text.slice(r.start, r.end))).toEqual([
+      "La",
+      "città",
+      "è",
+      "bella"
+    ])
+  })
 })
 
 describe("textRangeToItems", () => {

@@ -1,3 +1,6 @@
+import { memo, useMemo } from "react"
+import { isWord } from "../../utils/pdfText"
+
 type ReadingChunkProps = {
   id: number
   text: string
@@ -5,8 +8,9 @@ type ReadingChunkProps = {
   // Word being spoken, or -1 when there is none to show
   activeWordIndex: number
   isLoading: boolean
-  onSelect: () => void
-  chunkRef: (el: HTMLSpanElement | null) => void
+  // Stable across renders, so only the chunks that change render again
+  onSelect: (id: number) => void
+  chunkRef: (id: number, el: HTMLSpanElement | null) => void
 }
 
 // A chunk of the text being read, with its word being spoken highlighted
@@ -19,31 +23,25 @@ const ReadingChunk = ({
   onSelect,
   chunkRef
 }: ReadingChunkProps) => {
-  let wordCounter = 0
-
-  const tokens = text
-    .split(/(\s+)/)
-    .filter(t => t.length > 0)
-    .map(token => {
-      const isWord = /[A-Za-z0-9'’]+/.test(token)
-
-      if (isWord) {
-        const idx = wordCounter
-        wordCounter += 1
-        return { text: token, wordIndex: idx }
-      }
-
-      return { text: token, wordIndex: null }
-    })
+  const tokens = useMemo(() => {
+    let wordCounter = 0
+    return text
+      .split(/(\s+)/)
+      .filter(t => t.length > 0)
+      .map(token => ({
+        text: token,
+        wordIndex: isWord(token) ? wordCounter++ : null
+      }))
+  }, [text])
 
   return (
     <span
       data-chunk-id={id}
       aria-current={isCurrent ? "true" : undefined}
-      ref={chunkRef}
+      ref={el => chunkRef(id, el)}
       onClick={() => {
         if (!isLoading) {
-          onSelect()
+          onSelect(id)
         }
       }}
       className={`
@@ -66,14 +64,14 @@ const ReadingChunk = ({
         const isActive = isCurrent && token.wordIndex === activeWordIndex
 
         // Painted on the word itself: positioned, z-indexed overlays
-        // changing word by word make the glass bars lose their blur
+        // changing word by word make the glass bars lose their blur. No
+        // transition: a fading highlight trails the voice
         return (
           <span
             key={`${id}-${idx}`}
             className={`
               rounded-md
               box-decoration-clone
-              transition-colors
               ${isActive ? "bg-brand text-white px-1 -mx-1 py-0.5 shadow-md shadow-violet-500/40" : ""}
             `}
           >
@@ -85,4 +83,4 @@ const ReadingChunk = ({
   )
 }
 
-export default ReadingChunk
+export default memo(ReadingChunk)

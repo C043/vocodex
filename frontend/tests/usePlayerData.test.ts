@@ -62,6 +62,7 @@ const createMockAudio = () => {
     onended: null,
     playbackRate: 1,
     src: "",
+    currentTime: 0,
     textTracks: [] as unknown[],
     addTextTrack: vi.fn(() => track)
   } as unknown as HTMLAudioElement
@@ -363,7 +364,10 @@ describe("usePlayerData in the background", () => {
 
   // Answers the entry and the synthesis; synthesis of the sentences in
   // `pending` never answers, as if the network were still busy
-  const mockBackend = (pending: (text: string) => boolean = () => false) =>
+  const mockBackend = (
+    pending: (text: string) => boolean = () => false,
+    boundaries: unknown[] = []
+  ) =>
     vi.spyOn(window, "fetch").mockImplementation(async (input, init) => {
       const url = String(input)
       if (url.endsWith("/entries/long-id"))
@@ -375,7 +379,7 @@ describe("usePlayerData in the background", () => {
         const { text } = JSON.parse(String(init?.body))
         if (pending(text)) return new Promise<Response>(() => {})
         return new Response(
-          JSON.stringify({ audio: btoa("audio"), boundaries: [] }),
+          JSON.stringify({ audio: btoa("audio"), boundaries }),
           { status: 200 }
         )
       }
@@ -504,6 +508,33 @@ describe("usePlayerData in the background", () => {
     )
   })
 
+  it("highlights the first word of the next sentence as soon as it starts", async () => {
+    let blobs = 0
+    vi.mocked(URL.createObjectURL).mockImplementation(() => `blob:${blobs++}`)
+    mockBackend(() => false, [
+      { text: "Sentence", start: 0.1, end: 0.4 },
+      { text: "number", start: 0.5, end: 0.8 }
+    ])
+    const result = await startPlayer()
+    const audio = result.current.audioRef.current as HTMLAudioElement
+    await waitFor(() =>
+      expect(result.current.sentencesMap.get(1)?.audio.url).toBeTruthy()
+    )
+    audio.currentTime = 0.6
+    await waitFor(() => expect(result.current.activeWordIndex).toBe(1))
+
+    act(() => {
+      audio.currentTime = 0
+      audio.onended?.(new Event("ended"))
+    })
+
+    expect(result.current.currentIndex).toBe(1)
+    expect(result.current.activeWordIndex).toBe(0)
+    vi.mocked(URL.createObjectURL).mockImplementation(
+      () => "blob:mock-audio-url"
+    )
+  })
+
   it("saves progress with a request that outlives a frozen page", async () => {
     const fetchSpy = mockBackend()
 
@@ -513,5 +544,90 @@ describe("usePlayerData in the background", () => {
       expect.stringContaining("/entries/text/long-id/progress"),
       expect.objectContaining({ method: "POST", keepalive: true })
     )
+  })
+})
+
+describe("usePlayerData word highlight", () => {
+  // "This is the content." spoken with a pause after each word
+  const boundaries = [
+    { text: "This", start: 0, end: 0.2 },
+    { text: "is", start: 0.3, end: 0.4 },
+    { text: "the", start: 0.5, end: 0.6 },
+    { text: "content", start: 0.7, end: 1.0 }
+  ]
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.spyOn(window.localStorage.__proto__, "getItem").mockReturnValue(
+      "fake-token"
+    )
+    vi.spyOn(console, "error").mockImplementation(() => {})
+    vi.spyOn(window, "fetch").mockImplementation(async input => {
+      const url = String(input)
+      if (url.endsWith("/entries/words-id"))
+        return new Response(
+          JSON.stringify({
+            title: "Words",
+            content: "This is the content.",
+            progress: 0
+          }),
+          { status: 200 }
+        )
+      if (url.endsWith("/synthesis/GET"))
+        return new Response(
+          JSON.stringify({ audio: btoa("audio"), boundaries }),
+          { status: 200 }
+        )
+      return new Response(JSON.stringify([]), { status: 200 })
+    })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  const startPlayer = async () => {
+    const { result } = renderHook(() => usePlayerData("words-id"))
+    const audio = createMockAudio()
+    result.current.audioRef.current = audio
+    await waitFor(() => expect(result.current.isPlaying).toBe(true))
+    return { result, audio }
+  }
+
+  it("highlights the first word as soon as the sentence plays", async () => {
+    const { result } = await startPlayer()
+
+    await waitFor(() => expect(result.current.activeWordIndex).toBe(0))
+  })
+
+  it("follows the time of the audio", async () => {
+    const { result, audio } = await startPlayer()
+
+    audio.currentTime = 0.75
+    await waitFor(() => expect(result.current.activeWordIndex).toBe(3))
+    audio.currentTime = 0.35
+    await waitFor(() => expect(result.current.activeWordIndex).toBe(1))
+  })
+
+  it("keeps a word highlighted in the pause between words", async () => {
+    const { result, audio } = await startPlayer()
+
+    audio.currentTime = 0.55
+    await waitFor(() => expect(result.current.activeWordIndex).toBe(2))
+    audio.currentTime = 0.65
+    await new Promise(resolve => setTimeout(resolve, 50))
+
+    expect(result.current.activeWordIndex).toBe(2)
+  })
+
+  it("keeps the word highlighted while paused", async () => {
+    const { result, audio } = await startPlayer()
+    audio.currentTime = 0.55
+    await waitFor(() => expect(result.current.activeWordIndex).toBe(2))
+
+    act(() => result.current.handlePause())
+
+    expect(result.current.isPlaying).toBe(false)
+    expect(result.current.activeWordIndex).toBe(2)
   })
 })

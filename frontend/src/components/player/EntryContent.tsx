@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef } from "react"
+import { Fragment, useCallback, useEffect, useRef } from "react"
 import { usePlayer } from "../../contexts/PlayerContext"
 import type { SentenceObj } from "../../contexts/PlayerContext"
 import { useUserScrollPause } from "../../hooks/useUserScrollPause"
@@ -22,6 +22,13 @@ const EntryContent = () => {
   const chunkRefs = useRef(new Map<number, HTMLSpanElement>())
   const hasScrolled = useRef(false)
   const isUserScrolling = useUserScrollPause()
+  const registerChunk = useCallback(
+    (chunkId: number, el: HTMLSpanElement | null) => {
+      if (el) chunkRefs.current.set(chunkId, el)
+      else chunkRefs.current.delete(chunkId)
+    },
+    []
+  )
 
   // Keep the chunk being read in the middle of the screen
   useEffect(() => {
@@ -59,13 +66,10 @@ const EntryContent = () => {
         id={sentence.id}
         text={sentence.text}
         isCurrent={isCurrent}
-        activeWordIndex={hasWordTiming ? activeWordIndex : -1}
+        activeWordIndex={isCurrent && hasWordTiming ? activeWordIndex : -1}
         isLoading={isLoading}
-        onSelect={() => setCurrentIndex(sentence.id)}
-        chunkRef={el => {
-          if (el) chunkRefs.current.set(sentence.id, el)
-          else chunkRefs.current.delete(sentence.id)
-        }}
+        onSelect={setCurrentIndex}
+        chunkRef={registerChunk}
       />
     )
   }

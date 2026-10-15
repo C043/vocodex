@@ -242,11 +242,14 @@ export const chunkPageText = (
 export const chunkAtOffset = (chunks: PdfChunk[], offset: number) =>
   chunks.find(chunk => offset < chunk.end)
 
+// A token the voice says: it has a letter or a digit, in any alphabet
+export const isWord = (token: string) => /[\p{L}\p{N}]/u.test(token)
+
 // Same words as the reader counts for text entries, so the word index sent
 // by the voice points to the same word
 export const wordRanges = (text: string) =>
   [...text.matchAll(/\S+/g)]
-    .filter(match => /[A-Za-z0-9'’]+/.test(match[0]))
+    .filter(match => isWord(match[0]))
     .map(match => ({ start: match.index, end: match.index + match[0].length }))
 
 // The parts of the items that a range of the page text covers

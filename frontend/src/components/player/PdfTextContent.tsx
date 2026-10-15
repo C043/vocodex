@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { usePlayer } from "../../contexts/PlayerContext"
 import { useUserScrollPause } from "../../hooks/useUserScrollPause"
 import { usePageJumpScroll } from "../../hooks/usePageJumpScroll"
@@ -43,6 +43,13 @@ const PdfTextContent = () => {
   const pageEls = useRef(new Map<number, HTMLElement>())
   const hasScrolled = useRef(false)
   const isUserScrolling = useUserScrollPause()
+  const registerChunk = useCallback(
+    (chunkId: number, el: HTMLSpanElement | null) => {
+      if (el) chunkRefs.current.set(chunkId, el)
+      else chunkRefs.current.delete(chunkId)
+    },
+    []
+  )
   const [visiblePages, setVisiblePages] = useState<Set<number>>(new Set())
 
   // The page being read, so the scroll waits for its text to load
@@ -168,13 +175,12 @@ const PdfTextContent = () => {
                               id={chunk.id}
                               text={chunk.text}
                               isCurrent={!isLoading && currentIndex === chunk.id}
-                              activeWordIndex={activeWordIndex}
+                              activeWordIndex={
+                                currentIndex === chunk.id ? activeWordIndex : -1
+                              }
                               isLoading={isLoading}
-                              onSelect={() => setCurrentIndex(chunk.id)}
-                              chunkRef={el => {
-                                if (el) chunkRefs.current.set(chunk.id, el)
-                                else chunkRefs.current.delete(chunk.id)
-                              }}
+                              onSelect={setCurrentIndex}
+                              chunkRef={registerChunk}
                             />
                           </span>
                         ))}
