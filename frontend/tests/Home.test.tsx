@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { render, screen, createTestStore } from "./test-utils"
+import { render, screen, within, createTestStore } from "./test-utils"
 import "@testing-library/jest-dom"
 import Home from "../src/pages/Home"
 import { checkAuthentication, parseJwt } from "../src/utils/authUtils"
@@ -101,28 +101,51 @@ describe("Entries", () => {
     })
   })
 
-  it("should call delete api when delete button is clicked", async () => {
-    const { userEvent } = await import("@testing-library/user-event")
-    const { waitFor } = await import("@testing-library/react")
-
+  const renderWithEntry = async () => {
     global.fetch = vi.fn(() =>
       Promise.resolve({
         ok: true,
         json: () => Promise.resolve({ entries: [{ id: 1, title: "title" }] })
       })
     ) as any
-    window.confirm = vi.fn(() => true)
 
     const testStore = createTestStore({ isLoggedIn: true, userId: 1, username: "testuser" })
 
     render(<Home />, { store: testStore })
 
-    await waitFor(() => {
-      expect(screen.getByText("title")).toBeInTheDocument()
-    })
+    await screen.findByText("title")
+  }
 
-    const deleteIcon = screen.getByTestId("delete-entry-1")
-    await userEvent.click(deleteIcon)
+  const deleteCalls = () =>
+    vi
+      .mocked(global.fetch)
+      .mock.calls.filter(([, init]) => (init as RequestInit)?.method === "DELETE")
+
+  it("should ask for confirmation in a modal instead of the browser", async () => {
+    const { userEvent } = await import("@testing-library/user-event")
+    window.confirm = vi.fn(() => true)
+    await renderWithEntry()
+
+    await userEvent.click(screen.getByTestId("delete-entry-1"))
+
+    const dialog = await screen.findByRole("dialog")
+    expect(dialog).toHaveTextContent("Delete entry?")
+    expect(dialog).toHaveTextContent("title")
+    expect(window.confirm).not.toHaveBeenCalled()
+    expect(deleteCalls()).toHaveLength(0)
+  })
+
+  it("should call delete api once the deletion is confirmed", async () => {
+    const { userEvent } = await import("@testing-library/user-event")
+    const { waitFor } = await import("@testing-library/react")
+    await renderWithEntry()
+
+    await userEvent.click(screen.getByTestId("delete-entry-1"))
+    await userEvent.click(
+      within(await screen.findByRole("dialog")).getByRole("button", {
+        name: "Delete"
+      })
+    )
 
     expect(global.fetch).toHaveBeenCalledWith(
       expect.stringContaining("/entries/1"),
@@ -130,6 +153,28 @@ describe("Entries", () => {
         method: "DELETE"
       })
     )
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    })
+  })
+
+  it("should not delete when the deletion is cancelled", async () => {
+    const { userEvent } = await import("@testing-library/user-event")
+    const { waitFor } = await import("@testing-library/react")
+    await renderWithEntry()
+
+    await userEvent.click(screen.getByTestId("delete-entry-1"))
+    await userEvent.click(
+      within(await screen.findByRole("dialog")).getByRole("button", {
+        name: "Cancel"
+      })
+    )
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    })
+    expect(deleteCalls()).toHaveLength(0)
+    expect(screen.getByText("title")).toBeInTheDocument()
   })
 })
 

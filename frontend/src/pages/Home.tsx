@@ -27,6 +27,7 @@ import {
   TrashIcon
 } from "@heroicons/react/24/solid"
 import { motion } from "framer-motion"
+import ConfirmModal from "../components/ConfirmModal"
 
 type Entry = {
   id: number
@@ -61,6 +62,8 @@ const Home = () => {
   const pdfInputRef = useRef<HTMLInputElement>(null)
 
   const [entries, setEntries] = useState<Entry[]>([])
+  // Entry waiting for the user to confirm its deletion
+  const [entryToDelete, setEntryToDelete] = useState<Entry | null>(null)
 
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
@@ -196,34 +199,27 @@ const Home = () => {
     }
   }
 
-  const handleDelete = async (ev: React.MouseEvent, entryId: number) => {
+  const handleDelete = async (entryId: number) => {
     try {
-      ev.stopPropagation()
       setIsLoading(true)
       setHasError(false)
-      const confirmed = window.confirm(
-        "Are you sure you want to delete this entry?"
-      )
-
-      if (confirmed) {
-        const url = `${env.VITE_API_URL}/entries/${entryId}`
-        const headers = {
-          Authorization: `Bearer ${token}`
-        }
-        const method = "DELETE"
-        const resp = await fetch(url, {
-          method,
-          headers
-        })
-
-        if (!resp.ok) {
-          const data = await resp.json().catch(() => null)
-          const detail = data?.detail ?? `HTTP ${resp.status}`
-          throw new Error(detail)
-        }
-
-        await getUserEntries()
+      const url = `${env.VITE_API_URL}/entries/${entryId}`
+      const headers = {
+        Authorization: `Bearer ${token}`
       }
+      const method = "DELETE"
+      const resp = await fetch(url, {
+        method,
+        headers
+      })
+
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => null)
+        const detail = data?.detail ?? `HTTP ${resp.status}`
+        throw new Error(detail)
+      }
+
+      await getUserEntries()
     } catch (err) {
       setHasError(true)
       addToast({
@@ -472,7 +468,7 @@ const Home = () => {
                 type="button"
                 aria-label={`Delete ${entry.title}`}
                 className="shrink-0 grid place-items-center size-10 rounded-full text-foreground/40 hover:text-danger hover:bg-danger/10 active:opacity-50 transition-colors cursor-pointer"
-                onClick={(ev: React.MouseEvent) => handleDelete(ev, entry.id)}
+                onClick={() => setEntryToDelete(entry)}
                 data-testid={`delete-entry-${entry.id}`}
               >
                 <TrashIcon className="size-5" />
@@ -601,6 +597,26 @@ const Home = () => {
           )}
         </ModalContent>
       </Modal>
+
+      <ConfirmModal
+        isOpen={entryToDelete !== null}
+        title="Delete entry?"
+        message={
+          <>
+            <span className="font-semibold text-foreground">
+              {entryToDelete?.title}
+            </span>{" "}
+            will be permanently deleted.
+          </>
+        }
+        confirmLabel="Delete"
+        isDanger
+        onConfirm={() => {
+          if (entryToDelete) handleDelete(entryToDelete.id)
+          setEntryToDelete(null)
+        }}
+        onCancel={() => setEntryToDelete(null)}
+      />
     </div>
   )
 }
