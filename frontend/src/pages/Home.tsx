@@ -1,4 +1,4 @@
-import React, { FormEvent, useEffect, useRef, useState } from "react"
+import { FormEvent, useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { checkAuthentication } from "../utils/authUtils"
 import { useDispatch, useSelector } from "react-redux"
@@ -38,7 +38,7 @@ type Entry = {
 
 type State = {
   user: {
-    username: String
+    username: string
   }
 }
 
@@ -66,7 +66,6 @@ const Home = () => {
   const [entryToDelete, setEntryToDelete] = useState<Entry | null>(null)
 
   const [isLoading, setIsLoading] = useState(true)
-  const [hasError, setHasError] = useState(false)
 
   const formRef = useRef<HTMLFormElement>(null)
   const triggerSubmit = () => {
@@ -78,7 +77,6 @@ const Home = () => {
 
     try {
       setIsLoading(true)
-      setHasError(false)
       const token = window.localStorage.getItem("vocodex-jwt")
       const url = `${env.VITE_API_URL}/entries/text`
       const headers = {
@@ -109,7 +107,6 @@ const Home = () => {
         description: "Retry later.",
         color: "danger"
       })
-      setHasError(true)
     } finally {
       setIsLoading(false)
       setTextTitle("")
@@ -202,7 +199,6 @@ const Home = () => {
   const handleDelete = async (entryId: number) => {
     try {
       setIsLoading(true)
-      setHasError(false)
       const url = `${env.VITE_API_URL}/entries/${entryId}`
       const headers = {
         Authorization: `Bearer ${token}`
@@ -221,7 +217,6 @@ const Home = () => {
 
       await getUserEntries()
     } catch (err) {
-      setHasError(true)
       addToast({
         title: "There was an error deleting.",
         description: "Retry later.",
@@ -236,7 +231,6 @@ const Home = () => {
   const getUserEntries = async () => {
     try {
       setIsLoading(true)
-      setHasError(false)
       const url = `${env.VITE_API_URL}/entries/list/me`
       const headers = {
         Authorization: `Bearer ${token}`
@@ -259,7 +253,6 @@ const Home = () => {
       })
       setEntries(data.entries)
     } catch (err) {
-      setHasError(true)
       console.error(err)
 
       addToast({
@@ -284,6 +277,8 @@ const Home = () => {
         await getUserEntries()
       })().catch(console.error)
     }
+    // Auth check and first load run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const { isOpen, onOpen, onOpenChange } = useDisclosure()
