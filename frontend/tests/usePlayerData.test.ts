@@ -170,7 +170,7 @@ describe("usePlayerData EPUB entries", () => {
     vi.restoreAllMocks()
   })
 
-  it("reads headings apart, without their mark", async () => {
+  it("reads the blocks of the book, with their styles and pictures", async () => {
     const fetchSpy = vi
       .spyOn(window, "fetch")
       .mockImplementation(async input => {
@@ -180,7 +180,17 @@ describe("usePlayerData EPUB entries", () => {
             JSON.stringify({
               title: "A book",
               kind: "epub",
-              content: "# Chapter One\n\nIt begins.",
+              content: JSON.stringify({
+                blocks: [
+                  { kind: "image", image: 0, alt: "Cover" },
+                  { kind: "heading", text: "Chapter One" },
+                  {
+                    kind: "paragraph",
+                    text: "It begins.",
+                    styles: [{ start: 3, end: 9, style: "italic" }]
+                  }
+                ]
+              }),
               progress: 0
             }),
             { status: 200 }
@@ -200,11 +210,22 @@ describe("usePlayerData EPUB entries", () => {
 
     expect(result.current.kind).toBe("text")
     expect([...result.current.sentencesMap.values()]).toEqual([
-      expect.objectContaining({ text: "Chapter One", block: "heading" }),
+      expect.objectContaining({
+        text: "Chapter One",
+        block: "heading",
+        before: [
+          {
+            kind: "image",
+            src: expect.stringMatching(/\/entries\/book-id\/images\/0$/),
+            alt: "Cover"
+          }
+        ]
+      }),
       expect.objectContaining({
         text: "It begins.",
         block: "paragraph",
-        paragraphStart: true
+        paragraphStart: true,
+        styles: [{ start: 3, end: 9, style: "italic" }]
       })
     ])
     const synthesis = fetchSpy.mock.calls.find(([url]) =>

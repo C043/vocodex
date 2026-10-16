@@ -179,7 +179,10 @@ export const usePlayerData = (id: string | undefined) => {
       // Books keep their headings and line breaks
       const textChunks: (TextChunk | BookChunk)[] =
         data.kind === "epub"
-          ? splitBookIntoChunks(data.content)
+          ? splitBookIntoChunks(
+              JSON.parse(data.content),
+              image => `${env.VITE_API_URL}/entries/${id}/images/${image}`
+            )
           : splitIntoChunks(data.content)
       splitIntoSentences(textChunks, data.progress)
     } catch (err) {
@@ -232,7 +235,10 @@ export const usePlayerData = (id: string | undefined) => {
         paragraphStart: textChunks[idx].paragraphStart,
         ...("block" in textChunks[idx] && {
           block: textChunks[idx].block,
-          lineStart: textChunks[idx].lineStart
+          lineStart: textChunks[idx].lineStart,
+          styles: textChunks[idx].styles,
+          before: textChunks[idx].before,
+          after: textChunks[idx].after
         }),
         prev: previous,
         audio: {

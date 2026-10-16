@@ -176,3 +176,24 @@ async def getEntryFile(
         )
     except Exception:
         raise
+
+
+@router.get("/{entry_id}/images/{image_id}", status_code=200)
+async def getEntryImage(
+    entry_id: int,
+    image_id: int,
+    current_user: Users = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    try:
+        image = await entriesController.getEntryImage(
+            entry_id, image_id, current_user, session
+        )
+        # A book's pictures never change once uploaded
+        return Response(
+            content=image.data,
+            media_type=image.media_type,
+            headers={"Cache-Control": "private, max-age=31536000, immutable"},
+        )
+    except Exception:
+        raise

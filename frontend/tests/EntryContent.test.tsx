@@ -120,6 +120,65 @@ describe("EntryContent", () => {
       expect(second.closest("p")?.querySelectorAll("br")).toHaveLength(1)
     })
 
+    it("shows italic and bold parts of a chunk", () => {
+      const styled = [
+        {
+          ...makeSentence(0, "A bright day in April, very bold."),
+          styles: [
+            { start: 16, end: 21, style: "italic" as const },
+            { start: 23, end: 32, style: "bold" as const }
+          ]
+        }
+      ]
+      renderContent(
+        makeValue({ sentencesMap: new Map(styled.map(s => [s.id, s])) })
+      )
+
+      const el = chunk("A bright day in April, very bold.")
+      expect([...el.querySelectorAll("em")].map(e => e.textContent)).toEqual([
+        "April"
+      ])
+      expect(
+        [...el.querySelectorAll("strong")].map(e => e.textContent).join("")
+      ).toBe("very bold")
+    })
+
+    it("shows scene breaks and pictures around the text", () => {
+      vi.spyOn(window, "fetch").mockReturnValue(new Promise(() => {}))
+      const book = [
+        {
+          ...makeSentence(0, "First."),
+          before: [{ kind: "image" as const, src: "/images/0", alt: "Cover" }]
+        },
+        {
+          ...makeSentence(1, "Second.", true),
+          before: [{ kind: "break" as const }],
+          after: [{ kind: "image" as const, src: "/images/1", alt: "End" }]
+        }
+      ]
+      const { container } = renderContent(
+        makeValue({ sentencesMap: new Map(book.map(s => [s.id, s])) })
+      )
+
+      const order = [
+        ...container.querySelectorAll(
+          "[data-chunk-id], [role=separator], [data-book-image]"
+        )
+      ].map(
+        el =>
+          el.getAttribute("data-book-image") ??
+          el.getAttribute("role") ??
+          el.textContent
+      )
+      expect(order).toEqual([
+        "/images/0",
+        "First.",
+        "separator",
+        "Second.",
+        "/images/1"
+      ])
+    })
+
     it("marks only the chunk being read as current", () => {
       renderContent(makeValue({ currentIndex: 1 }))
 

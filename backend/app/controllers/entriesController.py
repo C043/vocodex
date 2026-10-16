@@ -1,3 +1,4 @@
+import json
 import re
 
 from fastapi import HTTPException
@@ -6,7 +7,7 @@ from sqlalchemy import Delete, Select, func, select, update
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from app.controllers import epubController, pdfController, websiteController
-from app.models.entry import Entries, EntryFiles
+from app.models.entry import Entries, EntryFiles, EntryImages
 from app.models.user import Users
 from app.schemas.entriesSchemas import (
     EntrySummary,
@@ -171,18 +172,28 @@ async def uploadPdf(
 async def uploadEpub(
     data: bytes, filename: str | None, current_user: Users, session: AsyncSession
 ) -> Entries:
-    # The book is read once, here, and kept as text: the reader plays it like
-    # any other text entry
+    # The book is read once, here: its blocks are kept as the content, and
+    # its pictures apart, fetched by the reader when shown
     parsed = await run_in_threadpool(epubController.parseEpub, data, filename)
 
     try:
         entry = Entries(
             title=parsed.title,
             user_id=current_user.id,
-            content=parsed.content,
+            content=json.dumps({"blocks": parsed.blocks}, ensure_ascii=False),
             kind="epub",
         )
         session.add(entry)
+        await session.flush()
+        session.add_all(
+            EntryImages(
+                entry_id=entry.id,
+                image_id=i,
+                media_type=image.mediaType,
+                data=image.data,
+            )
+            for i, image in enumerate(parsed.images)
+        )
         await session.commit()
         return entry
     except Exception:
@@ -259,3 +270,23 @@ async def getEntryFile(
     ).scalar_one()
 
     return data, total, byteRange
+
+
+async def getEntryImage(
+    entry_id: int, image_id: int, current_user: Users, session: AsyncSession
+) -> EntryImages:
+    image = (
+        await session.execute(
+            select(EntryImages)
+            .join(Entries, Entries.id == EntryImages.entry_id)
+            .where(
+                EntryImages.entry_id == entry_id,
+                EntryImages.image_id == image_id,
+                Entries.user_id == current_user.id,
+            )
+        )
+    ).scalar_one_or_none()
+
+    if image is None:
+        raise HTTPException(status_code=404, detail="Image not found")
+    return image

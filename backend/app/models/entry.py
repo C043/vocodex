@@ -21,7 +21,7 @@ class Entries(Base):
     title: Mapped[str] = mapped_column(String(1200))
     content: Mapped[str] = mapped_column(String(), nullable=False)
     # "text" for pasted text and websites, "pdf" when the entry is a PDF file,
-    # "epub" for books, whose text is extracted on upload
+    # "epub" for books, read on upload into JSON blocks of text and pictures
     kind: Mapped[str] = mapped_column(
         String(16), default="text", server_default=text("'text'"), nullable=False
     )
@@ -46,4 +46,17 @@ class EntryFiles(Base):
     entry_id: Mapped[int] = mapped_column(
         ForeignKey("entries.id", ondelete="CASCADE"), primary_key=True
     )
+    data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+
+
+class EntryImages(Base):
+    """The pictures of a book, referenced by their image_id in its blocks"""
+
+    __tablename__ = "entry_images"
+
+    entry_id: Mapped[int] = mapped_column(
+        ForeignKey("entries.id", ondelete="CASCADE"), primary_key=True
+    )
+    image_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    media_type: Mapped[str] = mapped_column(String(64), nullable=False)
     data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)

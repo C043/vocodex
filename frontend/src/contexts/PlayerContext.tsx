@@ -4,6 +4,7 @@ import type { PdfPage, PageSize } from "../hooks/usePdfDocument"
 import type { PdfView } from "../hooks/usePdfView"
 import type { PageJump } from "../hooks/usePlayerData"
 import type { BlockKind } from "../utils/pdfText"
+import type { Decoration, InlineStyle } from "../utils/bookText"
 
 export type boundaryObj = {
   text: string
@@ -16,10 +17,14 @@ export type SentenceObj = {
   boundaries: boundaryObj[]
   text: string
   paragraphStart?: boolean
-  // Set for books: the heading or paragraph the chunk is part of, and
-  // whether it starts a new line of it
+  // Set for books: the heading or paragraph the chunk is part of, whether
+  // it starts a new line of it, its italic and bold parts, and the scene
+  // breaks and pictures shown around it
   block?: BlockKind
   lineStart?: boolean
+  styles?: InlineStyle[]
+  before?: Decoration[]
+  after?: Decoration[]
   prev: string | null
   audio: {
     url: string | null

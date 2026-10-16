@@ -5,7 +5,32 @@ import { useUserScrollPause } from "../../hooks/useUserScrollPause"
 import { fontSizeClasses } from "../../utils/fontSize"
 import { readerFontFamily } from "../../utils/fonts"
 import { BLOCK_CLASSES, BLOCK_TAGS } from "../../utils/textBlocks"
+import type { Decoration } from "../../utils/bookText"
+import BookImage from "./BookImage"
 import ReadingChunk from "./ReadingChunk"
+
+// Scene breaks and pictures of a book, shown between its blocks of text
+const renderDecorations = (
+  decorations: Decoration[] | undefined,
+  key: string
+) =>
+  decorations?.map((decoration, idx) =>
+    decoration.kind === "break" ? (
+      <div
+        key={`${key}-${idx}`}
+        role="separator"
+        className="my-[1.4em] text-center tracking-[1em] text-foreground/40 select-none"
+      >
+        ∗∗∗
+      </div>
+    ) : (
+      <BookImage
+        key={`${key}-${idx}`}
+        src={decoration.src}
+        alt={decoration.alt}
+      />
+    )
+  )
 
 const EntryContent = () => {
   const {
@@ -71,6 +96,7 @@ const EntryContent = () => {
         isLoading={isLoading}
         onSelect={setCurrentIndex}
         chunkRef={registerChunk}
+        styles={sentence.styles}
       />
     )
   }
@@ -90,18 +116,25 @@ const EntryContent = () => {
         {paragraphs.map(paragraph => {
           const block = paragraph[0].block ?? "paragraph"
           const Tag = BLOCK_TAGS[block]
+          const last = paragraph[paragraph.length - 1]
           return (
-            <Tag
-              key={paragraph[0].id}
-              className={`whitespace-pre-wrap break-words ${block === "paragraph" ? "mb-[1em] last:mb-0" : BLOCK_CLASSES[block]}`}
-            >
-              {paragraph.map((sentence, idx) => (
-                <Fragment key={sentence.id}>
-                  {idx > 0 && (sentence.lineStart ? <br /> : " ")}
-                  {renderChunk(sentence)}
-                </Fragment>
-              ))}
-            </Tag>
+            <Fragment key={paragraph[0].id}>
+              {renderDecorations(
+                paragraph[0].before,
+                `before-${paragraph[0].id}`
+              )}
+              <Tag
+                className={`whitespace-pre-wrap break-words ${block === "paragraph" ? "mb-[1em] last:mb-0" : BLOCK_CLASSES[block]}`}
+              >
+                {paragraph.map((sentence, idx) => (
+                  <Fragment key={sentence.id}>
+                    {idx > 0 && (sentence.lineStart ? <br /> : " ")}
+                    {renderChunk(sentence)}
+                  </Fragment>
+                ))}
+              </Tag>
+              {renderDecorations(last.after, `after-${last.id}`)}
+            </Fragment>
           )
         })}
       </div>
