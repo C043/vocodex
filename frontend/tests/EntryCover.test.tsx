@@ -56,4 +56,23 @@ describe("EntryCover", () => {
     expect(fetchSpy).not.toHaveBeenCalled()
     expect(container.querySelector("svg")).toBeInTheDocument()
   })
+
+  it("fills the width of a grid card when large", () => {
+    vi.spyOn(window, "fetch").mockResolvedValue(new Response(null, { status: 404 }))
+
+    const { container } = render(<EntryCover entryId={7} kind="pdf" size="large" />)
+
+    const cover = container.querySelector("svg")!.parentElement
+    expect(cover).toHaveClass("w-full", "aspect-[3/4]")
+    expect(cover).not.toHaveClass("w-12")
+  })
+
+  it("is a small thumbnail by default", () => {
+    vi.spyOn(window, "fetch").mockResolvedValue(new Response(null, { status: 404 }))
+
+    const { container } = render(<EntryCover entryId={7} kind="pdf" />)
+
+    const cover = container.querySelector("svg")!.parentElement
+    expect(cover).toHaveClass("w-12", "h-16")
+  })
 })

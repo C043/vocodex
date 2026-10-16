@@ -19,16 +19,18 @@ import {
 } from "@heroui/react"
 import {
   BookOpenIcon,
-  ChevronRightIcon,
   DocumentArrowUpIcon,
   DocumentTextIcon,
   GlobeAltIcon,
+  ListBulletIcon,
   SpeakerWaveIcon,
+  Squares2X2Icon,
   TrashIcon
 } from "@heroicons/react/24/solid"
 import { motion } from "framer-motion"
 import ConfirmModal from "../components/ConfirmModal"
 import EntryCover from "../components/EntryCover"
+import { useEntriesView } from "../hooks/useEntriesView"
 
 type Entry = {
   id: number
@@ -68,6 +70,7 @@ const Home = () => {
   const epubInputRef = useRef<HTMLInputElement>(null)
 
   const [entries, setEntries] = useState<Entry[]>([])
+  const { entriesView, setEntriesView } = useEntriesView()
   // Entry waiting for the user to confirm its deletion
   const [entryToDelete, setEntryToDelete] = useState<Entry | null>(null)
 
@@ -418,11 +421,37 @@ const Home = () => {
 
       <div className="flex items-baseline justify-between mb-3 px-1">
         <h2 className="text-lg md:text-xl font-bold">Entries</h2>
-        {!isLoading && entries.length > 0 && (
-          <span className="text-sm text-foreground/50">
-            {entries.length} {entries.length === 1 ? "item" : "items"}
-          </span>
-        )}
+        <div className="flex items-center gap-3">
+          {!isLoading && entries.length > 0 && (
+            <span className="text-sm text-foreground/50">
+              {entries.length} {entries.length === 1 ? "item" : "items"}
+            </span>
+          )}
+          <div className="glass flex rounded-full p-1">
+            {(
+              [
+                ["list", "List view", ListBulletIcon],
+                ["grid", "Grid view", Squares2X2Icon]
+              ] as const
+            ).map(([view, label, Icon]) => (
+              <button
+                key={view}
+                type="button"
+                aria-label={label}
+                aria-pressed={entriesView === view}
+                title={label}
+                onClick={() => setEntriesView(view)}
+                className={`grid place-items-center size-8 rounded-full active:scale-90 transition cursor-pointer ${
+                  entriesView === view
+                    ? "bg-brand text-white shadow-md shadow-violet-500/40"
+                    : "text-foreground/60 hover:bg-foreground/10"
+                }`}
+              >
+                <Icon className="size-4" />
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {isLoading ? (
@@ -449,48 +478,87 @@ const Home = () => {
           </p>
         </div>
       ) : (
-        <ul className="flex flex-col gap-3">
-          {entries.map((entry, i) => (
-            <motion.li
-              key={entry.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: Math.min(i, 10) * 0.04 }}
-              className="glass rounded-3xl flex items-center pr-2 hover:ring-2 hover:ring-primary/40 transition-shadow"
-            >
-              <button
-                type="button"
-                onClick={() => navigate("/player/" + entry.id)}
-                className="flex-1 min-w-0 flex items-center gap-4 p-3 text-left cursor-pointer active:scale-[0.98] transition-transform"
-              >
-                <EntryCover entryId={entry.id} kind={entry.kind} />
-                <span className="min-w-0 flex-1">
-                  <span className="block font-semibold truncate">{entry.title}</span>
-                  {(entry.date || entry.kind !== "text") && (
-                    <span className="block text-xs text-foreground/50 mt-0.5">
-                      {entry.kind !== "text" && (
-                        <span className="font-semibold text-foreground/60">
-                          {FILE_LABELS[entry.kind]}
-                        </span>
-                      )}
-                      {entry.kind !== "text" && entry.date && " · "}
-                      {entry.date}
-                    </span>
-                  )}
-                </span>
-                <ChevronRightIcon className="size-5 text-foreground/30 hidden sm:block" />
-              </button>
+        <ul
+          aria-label="Entries"
+          data-view={entriesView}
+          className={
+            entriesView === "grid"
+              ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"
+              : "flex flex-col gap-3"
+          }
+        >
+          {entries.map((entry, i) => {
+            const meta = (entry.date || entry.kind !== "text") && (
+              <span className="block text-xs text-foreground/50 mt-0.5">
+                {entry.kind !== "text" && (
+                  <span className="font-semibold text-foreground/60">
+                    {FILE_LABELS[entry.kind]}
+                  </span>
+                )}
+                {entry.kind !== "text" && entry.date && " · "}
+                {entry.date}
+              </span>
+            )
+            const deleteButton = (className: string) => (
               <button
                 type="button"
                 aria-label={`Delete ${entry.title}`}
-                className="shrink-0 grid place-items-center size-10 rounded-full text-foreground/40 hover:text-danger hover:bg-danger/10 active:opacity-50 transition-colors cursor-pointer"
+                className={`shrink-0 grid place-items-center size-10 rounded-full hover:text-danger active:opacity-50 transition-colors cursor-pointer ${className}`}
                 onClick={() => setEntryToDelete(entry)}
                 data-testid={`delete-entry-${entry.id}`}
               >
                 <TrashIcon className="size-5" />
               </button>
-            </motion.li>
-          ))}
+            )
+
+            return (
+              <motion.li
+                key={entry.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: Math.min(i, 10) * 0.04 }}
+                className={`glass rounded-3xl hover:ring-2 hover:ring-primary/40 transition-shadow ${
+                  entriesView === "grid" ? "relative" : "flex items-center pr-2"
+                }`}
+              >
+                {entriesView === "grid" ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/player/" + entry.id)}
+                      className="w-full flex flex-col gap-2 p-2 text-left cursor-pointer active:scale-[0.98] transition-transform"
+                    >
+                      <EntryCover entryId={entry.id} kind={entry.kind} size="large" />
+                      <span className="min-w-0 px-1 pb-1">
+                        <span className="block font-semibold line-clamp-2 break-words">
+                          {entry.title}
+                        </span>
+                        {meta}
+                      </span>
+                    </button>
+                    {deleteButton(
+                      "absolute top-3 right-3 bg-black/30 text-white backdrop-blur-md hover:bg-black/50"
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/player/" + entry.id)}
+                      className="flex-1 min-w-0 flex items-center gap-4 p-3 text-left cursor-pointer active:scale-[0.98] transition-transform"
+                    >
+                      <EntryCover entryId={entry.id} kind={entry.kind} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-semibold truncate">{entry.title}</span>
+                        {meta}
+                      </span>
+                    </button>
+                    {deleteButton("text-foreground/40 hover:bg-danger/10")}
+                  </>
+                )}
+              </motion.li>
+            )
+          })}
         </ul>
       )}
 

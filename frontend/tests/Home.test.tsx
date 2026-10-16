@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, within, createTestStore } from "./test-utils"
 import "@testing-library/jest-dom"
 import Home from "../src/pages/Home"
@@ -175,6 +175,89 @@ describe("Entries", () => {
     })
     expect(deleteCalls()).toHaveLength(0)
     expect(screen.getByText("title")).toBeInTheDocument()
+  })
+
+  it("should not show an arrow next to the entry", async () => {
+    await renderWithEntry()
+
+    const openButton = screen.getByText("title").closest("button")!
+    // Only the cover icon is left
+    expect(openButton.querySelectorAll("svg")).toHaveLength(1)
+  })
+})
+
+describe("Entries view", () => {
+  beforeEach(() => {
+    vi.mocked(checkAuthentication).mockReturnValue(true)
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ entries: [{ id: 1, title: "title" }] })
+      })
+    ) as any
+  })
+
+  afterEach(() => {
+    window.localStorage.clear()
+  })
+
+  const renderHome = async () => {
+    const testStore = createTestStore({ isLoggedIn: true, userId: 1, username: "testuser" })
+    const result = render(<Home />, { store: testStore })
+    await screen.findByText("title")
+    return result
+  }
+
+  const entriesList = () => screen.getByRole("list", { name: "Entries" })
+
+  it("shows the entries as a list by default", async () => {
+    await renderHome()
+
+    expect(entriesList()).toHaveAttribute("data-view", "list")
+    expect(screen.getByRole("button", { name: "List view" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    )
+    expect(screen.getByRole("button", { name: "Grid view" })).toHaveAttribute(
+      "aria-pressed",
+      "false"
+    )
+  })
+
+  it("switches the entries to a grid and back", async () => {
+    const { userEvent } = await import("@testing-library/user-event")
+    await renderHome()
+
+    await userEvent.click(screen.getByRole("button", { name: "Grid view" }))
+    expect(entriesList()).toHaveAttribute("data-view", "grid")
+    expect(screen.getByRole("button", { name: "Grid view" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    )
+
+    await userEvent.click(screen.getByRole("button", { name: "List view" }))
+    expect(entriesList()).toHaveAttribute("data-view", "list")
+  })
+
+  it("remembers the chosen view", async () => {
+    const { userEvent } = await import("@testing-library/user-event")
+    const { unmount } = await renderHome()
+    await userEvent.click(screen.getByRole("button", { name: "Grid view" }))
+    unmount()
+
+    await renderHome()
+
+    expect(entriesList()).toHaveAttribute("data-view", "grid")
+  })
+
+  it("keeps the open and delete actions in the grid", async () => {
+    const { userEvent } = await import("@testing-library/user-event")
+    await renderHome()
+
+    await userEvent.click(screen.getByRole("button", { name: "Grid view" }))
+
+    expect(screen.getByText("title")).toBeInTheDocument()
+    expect(screen.getByTestId("delete-entry-1")).toBeInTheDocument()
   })
 })
 
