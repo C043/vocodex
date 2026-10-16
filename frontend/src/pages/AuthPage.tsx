@@ -13,16 +13,13 @@ import {
 
 type Mode = "login" | "register"
 
-type UserPreferences = {
-  speed: string
-  voice: string
-}
+// Error carrying the HTTP status of a failed request
+type HttpError = Error & { status?: number }
 
 const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
   const env = import.meta.env
 
   const [isLogin, setLogin] = useState<Mode>(mode)
-  const [hasError, setError] = useState(false)
   const [validationErrors, setValidationErrors] = useState({})
   const [isLoading, setLoading] = useState(false)
 
@@ -40,7 +37,6 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
     ev.preventDefault()
     try {
       setLoading(true)
-      setError(false)
 
       const url = `${env.VITE_API_URL}/auth/login`
       const headers = {
@@ -72,7 +68,6 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
       window.localStorage.setItem("vocodex-jwt", token)
       navigate("/")
     } catch (err) {
-      setError(true)
       addToast({
         title: "There was an error.",
         description: "Check the credentials and try again.",
@@ -97,7 +92,6 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
 
     try {
       setLoading(true)
-      setError(false)
       const url = `${env.VITE_API_URL}/auth/register`
       const headers = {
         "Content-Type": "application/json"
@@ -114,16 +108,15 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
       if (!resp.ok) {
         const data = await resp.json().catch(() => null)
         const detail = data?.detail ?? `HTTP ${resp.status}`
-        const error = new Error(detail)
-        ;(error as any).status = resp.status
+        const error: HttpError = new Error(detail)
+        error.status = resp.status
         throw error
       }
       await resp.json()
       setLogin("login")
     } catch (err) {
-      setError(true)
       let errors = {}
-      if (err instanceof Error && (err as any).status === 409) {
+      if (err instanceof Error && (err as HttpError).status === 409) {
         errors = {
           username: "Sorry, this username is already taken."
         }
@@ -142,7 +135,6 @@ const AuthPage = ({ mode = "login" }: { mode?: Mode }) => {
 
   const refreshData = () => {
     setLoading(false)
-    setError(false)
 
     setLoginUsername("")
     setLoginPassword("")

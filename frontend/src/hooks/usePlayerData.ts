@@ -7,7 +7,6 @@ import {
   SpeedOption,
   VoiceOption
 } from "../contexts/PlayerContext"
-import { audio } from "framer-motion/m"
 import { splitIntoChunks, toSpeech } from "../utils/splitIntoChunks"
 import { playAudio } from "../utils/playAudio"
 import { alignBoundaries, wordAt } from "../utils/wordTiming"

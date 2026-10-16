@@ -175,4 +175,30 @@ describe("Registration", () => {
       })
     )
   })
+
+  it("should say the username is taken when the backend answers 409", async () => {
+    const { userEvent } = await import("@testing-library/user-event")
+
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: false,
+        status: 409,
+        json: () => Promise.resolve({ detail: "Username already exists" })
+      })
+    ) as any
+
+    render(<AuthPage mode="register" />)
+
+    await userEvent.type(screen.getByLabelText(/Username/i), "taken")
+    await userEvent.type(screen.getByLabelText("Password"), "password123")
+    await userEvent.type(
+      screen.getByLabelText("Repeat Password"),
+      "password123"
+    )
+    await userEvent.click(screen.getByRole("button", { name: /^Register$/i }))
+
+    expect(
+      await screen.findByText("Sorry, this username is already taken.")
+    ).toBeInTheDocument()
+  })
 })

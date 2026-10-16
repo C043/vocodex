@@ -28,7 +28,7 @@ import {
 type State = {
   user: {
     isLoggedIn: boolean
-    username: String
+    username: string
   }
   darkMode: {
     value: boolean
