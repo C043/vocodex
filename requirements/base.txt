@@ -12,3 +12,5 @@ trafilatura>=2.0
 pypdf>=5.0
 lxml>=5.0
 python-multipart>=0.0.9
+pypdfium2>=4.30
+pillow>=10.4

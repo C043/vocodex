@@ -119,4 +119,33 @@ describe("Upload PDF", () => {
     expect(await screen.findByText("A book")).toBeInTheDocument()
     expect(screen.getAllByText("PDF", { selector: "li *" })).toHaveLength(1)
   })
+
+  it("shows the cover of PDF entries in the list", async () => {
+    vi.stubGlobal("URL", {
+      createObjectURL: vi.fn(() => "blob:cover"),
+      revokeObjectURL: vi.fn()
+    })
+    const fetchSpy = vi
+      .spyOn(window, "fetch")
+      .mockImplementation(async input =>
+        String(input).endsWith("/cover")
+          ? new Response(new Blob(["jpeg"]), { status: 200 })
+          : entriesResponse([
+              { id: 1, title: "A book", kind: "pdf", date: "2026-10-14" },
+              { id: 2, title: "Some text", kind: "text", date: "2026-10-14" }
+            ])
+      )
+    const { container } = render(<Home />)
+
+    await waitFor(() =>
+      expect(container.querySelector("li img")).toHaveAttribute(
+        "src",
+        "blob:cover"
+      )
+    )
+    const coverRequests = fetchSpy.mock.calls
+      .map(([url]) => String(url))
+      .filter(url => url.endsWith("/cover"))
+    expect(coverRequests).toEqual([expect.stringMatching(/\/entries\/1\/cover$/)])
+  })
 })

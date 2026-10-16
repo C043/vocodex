@@ -60,3 +60,18 @@ class EntryImages(Base):
     image_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     media_type: Mapped[str] = mapped_column(String(64), nullable=False)
     data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+
+
+class EntryCovers(Base):
+    """
+    The cover shown in the list of entries, made from the entry the first
+    time it is asked for. Empty data means the entry has no cover, so it is
+    not looked for again.
+    """
+
+    __tablename__ = "entry_covers"
+
+    entry_id: Mapped[int] = mapped_column(
+        ForeignKey("entries.id", ondelete="CASCADE"), primary_key=True
+    )
+    data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)

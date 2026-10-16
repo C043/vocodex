@@ -4,10 +4,16 @@ import re
 from fastapi import HTTPException
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import Delete, Select, func, select, update
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
-from app.controllers import epubController, pdfController, websiteController
-from app.models.entry import Entries, EntryFiles, EntryImages
+from app.controllers import (
+    coverController,
+    epubController,
+    pdfController,
+    websiteController,
+)
+from app.models.entry import Entries, EntryCovers, EntryFiles, EntryImages
 from app.models.user import Users
 from app.schemas.entriesSchemas import (
     EntrySummary,
@@ -290,3 +296,67 @@ async def getEntryImage(
     if image is None:
         raise HTTPException(status_code=404, detail="Image not found")
     return image
+
+
+async def getEntryCover(
+    entry_id: int, current_user: Users, session: AsyncSession
+) -> bytes:
+    """
+    The cover of a PDF or EPUB entry, as a small JPEG. It is made the first
+    time it is asked for, so the entries uploaded before covers existed get
+    one too, and then kept.
+    """
+    entry = (
+        await session.execute(
+            select(Entries.kind).where(
+                Entries.id == entry_id, Entries.user_id == current_user.id
+            )
+        )
+    ).one_or_none()
+    if entry is None or entry.kind not in ("pdf", "epub"):
+        raise HTTPException(status_code=404, detail="Cover not found")
+
+    cover = (
+        await session.execute(
+            select(EntryCovers.data).where(EntryCovers.entry_id == entry_id)
+        )
+    ).scalar_one_or_none()
+    if cover is None:
+        cover = await _makeCover(entry_id, entry.kind, session) or b""
+        # The list asks for many covers at once: another request may have
+        # just saved this one
+        await session.execute(
+            insert(EntryCovers)
+            .values(entry_id=entry_id, data=cover)
+            .on_conflict_do_nothing()
+        )
+        await session.commit()
+
+    if not cover:
+        raise HTTPException(status_code=404, detail="Cover not found")
+    return cover
+
+
+async def _makeCover(entry_id: int, kind: str, session: AsyncSession) -> bytes | None:
+    if kind == "pdf":
+        data = (
+            await session.execute(
+                select(EntryFiles.data).where(EntryFiles.entry_id == entry_id)
+            )
+        ).scalar_one_or_none()
+        return data and await run_in_threadpool(coverController.pdfCover, data)
+
+    content = (
+        await session.execute(select(Entries.content).where(Entries.id == entry_id))
+    ).scalar_one()
+    imageId = coverController.epubCoverImage(content)
+    if imageId is None:
+        return None
+    data = (
+        await session.execute(
+            select(EntryImages.data).where(
+                EntryImages.entry_id == entry_id, EntryImages.image_id == imageId
+            )
+        )
+    ).scalar_one_or_none()
+    return data and await run_in_threadpool(coverController.thumbnail, data)

@@ -21,7 +21,6 @@ import {
   BookOpenIcon,
   ChevronRightIcon,
   DocumentArrowUpIcon,
-  DocumentIcon,
   DocumentTextIcon,
   GlobeAltIcon,
   SpeakerWaveIcon,
@@ -29,6 +28,7 @@ import {
 } from "@heroicons/react/24/solid"
 import { motion } from "framer-motion"
 import ConfirmModal from "../components/ConfirmModal"
+import EntryCover from "../components/EntryCover"
 
 type Entry = {
   id: number
@@ -296,15 +296,6 @@ const Home = () => {
     onOpenChange: onImportOpenChange
   } = useDisclosure()
 
-  // Gives each entry a stable cover color
-  const coverGradients = [
-    "from-violet-500 to-indigo-500",
-    "from-sky-400 to-blue-600",
-    "from-fuchsia-500 to-pink-500",
-    "from-emerald-400 to-teal-600",
-    "from-amber-400 to-orange-500"
-  ]
-
   // Bottom sheet on mobile, centered dialog on desktop
   const modalClassNames = {
     backdrop: "bg-black/40 backdrop-blur-sm",
@@ -472,17 +463,7 @@ const Home = () => {
                 onClick={() => navigate("/player/" + entry.id)}
                 className="flex-1 min-w-0 flex items-center gap-4 p-3 text-left cursor-pointer active:scale-[0.98] transition-transform"
               >
-                <span
-                  className={`shrink-0 grid place-items-center size-12 rounded-2xl bg-gradient-to-br text-white ${coverGradients[entry.id % coverGradients.length]}`}
-                >
-                  {entry.kind === "pdf" ? (
-                    <DocumentIcon className="size-5" />
-                  ) : entry.kind === "epub" ? (
-                    <BookOpenIcon className="size-5" />
-                  ) : (
-                    <SpeakerWaveIcon className="size-5" />
-                  )}
-                </span>
+                <EntryCover entryId={entry.id} kind={entry.kind} />
                 <span className="min-w-0 flex-1">
                   <span className="block font-semibold truncate">{entry.title}</span>
                   {(entry.date || entry.kind !== "text") && (

@@ -18,7 +18,7 @@ from app.schemas.entriesSchemas import (
     UploadEpubOut,
 )
 
-from app.controllers import entriesController
+from app.controllers import coverController, entriesController
 
 router = APIRouter(prefix="/entries", tags=["entries"])
 
@@ -193,6 +193,24 @@ async def getEntryImage(
         return Response(
             content=image.data,
             media_type=image.media_type,
+            headers={"Cache-Control": "private, max-age=31536000, immutable"},
+        )
+    except Exception:
+        raise
+
+
+@router.get("/{entry_id}/cover", status_code=200)
+async def getEntryCover(
+    entry_id: int,
+    current_user: Users = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    try:
+        cover = await entriesController.getEntryCover(entry_id, current_user, session)
+        # A cover never changes once made
+        return Response(
+            content=cover,
+            media_type=coverController.COVER_MEDIA_TYPE,
             headers={"Cache-Control": "private, max-age=31536000, immutable"},
         )
     except Exception:
