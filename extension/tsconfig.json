@@ -1,0 +1,10 @@
+{
+  "extends": "./.wxt/tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "strict": true,
+    // Written without it, like the web app the text utils come from
+    "noUncheckedIndexedAccess": false,
+    "types": ["vitest/globals", "@testing-library/jest-dom"]
+  }
+}

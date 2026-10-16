@@ -1,0 +1,212 @@
+@import "tailwindcss";
+@plugin "../../hero.ts";
+
+@source "../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}";
+@source "../../components";
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --bg: #f7f6fb;
+  --surface: #ffffff;
+  --text: #17142a;
+  --muted: #6b6785;
+  --border: rgba(15, 10, 40, 0.1);
+  --accent: #7c5cff;
+  --accent-text: #ffffff;
+  --danger: #c2334d;
+  color-scheme: light dark;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14121f;
+    --surface: #1e1b2e;
+    --text: #ece9f8;
+    --muted: #9a95b5;
+    --border: rgba(255, 255, 255, 0.1);
+    --danger: #ff7a90;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.popup {
+  width: 320px;
+  /* The popup is as tall as its content: room for the open voice list */
+  min-height: 470px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+
+[role="switch"] {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 11px;
+  background: var(--border);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+[role="switch"]::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s;
+}
+
+[role="switch"][aria-checked="true"] {
+  background: var(--accent);
+}
+
+[role="switch"][aria-checked="true"]::after {
+  transform: translateX(16px);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: relative;
+}
+
+.controls button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.controls button.play {
+  width: 48px;
+  height: 48px;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+/* Like the bar of the app: filled with the brand color when on */
+.controls button.auto-scroll {
+  position: absolute;
+  left: 0;
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+}
+
+.controls button.auto-scroll[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-text);
+  box-shadow: 0 4px 6px -1px rgba(139, 92, 246, 0.4);
+}
+
+.controls button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.controls svg {
+  width: 18px;
+  height: 18px;
+}
+
+.position {
+  position: absolute;
+  right: 0;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label,
+.field .label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* The voice select is styled by HeroUI, like in the app */
+.server input,
+.field select,
+.row button {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.row {
+  display: flex;
+  gap: 6px;
+}
+
+.row button {
+  width: auto;
+  cursor: pointer;
+}
+
+.server {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.error {
+  margin: 0;
+  color: var(--danger);
+}

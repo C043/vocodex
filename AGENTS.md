@@ -16,6 +16,10 @@ fixes start with a test that reproduces the bug.
 
 - Backend (pytest, needs the database): `docker compose exec backend pytest`
 - Frontend (vitest): `cd frontend && npx vitest --run`, plus `npm run typecheck`
+- Browser extension (vitest): `cd extension && npx vitest --run`, plus
+  `npm run typecheck`. It stands on its own: it never imports from
+  `frontend/`. Its text utils and voice/speed selects are copies of the
+  app's, so a change to those in the app is made in `extension/` too
 
 ## Git
 
