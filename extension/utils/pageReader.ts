@@ -23,8 +23,9 @@ type PageReaderDeps = {
   highlighter: Highlighter
   // The text node and offset under a point of the screen
   caretAt: (x: number, y: number) => { node: Node; offset: number } | null
-  // Keeps the word being said in view
+  // Keeps the word being said in view, while auto scroll is on
   follow: (range: Range) => void
+  autoScroll: boolean
   maxChars?: number
 }
 
@@ -38,6 +39,7 @@ export const createPageReader = (deps: PageReaderDeps) => {
   const page = readPage(deps.root)
   const chunks = chunkPage(page, deps.maxChars)
   const doc = deps.root.ownerDocument
+  let autoScroll = deps.autoScroll
 
   const chunkRange = (idx: number) => {
     const chunk = chunks[idx]
@@ -48,7 +50,7 @@ export const createPageReader = (deps: PageReaderDeps) => {
     highlighter.set("vocodex-chunk", chunkRange(state.index))
     const word = state.word && rangeOf(page, state.word.start, state.word.end)
     highlighter.set("vocodex-word", word)
-    if (word && state.playing) deps.follow(word)
+    if (word && state.playing && autoScroll) deps.follow(word)
   }
 
   const reader = createReader(
@@ -106,6 +108,7 @@ export const createPageReader = (deps: PageReaderDeps) => {
         case "reader:previous": reader.previous(); break
         case "reader:voice": reader.setVoice(command.voice); break
         case "reader:speed": reader.setSpeed(command.speed); break
+        case "reader:autoScroll": autoScroll = command.autoScroll; break
         case "reader:off": off(); break
       }
       return reader.state()

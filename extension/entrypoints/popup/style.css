@@ -1,3 +1,10 @@
+@import "tailwindcss";
+@plugin "../../hero.ts";
+
+@source "../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}";
+@source "../../components";
+@custom-variant dark (&:is(.dark *));
+
 :root {
   --bg: #f7f6fb;
   --surface: #ffffff;
@@ -35,6 +42,8 @@ body {
 
 .popup {
   width: 320px;
+  /* The popup is as tall as its content: room for the open voice list */
+  min-height: 470px;
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -122,6 +131,23 @@ h1 {
   color: var(--accent-text);
 }
 
+/* Like the bar of the app: filled with the brand color when on */
+.controls button.auto-scroll {
+  position: absolute;
+  left: 0;
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+}
+
+.controls button.auto-scroll[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-text);
+  box-shadow: 0 4px 6px -1px rgba(139, 92, 246, 0.4);
+}
+
 .controls button:disabled {
   opacity: 0.4;
   cursor: default;
@@ -145,14 +171,16 @@ h1 {
   gap: 6px;
 }
 
-.field label {
+.field label,
+.field .label {
   color: var(--muted);
   font-size: 12px;
   font-weight: 600;
 }
 
-input,
-select,
+/* The voice select is styled by HeroUI, like in the app */
+.server input,
+.field select,
 .row button {
   width: 100%;
   padding: 7px 9px;

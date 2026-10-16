@@ -6,19 +6,23 @@
   "scripts": {
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
-    "build": "wxt build",
+    "build": "wxt build && wxt build -b firefox",
+    "build:chrome": "wxt build",
     "build:firefox": "wxt build -b firefox",
-    "zip": "wxt zip",
-    "zip:firefox": "wxt zip -b firefox",
+    "zip": "wxt zip && wxt zip -b firefox",
     "test": "vitest",
     "typecheck": "tsc --noEmit",
     "postinstall": "wxt prepare"
   },
   "dependencies": {
+    "@heroui/react": "^2.8.10",
+    "framer-motion": "^12.43.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.1.13",
+    "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.8",
@@ -27,8 +31,10 @@
     "@types/react-dom": "^19.3.0",
     "@wxt-dev/module-react": "^1.2.2",
     "jsdom": "^27.4.0",
+    "tailwindcss": "^4.1.13",
     "typescript": "^5.9.3",
     "vitest": "^4.1.10",
+    "web-ext": "^10.8.0",
     "wxt": "^0.21.4"
   }
 }

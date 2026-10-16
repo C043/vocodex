@@ -3,7 +3,7 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "strict": true,
-    // The web app utils imported through @vocodex/utils are written without it
+    // Written without it, like the web app the text utils come from
     "noUncheckedIndexedAccess": false,
     "types": ["vitest/globals", "@testing-library/jest-dom"]
   }

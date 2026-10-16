@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import type { PdfChunk } from "@vocodex/utils/pdfText"
+import type { Chunk } from "../utils/chunks"
 import { createReader, type ReaderState } from "../utils/reader"
 
-const chunks: PdfChunk[] = [
-  { id: 0, text: "One two.", start: 0, end: 8, block: 0 },
-  { id: 1, text: "Three.", start: 9, end: 15, block: 1 },
-  { id: 2, text: "Four.", start: 16, end: 21, block: 1 }
+const chunks: Chunk[] = [
+  { text: "One two.", start: 0, end: 8, block: 0 },
+  { text: "Three.", start: 9, end: 15, block: 1 },
+  { text: "Four.", start: 16, end: 21, block: 1 }
 ]
 
 const setup = (synthesize = vi.fn(async (text: string, voice: string) => ({

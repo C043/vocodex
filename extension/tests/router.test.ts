@@ -6,7 +6,7 @@ const setup = () => {
   const deps = {
     player,
     sendToTab: vi.fn(),
-    loadSettings: vi.fn(async () => ({ serverUrl: "http://s", voice: "", speed: "+0%" })),
+    loadSettings: vi.fn(async () => ({ serverUrl: "http://s", voice: "", speed: "+0%", autoScroll: true })),
     synthesize: vi.fn(async () => ({ audio: "AAA", boundaries: [] }))
   }
   return { ...deps, route: createRouter(deps) }

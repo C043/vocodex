@@ -1,4 +1,4 @@
-import type { BlockKind, TextBlock } from "@vocodex/utils/pdfText"
+import type { BlockKind, TextBlock } from "./chunks"
 
 // A text node of the page and where its text starts in the page text
 export type Segment = {

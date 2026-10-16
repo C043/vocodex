@@ -22,7 +22,7 @@ export default defineContentScript({
     }
 
     let reader: PageReader | null = null
-    const ready = loadSettings().then(({ voice, speed }) => {
+    const ready = loadSettings().then(({ voice, speed, autoScroll }) => {
       reader = createPageReader({
         root: readingRoot(document),
         settings: { voice, speed },
@@ -42,7 +42,8 @@ export default defineContentScript({
         },
         highlighter: cssHighlighter(document),
         caretAt: (x, y) => caretAt(document, x, y),
-        follow: range => follow(window, range)
+        follow: range => follow(window, range),
+        autoScroll
       })
     })
 

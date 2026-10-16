@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
+import { fakeBrowser } from "wxt/testing/fake-browser"
 import { fetchVoices, loadSettings, saveSettings, synthesize } from "../utils/api"
 
 const respond = (body: unknown, ok = true) =>
@@ -9,18 +10,31 @@ const respond = (body: unknown, ok = true) =>
 afterEach(() => vi.restoreAllMocks())
 
 describe("settings", () => {
-  it("defaults to a local server, its default voice and normal speed", async () => {
+  it("defaults to a local server, its default voice, normal speed and auto scroll", async () => {
     expect(await loadSettings()).toEqual({
       serverUrl: "http://localhost:8000",
       voice: "",
-      speed: "+0%"
+      speed: "+0%",
+      autoScroll: true
     })
   })
 
   it("keeps what was changed", async () => {
     await saveSettings({ voice: "en-US-AriaNeural" })
     await saveSettings({ speed: "+50%" })
-    expect(await loadSettings()).toMatchObject({ voice: "en-US-AriaNeural", speed: "+50%" })
+    await saveSettings({ autoScroll: false })
+    expect(await loadSettings()).toMatchObject({
+      voice: "en-US-AriaNeural", speed: "+50%", autoScroll: false
+    })
+  })
+
+  it("fills in what settings saved by an older version miss", async () => {
+    await fakeBrowser.storage.local.set({
+      settings: { serverUrl: "http://old", voice: "en-A", speed: "+50%" }
+    })
+    expect(await loadSettings()).toEqual({
+      serverUrl: "http://old", voice: "en-A", speed: "+50%", autoScroll: true
+    })
   })
 
   it("drops the trailing slash of the server address", async () => {

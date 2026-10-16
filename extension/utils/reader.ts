@@ -1,7 +1,7 @@
-import type { PdfChunk } from "@vocodex/utils/pdfText"
-import { speedRate } from "@vocodex/utils/speed"
-import { toSpeech } from "@vocodex/utils/splitIntoChunks"
-import { wordAt } from "@vocodex/utils/wordTiming"
+import type { Chunk } from "./chunks"
+import { speedRate } from "./speed"
+import { toSpeech } from "./splitIntoChunks"
+import { wordAt } from "./wordTiming"
 import { wordSpans, type Boundary, type WordSpan } from "./pageChunks"
 
 export type Synthesis = {
@@ -33,7 +33,7 @@ export type ReaderState = ReaderSettings & {
 }
 
 type ReaderDeps = {
-  chunks: PdfChunk[]
+  chunks: Chunk[]
   synthesize: (text: string, voice: string) => Promise<Synthesis>
   audio: AudioOutput
   onChange: (state: ReaderState) => void

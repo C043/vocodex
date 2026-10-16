@@ -1,4 +1,4 @@
-import { playAudio } from "@vocodex/utils/playAudio"
+import { playAudio } from "./playAudio"
 import type { AudioEvent } from "./messages"
 
 // How often the tab is told the time: often enough for the word highlight

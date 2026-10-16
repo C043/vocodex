@@ -143,6 +143,17 @@ npx vitest --run
 npm run typecheck
 ```
 
+### How to build the browser extension
+The extension in `extension/` stands on its own, it does not need the rest of
+the project:
+```bash
+cd extension
+npm install
+npm run build   # .output/chrome-mv3 and .output/firefox-mv2
+```
+See [`extension/README.md`](extension/README.md) to load it in the browser and
+package it for the stores.
+
 ### How to test the browser extension
 ```bash
 cd extension

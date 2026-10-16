@@ -9,6 +9,7 @@ export type ReaderCommand =
   | { type: "reader:previous" }
   | { type: "reader:voice"; voice: string }
   | { type: "reader:speed"; speed: string }
+  | { type: "reader:autoScroll"; autoScroll: boolean }
   | { type: "reader:off" }
 
 // Content script -> popup, whenever the reader changes

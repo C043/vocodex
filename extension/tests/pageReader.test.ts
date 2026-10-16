@@ -3,7 +3,7 @@ import { createPageReader } from "../utils/pageReader"
 
 const settle = () => new Promise(resolve => setTimeout(resolve))
 
-const setup = () => {
+const setup = (autoScroll = true) => {
   document.body.innerHTML = "<h1>Title</h1><p>First line. <b>Second</b> line.</p>"
   const highlights = new Map<string, string>()
   const highlighter = {
@@ -29,6 +29,7 @@ const setup = () => {
     highlighter,
     caretAt: () => caret,
     follow,
+    autoScroll,
     // One sentence per chunk
     maxChars: 12
   })
@@ -85,6 +86,26 @@ describe("page reader", () => {
     expect(r.highlights.get("vocodex-chunk")).toBe("First line.")
     expect(r.highlights.get("vocodex-word")).toBe("line.")
     expect(r.follow).toHaveBeenLastCalledWith(expect.any(Range))
+  })
+
+  it("does not scroll the page while auto scroll is off", async () => {
+    r = setup(false)
+    r.reader.handle({ type: "reader:next" })
+    await settle()
+    r.reader.onAudioEvent({ type: "audio:time", time: 1.5 })
+    expect(r.highlights.get("vocodex-word")).toBe("line.")
+    expect(r.follow).not.toHaveBeenCalled()
+  })
+
+  it("turns auto scroll on and off from the popup", async () => {
+    r.reader.handle({ type: "reader:autoScroll", autoScroll: false })
+    r.reader.handle({ type: "reader:next" })
+    await settle()
+    r.reader.onAudioEvent({ type: "audio:time", time: 1.5 })
+    expect(r.follow).not.toHaveBeenCalled()
+    r.reader.handle({ type: "reader:autoScroll", autoScroll: true })
+    r.reader.onAudioEvent({ type: "audio:time", time: 0.5 })
+    expect(r.follow).toHaveBeenCalled()
   })
 
   it("moves on when the chunk ends, and stops when another tab plays", async () => {

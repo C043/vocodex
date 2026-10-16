@@ -13,8 +13,8 @@ const reading = (state: Partial<ReaderState> = {}): ReaderState => ({
 const fakeClient = (overrides: Partial<PopupClient> = {}) => {
   let listener: ((state: ReaderState) => void) | null = null
   const client: PopupClient = {
-    loadSettings: vi.fn(async () => ({ serverUrl: "http://s", voice: "en-A", speed: "+0%" })),
-    saveSettings: vi.fn(async changes => ({ serverUrl: "http://s", voice: "en-A", speed: "+0%", ...changes })),
+    loadSettings: vi.fn(async () => ({ serverUrl: "http://s", voice: "en-A", speed: "+0%", autoScroll: true })),
+    saveSettings: vi.fn(async changes => ({ serverUrl: "http://s", voice: "en-A", speed: "+0%", autoScroll: true, ...changes })),
     fetchVoices: vi.fn(async () => [
       { key: "en-A", name: "Aria", locale: "en-US", language: "English" },
       { key: "it-B", name: "Bruno", locale: "it-IT", language: "Italian" }
@@ -91,25 +91,76 @@ describe("Popup", () => {
     expect(screen.getByText("3 / 5")).toBeInTheDocument()
   })
 
-  it("picks the voice, searching the list, and keeps it", async () => {
+  it("picks the voice with the voice select of the app, and keeps it", async () => {
     const { client } = fakeClient({ readerState: vi.fn(async () => reading()) })
     render(<Popup client={client} />)
-    const voice = await screen.findByRole("combobox", { name: "Voice" })
-    await waitFor(() => expect(voice).toHaveValue("en-A"))
-    await userEvent.type(screen.getByRole("searchbox", { name: "Search voices" }), "ital")
-    expect(screen.queryByRole("option", { name: /Aria/ })).not.toBeInTheDocument()
-    await userEvent.selectOptions(voice, "it-B")
+    const voice = await screen.findByRole("combobox", { name: "Select Voice" })
+    await waitFor(() => expect(voice).toHaveValue("Aria"))
+    // One field to search and pick, no separate search box
+    expect(screen.queryByRole("searchbox")).not.toBeInTheDocument()
+    await userEvent.clear(voice)
+    await userEvent.type(voice, "ital")
+    expect(screen.queryByRole("option", { name: "Aria" })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole("option", { name: "Bruno" }))
     expect(client.saveSettings).toHaveBeenCalledWith({ voice: "it-B" })
     expect(client.send).toHaveBeenCalledWith({ type: "reader:voice", voice: "it-B" })
   })
 
-  it("picks the speed, and keeps it", async () => {
+  it("offers Auto, the server's voice, like the app", async () => {
+    const { client } = fakeClient({ readerState: vi.fn(async () => reading()) })
+    render(<Popup client={client} />)
+    const voice = await screen.findByRole("combobox", { name: "Select Voice" })
+    await waitFor(() => expect(voice).toHaveValue("Aria"))
+    await userEvent.click(voice)
+    await userEvent.click(await screen.findByRole("option", { name: "Auto" }))
+    expect(client.saveSettings).toHaveBeenCalledWith({ voice: "" })
+  })
+
+  it("picks the speed with the speed select of the app, and keeps it", async () => {
     const { client } = fakeClient()
     render(<Popup client={client} />)
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Speed" }), "+50%")
+    const speed = await screen.findByRole("button", { name: /Select Speed/ })
+    await waitFor(() => expect(speed).toHaveTextContent("1x"))
+    await userEvent.click(speed)
+    const options = await screen.findAllByRole("option")
+    expect(options.map(option => option.textContent)).toEqual(["2x", "1.5x", "1x"])
+    await userEvent.click(screen.getByRole("option", { name: "1.5x" }))
     expect(client.saveSettings).toHaveBeenCalledWith({ speed: "+50%" })
     // Off, nothing to tell the page
     expect(client.send).not.toHaveBeenCalled()
+  })
+
+  it("tells the page the new speed while it is on", async () => {
+    const { client } = fakeClient({ readerState: vi.fn(async () => reading()) })
+    render(<Popup client={client} />)
+    await screen.findByRole("button", { name: "Play" })
+    await userEvent.click(screen.getByRole("button", { name: /Select Speed/ }))
+    await userEvent.click(await screen.findByRole("option", { name: "2x" }))
+    expect(client.send).toHaveBeenCalledWith({ type: "reader:speed", speed: "+100%" })
+  })
+
+  it("turns auto scroll off and on, like the app, and keeps it", async () => {
+    const { client } = fakeClient()
+    render(<Popup client={client} />)
+    const button = await screen.findByRole("button", { name: "Auto scroll" })
+    await waitFor(() => expect(button).toHaveAttribute("aria-pressed", "true"))
+    expect(button).toHaveAttribute("title", "Auto scroll on")
+    await userEvent.click(button)
+    expect(button).toHaveAttribute("aria-pressed", "false")
+    expect(button).toHaveAttribute("title", "Auto scroll off")
+    expect(client.saveSettings).toHaveBeenCalledWith({ autoScroll: false })
+    // Off, nothing to tell the page
+    expect(client.send).not.toHaveBeenCalled()
+  })
+
+  it("tells the page about auto scroll while it is on", async () => {
+    const { client } = fakeClient({ readerState: vi.fn(async () => reading()) })
+    render(<Popup client={client} />)
+    await screen.findByRole("button", { name: "Play" })
+    const button = screen.getByRole("button", { name: "Auto scroll" })
+    await waitFor(() => expect(button).toHaveAttribute("aria-pressed", "true"))
+    await userEvent.click(button)
+    expect(client.send).toHaveBeenCalledWith({ type: "reader:autoScroll", autoScroll: false })
   })
 
   it("shows what went wrong while reading", async () => {
