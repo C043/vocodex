@@ -18,7 +18,18 @@ export default defineConfig({
       "storage",
       ...(browser === "firefox" ? [] : ["offscreen"])
     ],
+    // addons.mozilla.org asks every new extension to declare its data
+    // collection: the text of the page is sent to the Vocodex server.
+    // Firefox 140 is the first to know that declaration
     browser_specific_settings:
-      browser === "firefox" ? { gecko: { id: "extension@vocodex" } } : undefined
+      browser === "firefox"
+        ? {
+            gecko: {
+              id: "extension@vocodex",
+              strict_min_version: "140.0",
+              data_collection_permissions: { required: ["websiteContent"] }
+            }
+          }
+        : undefined
   })
 })
