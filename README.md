@@ -22,6 +22,7 @@ Key features will be:
 - Text Highlighting in sync with the voice
 - Speed control
 - `PDF` Reading
+- `EPUB` Reading
 - Progress saving
 
 Components:
@@ -38,10 +39,10 @@ Components:
 - Website import: paste a URL and the article is turned into an entry
 - `PDF` uploading and reading, page by page, with the original layout
 - Text view for `PDF`s: read the extracted text, with headings and paragraphs, instead of the pages (easier on small screens)
-- `EPUB` uploading: the book is read in chapter order, as text, with the same highlighting, fonts and progress saving as any text
+- `EPUB` uploading and reading, in chapter order, keeping headings, line breaks (poems), italic and bold, scene breaks and pictures, including the cover. Scene breaks and pictures are shown but not read aloud. DRM protected books are not supported
 - Speed control
 - `TTS` with the full voice list from `edge-tts`, with search
-- Text highlighting in sync with the voice, for plain text and `PDF`s, with the reader following along as it plays
+- Text highlighting in sync with the voice, for plain text, `PDF`s and `EPUB`s, with the reader following along as it plays
 - Current page of the total shown while reading a `PDF`
 - Audio control (play, pause, forward, backward) with keyboard shortcuts too
 - Keeps reading with the app minimized or the screen locked, with play, pause, next and previous on the lock screen and notification controls
