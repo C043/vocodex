@@ -15,6 +15,7 @@ from app.schemas.entriesSchemas import (
     UploadWebsiteIn,
     UploadWebsiteOut,
     UploadPdfOut,
+    UploadEpubOut,
 )
 
 from app.controllers import entriesController
@@ -130,6 +131,22 @@ async def uploadPdf(
             data, file.filename, current_user, session
         )
         return UploadPdfOut(id=entry.id)
+    except Exception:
+        raise
+
+
+@router.post("/epub", status_code=201)
+async def uploadEpub(
+    file: UploadFile = File(...),
+    current_user: Users = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> UploadEpubOut:
+    try:
+        data = await file.read()
+        entry = await entriesController.uploadEpub(
+            data, file.filename, current_user, session
+        )
+        return UploadEpubOut(id=entry.id)
     except Exception:
         raise
 

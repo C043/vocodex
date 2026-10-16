@@ -44,3 +44,7 @@ class UploadWebsiteOut(BaseModel):
 
 class UploadPdfOut(BaseModel):
     id: int
+
+
+class UploadEpubOut(BaseModel):
+    id: int

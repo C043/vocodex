@@ -20,7 +20,8 @@ class Entries(Base):
     )
     title: Mapped[str] = mapped_column(String(1200))
     content: Mapped[str] = mapped_column(String(), nullable=False)
-    # "text" for pasted text and websites, "pdf" when the entry is a PDF file
+    # "text" for pasted text and websites, "pdf" when the entry is a PDF file,
+    # "epub" for books, whose text is extracted on upload
     kind: Mapped[str] = mapped_column(
         String(16), default="text", server_default=text("'text'"), nullable=False
     )

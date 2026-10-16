@@ -157,6 +157,63 @@ describe("usePlayerData hook", () => {
   })
 })
 
+describe("usePlayerData EPUB entries", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.spyOn(window.localStorage.__proto__, "getItem").mockReturnValue(
+      "fake-token"
+    )
+    vi.spyOn(console, "error").mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it("reads headings apart, without their mark", async () => {
+    const fetchSpy = vi
+      .spyOn(window, "fetch")
+      .mockImplementation(async input => {
+        const url = String(input)
+        if (url.endsWith("/entries/book-id"))
+          return new Response(
+            JSON.stringify({
+              title: "A book",
+              kind: "epub",
+              content: "# Chapter One\n\nIt begins.",
+              progress: 0
+            }),
+            { status: 200 }
+          )
+        if (url.endsWith("/synthesis/GET"))
+          return new Response(
+            JSON.stringify({ audio: btoa("audio"), boundaries: [] }),
+            { status: 200 }
+          )
+        return new Response(JSON.stringify([]), { status: 200 })
+      })
+
+    const { result } = renderHook(() => usePlayerData("book-id"))
+    result.current.audioRef.current = createMockAudio()
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.kind).toBe("text")
+    expect([...result.current.sentencesMap.values()]).toEqual([
+      expect.objectContaining({ text: "Chapter One", block: "heading" }),
+      expect.objectContaining({
+        text: "It begins.",
+        block: "paragraph",
+        paragraphStart: true
+      })
+    ])
+    const synthesis = fetchSpy.mock.calls.find(([url]) =>
+      String(url).endsWith("/synthesis/GET")
+    )
+    expect(JSON.parse(String(synthesis?.[1]?.body)).text).toBe("Chapter One")
+  })
+})
+
 describe("usePlayerData voices", () => {
   const voices = [
     {

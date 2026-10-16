@@ -18,6 +18,7 @@ import {
   useDisclosure
 } from "@heroui/react"
 import {
+  BookOpenIcon,
   ChevronRightIcon,
   DocumentArrowUpIcon,
   DocumentIcon,
@@ -32,9 +33,13 @@ import ConfirmModal from "../components/ConfirmModal"
 type Entry = {
   id: number
   title: string
-  kind: "text" | "pdf"
+  kind: "text" | "pdf" | "epub"
   date: string
 }
+
+// Files the library can import, with the label shown to the user
+type FileKind = "pdf" | "epub"
+const FILE_LABELS: Record<FileKind, string> = { pdf: "PDF", epub: "EPUB" }
 
 type State = {
   user: {
@@ -58,8 +63,9 @@ const Home = () => {
   const [isImporting, setIsImporting] = useState(false)
   const [importError, setImportError] = useState("")
 
-  const [isUploadingPdf, setIsUploadingPdf] = useState(false)
+  const [uploadingFile, setUploadingFile] = useState<FileKind | null>(null)
   const pdfInputRef = useRef<HTMLInputElement>(null)
+  const epubInputRef = useRef<HTMLInputElement>(null)
 
   const [entries, setEntries] = useState<Entry[]>([])
   // Entry waiting for the user to confirm its deletion
@@ -158,13 +164,14 @@ const Home = () => {
     }
   }
 
-  const handlePdfUpload = async (file: File) => {
+  const handleFileUpload = async (kind: FileKind, file: File) => {
+    const failureTitle = `The ${FILE_LABELS[kind]} could not be uploaded.`
     try {
-      setIsUploadingPdf(true)
+      setUploadingFile(kind)
       const body = new FormData()
       body.append("file", file)
 
-      const resp = await fetch(`${env.VITE_API_URL}/entries/pdf`, {
+      const resp = await fetch(`${env.VITE_API_URL}/entries/${kind}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body
@@ -173,7 +180,7 @@ const Home = () => {
       if (!resp.ok) {
         const data = await resp.json().catch(() => null)
         addToast({
-          title: "The PDF could not be uploaded.",
+          title: failureTitle,
           description:
             typeof data?.detail === "string" ? data.detail : "Retry later.",
           color: "danger"
@@ -185,14 +192,15 @@ const Home = () => {
     } catch (err) {
       console.error(err)
       addToast({
-        title: "The PDF could not be uploaded.",
+        title: failureTitle,
         description: "Retry later.",
         color: "danger"
       })
     } finally {
-      setIsUploadingPdf(false)
+      setUploadingFile(null)
       // Choosing the same file again still triggers an upload
-      if (pdfInputRef.current) pdfInputRef.current.value = ""
+      const input = kind === "pdf" ? pdfInputRef : epubInputRef
+      if (input.current) input.current.value = ""
     }
   }
 
@@ -324,7 +332,7 @@ const Home = () => {
         </h1>
       </header>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
         <Button className={actionTile} onPress={onOpen}>
           <span className="grid place-items-center size-11 rounded-2xl bg-brand text-white shadow-lg shadow-violet-500/30 group-hover:scale-105 transition-transform">
             <DocumentTextIcon className="size-6" />
@@ -358,8 +366,8 @@ const Home = () => {
           </span>
         </Button>
         <Button
-          className={`${actionTile} col-span-2 md:col-span-1`}
-          isDisabled={isUploadingPdf}
+          className={actionTile}
+          isDisabled={uploadingFile !== null}
           onPress={() => pdfInputRef.current?.click()}
         >
           <span className="grid place-items-center size-11 rounded-2xl bg-gradient-to-br from-fuchsia-500 to-pink-500 text-white shadow-lg shadow-pink-500/30 group-hover:scale-105 transition-transform">
@@ -370,7 +378,7 @@ const Home = () => {
               Upload PDF
             </span>
             <span className="block text-xs md:text-sm text-foreground/60">
-              {isUploadingPdf ? "Uploading…" : "Listen to documents and books"}
+              {uploadingFile === "pdf" ? "Uploading…" : "Listen to documents"}
             </span>
           </span>
         </Button>
@@ -383,7 +391,36 @@ const Home = () => {
           tabIndex={-1}
           onChange={ev => {
             const file = ev.target.files?.[0]
-            if (file) handlePdfUpload(file)
+            if (file) handleFileUpload("pdf", file)
+          }}
+        />
+        <Button
+          className={actionTile}
+          isDisabled={uploadingFile !== null}
+          onPress={() => epubInputRef.current?.click()}
+        >
+          <span className="grid place-items-center size-11 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 text-white shadow-lg shadow-emerald-500/30 group-hover:scale-105 transition-transform">
+            <BookOpenIcon className="size-6" />
+          </span>
+          <span>
+            <span className="block font-bold text-base md:text-lg">
+              Upload EPUB
+            </span>
+            <span className="block text-xs md:text-sm text-foreground/60">
+              {uploadingFile === "epub" ? "Uploading…" : "Listen to ebooks"}
+            </span>
+          </span>
+        </Button>
+        <input
+          ref={epubInputRef}
+          type="file"
+          accept="application/epub+zip,.epub"
+          aria-label="EPUB file"
+          className="sr-only"
+          tabIndex={-1}
+          onChange={ev => {
+            const file = ev.target.files?.[0]
+            if (file) handleFileUpload("epub", file)
           }}
         />
       </div>
@@ -416,7 +453,8 @@ const Home = () => {
           </span>
           <p className="font-bold text-lg">No entries found.</p>
           <p className="text-sm text-foreground/60 max-w-xs">
-            Upload a text or a PDF, or import a website, to start listening.
+            Upload a text, a PDF or an EPUB, or import a website, to start
+            listening.
           </p>
         </div>
       ) : (
@@ -439,20 +477,22 @@ const Home = () => {
                 >
                   {entry.kind === "pdf" ? (
                     <DocumentIcon className="size-5" />
+                  ) : entry.kind === "epub" ? (
+                    <BookOpenIcon className="size-5" />
                   ) : (
                     <SpeakerWaveIcon className="size-5" />
                   )}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-semibold truncate">{entry.title}</span>
-                  {(entry.date || entry.kind === "pdf") && (
+                  {(entry.date || entry.kind !== "text") && (
                     <span className="block text-xs text-foreground/50 mt-0.5">
-                      {entry.kind === "pdf" && (
+                      {entry.kind !== "text" && (
                         <span className="font-semibold text-foreground/60">
-                          PDF
+                          {FILE_LABELS[entry.kind]}
                         </span>
                       )}
-                      {entry.kind === "pdf" && entry.date && " · "}
+                      {entry.kind !== "text" && entry.date && " · "}
                       {entry.date}
                     </span>
                   )}

@@ -3,6 +3,7 @@ import type { PDFDocumentProxy } from "pdfjs-dist"
 import type { PdfPage, PageSize } from "../hooks/usePdfDocument"
 import type { PdfView } from "../hooks/usePdfView"
 import type { PageJump } from "../hooks/usePlayerData"
+import type { BlockKind } from "../utils/pdfText"
 
 export type boundaryObj = {
   text: string
@@ -15,6 +16,10 @@ export type SentenceObj = {
   boundaries: boundaryObj[]
   text: string
   paragraphStart?: boolean
+  // Set for books: the heading or paragraph the chunk is part of, and
+  // whether it starts a new line of it
+  block?: BlockKind
+  lineStart?: boolean
   prev: string | null
   audio: {
     url: string | null

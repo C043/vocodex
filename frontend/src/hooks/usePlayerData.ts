@@ -8,6 +8,9 @@ import {
   VoiceOption
 } from "../contexts/PlayerContext"
 import { splitIntoChunks, toSpeech } from "../utils/splitIntoChunks"
+import type { TextChunk } from "../utils/splitIntoChunks"
+import { splitBookIntoChunks } from "../utils/bookText"
+import type { BookChunk } from "../utils/bookText"
 import { playAudio } from "../utils/playAudio"
 import { alignBoundaries, wordAt } from "../utils/wordTiming"
 import { speedRate } from "../utils/speed"
@@ -173,7 +176,12 @@ export const usePlayerData = (id: string | undefined) => {
         return
       }
 
-      splitIntoSentences(data.content, data.progress)
+      // Books keep their headings and line breaks
+      const textChunks: (TextChunk | BookChunk)[] =
+        data.kind === "epub"
+          ? splitBookIntoChunks(data.content)
+          : splitIntoChunks(data.content)
+      splitIntoSentences(textChunks, data.progress)
     } catch (err) {
       console.error(err)
       navigate("/")
@@ -199,11 +207,9 @@ export const usePlayerData = (id: string | undefined) => {
   }
 
   const splitIntoSentences = async (
-    content: string,
-    progress: number,
-    maxChars = 200
+    textChunks: (TextChunk | BookChunk)[],
+    progress: number
   ) => {
-    const textChunks = splitIntoChunks(content, maxChars)
     const chunks = textChunks.map(chunk => chunk.text)
     let previous: string | null = null
     let next: string | null = null
@@ -224,6 +230,10 @@ export const usePlayerData = (id: string | undefined) => {
         boundaries: [],
         text: sentence,
         paragraphStart: textChunks[idx].paragraphStart,
+        ...("block" in textChunks[idx] && {
+          block: textChunks[idx].block,
+          lineStart: textChunks[idx].lineStart
+        }),
         prev: previous,
         audio: {
           voice: null,

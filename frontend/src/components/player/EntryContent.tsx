@@ -4,6 +4,7 @@ import type { SentenceObj } from "../../contexts/PlayerContext"
 import { useUserScrollPause } from "../../hooks/useUserScrollPause"
 import { fontSizeClasses } from "../../utils/fontSize"
 import { readerFontFamily } from "../../utils/fonts"
+import { BLOCK_CLASSES, BLOCK_TAGS } from "../../utils/textBlocks"
 import ReadingChunk from "./ReadingChunk"
 
 const EntryContent = () => {
@@ -86,19 +87,23 @@ const EntryContent = () => {
         className={`leading-[1.8] mb-72 md:mb-52 ${fontClasses}`}
         style={{ fontFamily: readerFontFamily(currentFont) }}
       >
-        {paragraphs.map(paragraph => (
-          <p
-            key={paragraph[0].id}
-            className="whitespace-pre-wrap break-words mb-[1em] last:mb-0"
-          >
-            {paragraph.map((sentence, idx) => (
-              <Fragment key={sentence.id}>
-                {idx > 0 && " "}
-                {renderChunk(sentence)}
-              </Fragment>
-            ))}
-          </p>
-        ))}
+        {paragraphs.map(paragraph => {
+          const block = paragraph[0].block ?? "paragraph"
+          const Tag = BLOCK_TAGS[block]
+          return (
+            <Tag
+              key={paragraph[0].id}
+              className={`whitespace-pre-wrap break-words ${block === "paragraph" ? "mb-[1em] last:mb-0" : BLOCK_CLASSES[block]}`}
+            >
+              {paragraph.map((sentence, idx) => (
+                <Fragment key={sentence.id}>
+                  {idx > 0 && (sentence.lineStart ? <br /> : " ")}
+                  {renderChunk(sentence)}
+                </Fragment>
+              ))}
+            </Tag>
+          )
+        })}
       </div>
     </article>
   )

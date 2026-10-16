@@ -5,7 +5,7 @@ from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import Delete, Select, func, select, update
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
-from app.controllers import pdfController, websiteController
+from app.controllers import epubController, pdfController, websiteController
 from app.models.entry import Entries, EntryFiles
 from app.models.user import Users
 from app.schemas.entriesSchemas import (
@@ -161,6 +161,28 @@ async def uploadPdf(
         session.add(entry)
         await session.flush()
         session.add(EntryFiles(entry_id=entry.id, data=data))
+        await session.commit()
+        return entry
+    except Exception:
+        await session.rollback()
+        raise
+
+
+async def uploadEpub(
+    data: bytes, filename: str | None, current_user: Users, session: AsyncSession
+) -> Entries:
+    # The book is read once, here, and kept as text: the reader plays it like
+    # any other text entry
+    parsed = await run_in_threadpool(epubController.parseEpub, data, filename)
+
+    try:
+        entry = Entries(
+            title=parsed.title,
+            user_id=current_user.id,
+            content=parsed.content,
+            kind="epub",
+        )
+        session.add(entry)
         await session.commit()
         return entry
     except Exception:

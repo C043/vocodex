@@ -89,6 +89,37 @@ describe("EntryContent", () => {
       )
     })
 
+    it("shows heading chunks as headings", () => {
+      const book = [
+        { ...makeSentence(0, "Chapter One"), block: "heading" as const },
+        { ...makeSentence(1, "A section", true), block: "subheading" as const },
+        makeSentence(2, "Some text.", true)
+      ]
+      renderContent(
+        makeValue({ sentencesMap: new Map(book.map(s => [s.id, s])) })
+      )
+
+      expect(chunk("Chapter One").closest("h2")).not.toBeNull()
+      expect(chunk("A section").closest("h3")).not.toBeNull()
+      expect(chunk("Some text.").closest("p")).not.toBeNull()
+    })
+
+    it("breaks the line before a chunk that starts a new line", () => {
+      const poem = [
+        makeSentence(0, "Improve his shining tail!"),
+        { ...makeSentence(1, "And pour the waters."), lineStart: true }
+      ]
+      renderContent(
+        makeValue({ sentencesMap: new Map(poem.map(s => [s.id, s])) })
+      )
+
+      const second = chunk("And pour the waters.")
+      expect(second.closest("p")).toBe(
+        chunk("Improve his shining tail!").closest("p")
+      )
+      expect(second.closest("p")?.querySelectorAll("br")).toHaveLength(1)
+    })
+
     it("marks only the chunk being read as current", () => {
       renderContent(makeValue({ currentIndex: 1 }))
 
