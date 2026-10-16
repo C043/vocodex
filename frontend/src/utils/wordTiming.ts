@@ -1,4 +1,3 @@
-import type { boundaryObj } from "../contexts/PlayerContext"
 import { wordRanges } from "./pdfText"
 
 // The spoken word at a time of the audio, given when each word starts. The
@@ -18,8 +17,12 @@ export const wordAt = (starts: number[], time: number) => {
 
 // The word of the text each spoken word belongs to. The voice may say a word
 // in parts, or say what is not written as is (numbers), so it is matched by
-// text and never counted
-export const alignBoundaries = (text: string, boundaries: boundaryObj[]) => {
+// text and never counted. Only the spoken text is needed, so the browser
+// extension can use it without the player of the app
+export const alignBoundaries = (
+  text: string,
+  boundaries: { text: string }[]
+) => {
   const words = wordRanges(text)
   const lower = text.toLowerCase()
   const wordFrom = (offset: number) => {

@@ -1,0 +1,10 @@
+{
+  "extends": "./.wxt/tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "strict": true,
+    // The web app utils imported through @vocodex/utils are written without it
+    "noUncheckedIndexedAccess": false,
+    "types": ["vitest/globals", "@testing-library/jest-dom"]
+  }
+}

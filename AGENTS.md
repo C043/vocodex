@@ -16,6 +16,9 @@ fixes start with a test that reproduces the bug.
 
 - Backend (pytest, needs the database): `docker compose exec backend pytest`
 - Frontend (vitest): `cd frontend && npx vitest --run`, plus `npm run typecheck`
+- Browser extension (vitest): `cd extension && npx vitest --run`, plus
+  `npm run typecheck`. It imports the text utils of the frontend
+  (`@vocodex/utils`), so run both suites when changing `frontend/src/utils`
 
 ## Git
 

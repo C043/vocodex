@@ -28,6 +28,7 @@ Components:
 - `Postgres` database
 - Frontend using `React` and `TypeScript`
 - Backend written in `Python` using `FastAPI`
+- Browser extension for `Chromium` and `Firefox` that reads any web page aloud (see [`extension/`](extension/README.md))
 - `edge-tts` package for the `TTS` feature (other `TTS` will be supported in the future)
 - Fully Self-Hosted using `Docker compose`
 
@@ -117,7 +118,6 @@ If everything went according to plan, going to `http://<server-ip>:<frontend-por
 
 - Right now I'm using `edge-tts` to have natural sounding voices easily from the start. In the future I intend to implement support for multiple open source and self hosted `TTS`.
 - `iOS` app
-- `Chromium` browser plugin
 
 ## Development Setup
 ```bash
@@ -139,6 +139,13 @@ sudo docker compose exec backend pytest
 ### How to test the frontend
 ```bash
 cd frontend
+npx vitest --run
+npm run typecheck
+```
+
+### How to test the browser extension
+```bash
+cd extension
 npx vitest --run
 npm run typecheck
 ```
