@@ -256,10 +256,20 @@ export const usePlayerData = (id: string | undefined) => {
     setCurrentIndex(progress)
   }
 
+  // Read through a ref, as the ended handler can outlive the render that
+  // bound it
+  const speedRef = useRef(currentSpeed)
+  speedRef.current = currentSpeed
+
+  // Mobile browsers reload or resume the audio on their own, e.g. when the
+  // phone is turned, and that resets the rate to the default one: both are
+  // set, so the speed survives
   const handleVoiceSpeed = () => {
-    if (audioRef.current) {
-      audioRef.current.playbackRate = speedRate(currentSpeed)
-    }
+    const audio = audioRef.current
+    if (!audio) return
+    const rate = speedRate(speedRef.current)
+    audio.defaultPlaybackRate = rate
+    if (audio.playbackRate !== rate) audio.playbackRate = rate
   }
 
   // Ids of the chunks read after a chunk, among the ones already known
@@ -560,6 +570,9 @@ export const usePlayerData = (id: string | undefined) => {
   // Handle smoothless transition from a sentence to another
   useEffect(() => {
     if (audioRef.current) {
+      // Only the player changes the rate: any other change is the browser
+      // resetting it, so the chosen speed is put back
+      audioRef.current.onratechange = handleVoiceSpeed
       audioRef.current.onended = async () => {
         // iOS keeps a locked phone playing only if the next sentence starts
         // within this event, so it cannot wait for the sentence effect

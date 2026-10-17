@@ -61,6 +61,8 @@ const createMockAudio = () => {
     pause: vi.fn(),
     onended: null,
     playbackRate: 1,
+    defaultPlaybackRate: 1,
+    onratechange: null,
     src: "",
     currentTime: 0,
     textTracks: [] as unknown[],
@@ -608,6 +610,49 @@ describe("usePlayerData in the background", () => {
 
     expect(result.current.currentIndex).toBe(1)
     expect(result.current.activeWordIndex).toBe(0)
+    vi.mocked(URL.createObjectURL).mockImplementation(
+      () => "blob:mock-audio-url"
+    )
+  })
+
+  // Mobile browsers reload or resume the audio on their own, e.g. when the
+  // phone is turned, and that brings the rate back to its default
+  it("keeps the chosen speed when the browser resets the audio rate", async () => {
+    mockBackend()
+    const result = await startPlayer()
+    const audio = result.current.audioRef.current as HTMLAudioElement
+
+    act(() => result.current.setSpeed("+50%"))
+
+    expect(audio.playbackRate).toBe(1.5)
+    expect(audio.defaultPlaybackRate).toBe(1.5)
+
+    act(() => {
+      audio.playbackRate = 1
+      audio.onratechange?.(new Event("ratechange"))
+    })
+
+    expect(audio.playbackRate).toBe(1.5)
+  })
+
+  it("plays the next sentence at the speed chosen during the last one", async () => {
+    let blobs = 0
+    vi.mocked(URL.createObjectURL).mockImplementation(() => `blob:${blobs++}`)
+    mockBackend()
+    const result = await startPlayer()
+    const audio = result.current.audioRef.current as HTMLAudioElement
+    await waitFor(() =>
+      expect(result.current.sentencesMap.get(5)?.audio.url).toBeTruthy()
+    )
+    // Let the prefetch settle, so nothing binds the ended event again
+    await new Promise(resolve => setTimeout(resolve, 20))
+
+    act(() => result.current.setSpeed("+100%"))
+    act(() => {
+      audio.onended?.(new Event("ended"))
+    })
+
+    expect(audio.playbackRate).toBe(2)
     vi.mocked(URL.createObjectURL).mockImplementation(
       () => "blob:mock-audio-url"
     )
