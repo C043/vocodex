@@ -97,6 +97,30 @@ describe("usePlayerData hook", () => {
     expect(result.current.currentVoice).toBe("en-GB-AdaMultilingualNeural")
   })
 
+  // A page loaded on the player renders before the saved preferences
+  // reach the store
+  it("follows the saved speed once the preferences arrive", () => {
+    vi.spyOn(window, "fetch").mockReturnValue(new Promise(() => {}))
+    const { result, rerender } = renderHook(() => usePlayerData("test-id"))
+
+    mockState.user.preferences.speed = "+50%"
+    rerender()
+
+    expect(result.current.currentSpeed).toBe("+50%")
+    mockState.user.preferences.speed = "+0%"
+  })
+
+  it("follows the saved voice once the preferences arrive", () => {
+    vi.spyOn(window, "fetch").mockReturnValue(new Promise(() => {}))
+    const { result, rerender } = renderHook(() => usePlayerData("test-id"))
+
+    mockState.user.preferences.voice = "en-US-AvaMultilingualNeural"
+    rerender()
+
+    expect(result.current.currentVoice).toBe("en-US-AvaMultilingualNeural")
+    mockState.user.preferences.voice = "en-GB-AdaMultilingualNeural"
+  })
+
   it("should navigate home if the entry cannot be fetched", async () => {
     vi.spyOn(window, "fetch").mockImplementation(
       async () =>

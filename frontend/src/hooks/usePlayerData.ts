@@ -782,6 +782,16 @@ export const usePlayerData = (id: string | undefined) => {
   const setActiveWordIndex = (word: number) =>
     setActiveWord({ chunk: currentIndex, word })
 
+  // A page loaded on the player renders before the saved preferences reach
+  // the store, so the speed and voice follow them when they arrive
+  useEffect(() => {
+    setSpeed(userSpeed)
+  }, [userSpeed])
+
+  useEffect(() => {
+    setVoice(userVoice)
+  }, [userVoice])
+
   // Handle voice speed change
   useEffect(() => {
     handleVoiceSpeed()
