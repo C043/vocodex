@@ -14,6 +14,7 @@ import {
 } from "@heroicons/react/24/outline"
 import { VoiceOption } from "../../contexts/PlayerContext"
 import { useIsDesktop } from "../../hooks/useIsDesktop"
+import { useIsTouch } from "../../hooks/useIsTouch"
 
 // "" is the stored value for Auto, but it makes for an unreliable list key
 const AUTO_KEY = "auto"
@@ -79,8 +80,17 @@ const labelOf = (voices: VoiceOption[], voice: string) =>
     ? (voices.find(option => option.key === voice)?.name ?? nameFromKey(voice))
     : AUTO_LABEL
 
-export const VoiceSelect = (props: Props) =>
-  useIsDesktop() ? <VoiceAutocomplete {...props} /> : <VoicePicker {...props} />
+// Touch screens get the full screen list even when wide, as on tablets and
+// phones in landscape, where a popover leaves little room above the keyboard
+export const VoiceSelect = (props: Props) => {
+  const isDesktop = useIsDesktop()
+  const isTouch = useIsTouch()
+  return isDesktop && !isTouch ? (
+    <VoiceAutocomplete {...props} />
+  ) : (
+    <VoicePicker {...props} />
+  )
+}
 
 const VoiceAutocomplete = ({
   voices,
@@ -159,7 +169,8 @@ const VoiceAutocomplete = ({
   )
 }
 
-// Phones get a full screen list, roomier than a popover above the keyboard
+// Phones and tablets get a full screen list, roomier than a popover above the
+// keyboard
 const VoicePicker = ({
   voices,
   selectedVoice,

@@ -144,8 +144,11 @@ describe("VoiceSelect", () => {
   })
 })
 
-describe("VoiceSelect on a phone", () => {
-  beforeEach(() => setScreenWidth(390))
+describe.each([
+  ["a phone", 390],
+  ["a landscape phone or tablet", 1024]
+])("VoiceSelect on %s", (_, width) => {
+  beforeEach(() => setScreenWidth(width, { touch: true }))
   afterEach(resetScreenWidth)
 
   const picker = () => screen.getByRole("dialog", { name: "Choose a voice" })

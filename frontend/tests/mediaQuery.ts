@@ -1,11 +1,13 @@
 import { vi } from "vitest"
 
-// jsdom has no matchMedia: fake a screen that is at least `width` px wide
-export const setScreenWidth = (width: number) => {
+// jsdom has no matchMedia: fake a screen that is at least `width` px wide,
+// driven by a finger when `touch` is set
+export const setScreenWidth = (width: number, { touch = false } = {}) => {
   window.matchMedia = vi.fn((query: string) => {
     const min = Number(/min-width:\s*(\d+)px/.exec(query)?.[1] ?? 0)
+    const coarse = /pointer:\s*coarse/.test(query)
     return {
-      matches: width >= min,
+      matches: coarse ? touch : width >= min,
       media: query,
       onchange: null,
       addEventListener: vi.fn(),
