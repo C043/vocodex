@@ -41,6 +41,10 @@ const NO_HIGHLIGHTS: Highlights = {
   chunkRanges: null
 }
 
+// iOS kills a page whose canvases take too much memory, so each page is
+// drawn with at most as many pixels as PDF.js allows there
+const MAX_CANVAS_PIXELS = 5242880
+
 const boxStyle = (box: Box) => ({
   left: `${box.left}px`,
   top: `${box.top}px`,
@@ -94,8 +98,11 @@ const PdfPageView = ({
       if (cancelled || !canvas || !layer) return
 
       const viewport = pdfPage.getViewport({ scale })
-      // Sharp on high density screens
-      const ratio = window.devicePixelRatio || 1
+      // Sharp on high density screens, within what a phone can hold
+      const ratio = Math.min(
+        window.devicePixelRatio || 1,
+        Math.sqrt(MAX_CANVAS_PIXELS / (viewport.width * viewport.height))
+      )
       canvas.width = Math.floor(viewport.width * ratio)
       canvas.height = Math.floor(viewport.height * ratio)
       renderTask = pdfPage.render({
@@ -125,6 +132,17 @@ const PdfPageView = ({
       setTextDivs([])
     }
   }, [doc, pageNumber, scale, isActive])
+
+  // A canvas taken off the page keeps its memory until it is collected:
+  // emptying it gives it back at once
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current
+    if (!isActive || !canvas) return
+    return () => {
+      canvas.width = 0
+      canvas.height = 0
+    }
+  }, [isActive])
 
   // Measure where the chunk and the word being read are drawn, and the
   // chunk under the pointer

@@ -190,6 +190,45 @@ describe("PdfContent", () => {
       expect(pageWidth(4)).toBeCloseTo(1000)
       expect(pageWidth(2)).toBeCloseTo(1000)
     })
+
+    // Turning a phone changes the width a few times in a row: the pages
+    // are drawn again once, at the final size
+    it("waits for the width to settle before resizing the pages", () => {
+      vi.useFakeTimers()
+      let resize: ResizeObserverCallback = () => {}
+      vi.stubGlobal(
+        "ResizeObserver",
+        class {
+          constructor(callback: ResizeObserverCallback) {
+            resize = callback
+          }
+          observe() {}
+          disconnect() {}
+        }
+      )
+      renderContent(makeValue())
+      expect(pageWidth(4)).toBeCloseTo(600)
+
+      Object.defineProperty(Element.prototype, "clientWidth", {
+        configurable: true,
+        get(this: Element) {
+          if (this.hasAttribute("data-reading-column")) return 900
+          if (this.hasAttribute("data-pages-area")) return 1200
+          return 0
+        }
+      })
+      act(() => resize([], {} as ResizeObserver))
+      act(() => vi.advanceTimersByTime(100))
+      act(() => resize([], {} as ResizeObserver))
+      act(() => vi.advanceTimersByTime(100))
+
+      expect(pageWidth(4)).toBeCloseTo(600)
+
+      act(() => vi.advanceTimersByTime(100))
+
+      expect(pageWidth(4)).toBeCloseTo(900)
+      vi.useRealTimers()
+    })
   })
 
   it("centers the pages", () => {
@@ -241,6 +280,30 @@ describe("PdfContent", () => {
 
     expect(pageProps.get(5)!.isActive).toBe(true)
     expect(value.pdf.loadPage).toHaveBeenCalledWith(5)
+  })
+
+  // Each drawn page holds a large canvas, and iOS kills a page that holds
+  // too many: only pages about to scroll in are drawn ahead
+  it("draws ahead only a little past the screen", () => {
+    let options: IntersectionObserverInit | undefined
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        constructor(
+          _: IntersectionObserverCallback,
+          init: IntersectionObserverInit
+        ) {
+          options = init
+        }
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      }
+    )
+
+    renderContent(makeValue())
+
+    expect(options?.rootMargin).toBe("200px 0px")
   })
 
   it("watches the pages that appear after the first page size is known", () => {

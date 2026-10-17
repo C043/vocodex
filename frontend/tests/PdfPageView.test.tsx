@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import type { ComponentProps } from "react"
 import { render, screen, waitFor, fireEvent } from "@testing-library/react"
 import PdfPageView from "../src/components/player/PdfPageView"
@@ -113,6 +113,56 @@ describe("PdfPageView", () => {
     expect(textLayers[0].cancel).toHaveBeenCalled()
     expect(page.cleanup).toHaveBeenCalled()
     expect(container.querySelector("canvas")).toBeNull()
+  })
+
+  // iOS kills a page whose canvases take too much memory, and the app
+  // reloads: a phone turned to landscape draws the pages much larger
+  describe("on a high density screen", () => {
+    const setPixelRatio = (ratio: number) =>
+      Object.defineProperty(window, "devicePixelRatio", {
+        value: ratio,
+        configurable: true
+      })
+
+    afterEach(() => Reflect.deleteProperty(window, "devicePixelRatio"))
+
+    it("draws at the density of the screen", async () => {
+      setPixelRatio(2)
+      const { container } = render(<PdfPageView {...makeProps()} />)
+      await waitFor(() => expect(textLayers).toHaveLength(1))
+
+      const canvas = container.querySelector("canvas")!
+      expect(canvas.width).toBe(1200)
+      expect(canvas.height).toBe(1600)
+    })
+
+    it("keeps a large page within the pixels a phone can hold", async () => {
+      setPixelRatio(3)
+      const { container } = render(<PdfPageView {...makeProps({ scale: 2 })} />)
+      await waitFor(() => expect(textLayers).toHaveLength(1))
+
+      const canvas = container.querySelector("canvas")!
+      expect(canvas.width * canvas.height).toBeLessThanOrEqual(5242880)
+      // Still sharper than the page's own size
+      expect(canvas.width).toBeGreaterThan(1200)
+      // Drawn at the density the canvas was sized for
+      const [{ transform }] = page.render.mock.calls[0] as unknown as [
+        { transform: number[] }
+      ]
+      expect(Math.floor(1200 * transform[0])).toBe(canvas.width)
+      expect(transform[3]).toBe(transform[0])
+    })
+  })
+
+  it("gives back the memory of the drawing when the page is hidden", async () => {
+    const { rerender, container } = render(<PdfPageView {...makeProps()} />)
+    await waitFor(() => expect(textLayers).toHaveLength(1))
+    const canvas = container.querySelector("canvas")!
+
+    rerender(<PdfPageView {...makeProps({ isActive: false })} />)
+
+    expect(canvas.width).toBe(0)
+    expect(canvas.height).toBe(0)
   })
 
   it("tells which text item was clicked", async () => {

@@ -16,6 +16,8 @@ const ZOOMS: Record<number, number> = { 1: 1, 2: 1.25, 3: 1.5, 4: 2 }
 // Until the reader width is known
 const FALLBACK_WIDTH = 800
 const NO_RANGES: ItemRange[] = []
+// How long the width must stay the same before the pages follow it
+const RESIZE_SETTLE_MS = 150
 
 const PdfContent = () => {
   const {
@@ -54,10 +56,19 @@ const PdfContent = () => {
     }
     update()
     if (typeof ResizeObserver === "undefined") return
-    const observer = new ResizeObserver(update)
+    // Turning a phone changes the width a few times in a row, and each
+    // change draws every shown page again: only the last one is followed
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const observer = new ResizeObserver(() => {
+      clearTimeout(timer)
+      timer = setTimeout(update, RESIZE_SETTLE_MS)
+    })
     observer.observe(column)
     observer.observe(area)
-    return () => observer.disconnect()
+    return () => {
+      clearTimeout(timer)
+      observer.disconnect()
+    }
   }, [])
   const pageWidth = Math.min(columnWidth * zoom, areaWidth)
 
@@ -80,8 +91,10 @@ const PdfContent = () => {
           return next
         })
       },
-      // Start drawing a little before a page scrolls in
-      { rootMargin: "50% 0px" }
+      // Start drawing a little before a page scrolls in. Each drawn page
+      // holds a large canvas and iOS kills a page holding too many, so no
+      // further ahead
+      { rootMargin: "200px 0px" }
     )
     pageEls.current.forEach(el => observer.current?.observe(el))
     return () => observer.current?.disconnect()
