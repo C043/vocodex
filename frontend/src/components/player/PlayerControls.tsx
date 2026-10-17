@@ -312,13 +312,12 @@ export const PlayerControls = () => {
 
   return (
     // A compact bar, docked on mobile and floating on desktop, the settings
-    // slide out of it. Taps skip the double tap zoom wait, else two quick taps
-    // on the options button land together and it opens and closes at once
+    // slide out of it
     <div
       data-player-controls
       aria-hidden={isChromeHidden || undefined}
       inert={isChromeHidden}
-      className={`touch-manipulation transition duration-300 ${
+      className={`transition duration-300 ${
         isDesktop
           ? "fixed z-50 left-1/2 -translate-x-1/2 bottom-6 w-[26rem]"
           : "fixed z-50 inset-x-0 bottom-0"
@@ -340,33 +339,36 @@ export const PlayerControls = () => {
             className="mx-auto w-9 h-1 rounded-full bg-foreground/15"
           />
         )}
-        <AnimatePresence initial={false}>
-          {isOptionsOpen && (
-            <motion.div
-              id="player-options"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 400, damping: 35 }}
-              className="overflow-hidden"
-            >
-              <div className="flex flex-col gap-2 pt-1 pb-2">
-                <div className="flex gap-2">
-                  {voiceSelect("flex-1 min-w-0")}
-                  {speedSelect("w-24 shrink-0")}
-                </div>
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <FontSizeControls />
-                  </div>
-                  {textViewButton()}
-                </div>
-                {hasReaderFont && <FontSelect />}
-                {kind === "pdf" && <PageJump />}
+        {/* Always mounted, only collapsed: mounting the selects on the first
+            tap kept phones busy long enough to lag and catch a second tap */}
+        <motion.div
+          id="player-options"
+          aria-hidden={!isOptionsOpen || undefined}
+          inert={!isOptionsOpen}
+          initial={false}
+          animate={
+            isOptionsOpen
+              ? { height: "auto", opacity: 1 }
+              : { height: 0, opacity: 0 }
+          }
+          transition={{ type: "spring", stiffness: 400, damping: 35 }}
+          className="overflow-hidden"
+        >
+          <div className="flex flex-col gap-2 pt-1 pb-2">
+            <div className="flex gap-2">
+              {voiceSelect("flex-1 min-w-0")}
+              {speedSelect("w-24 shrink-0")}
+            </div>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <FontSizeControls />
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              {textViewButton()}
+            </div>
+            {hasReaderFont && <FontSelect />}
+            {kind === "pdf" && <PageJump />}
+          </div>
+        </motion.div>
         {showPage && (
           <p
             aria-label="Current page"

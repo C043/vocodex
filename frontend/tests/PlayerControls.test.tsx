@@ -335,14 +335,22 @@ describe.each([
     ).not.toHaveClass("bg-brand")
   })
 
-  // Without it, a tap waits to see if it starts a double tap zoom, and two
-  // quick taps on the options button reach it together: open, then close
-  it("answers taps right away, without double tap zoom", () => {
-    renderControls()
+  // Mounting the selects on the first tap made phones lag before opening
+  it("keeps the options mounted but inert while closed", async () => {
+    renderControls({ kind: "pdf", pdfView: "pdf" })
+    const options = document.getElementById("player-options")!
 
-    expect(
-      document.querySelector("[data-player-controls]")
-    ).toHaveClass("touch-manipulation")
+    expect(options).toHaveAttribute("inert")
+    expect(options).toHaveAttribute("aria-hidden", "true")
+    expect(options).toContainElement(
+      document.querySelector('[aria-label="Select Speed"]') as HTMLElement
+    )
+
+    await openOptions()
+
+    expect(document.getElementById("player-options")).toBe(options)
+    expect(options).not.toHaveAttribute("inert")
+    expect(options).not.toHaveAttribute("aria-hidden")
   })
 
   it("fills the options button with the brand color when open", async () => {
