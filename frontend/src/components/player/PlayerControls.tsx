@@ -312,12 +312,13 @@ export const PlayerControls = () => {
 
   return (
     // A compact bar, docked on mobile and floating on desktop, the settings
-    // slide out of it
+    // slide out of it. Taps skip the double tap zoom wait, else two quick taps
+    // on the options button land together and it opens and closes at once
     <div
       data-player-controls
       aria-hidden={isChromeHidden || undefined}
       inert={isChromeHidden}
-      className={`transition duration-300 ${
+      className={`touch-manipulation transition duration-300 ${
         isDesktop
           ? "fixed z-50 left-1/2 -translate-x-1/2 bottom-6 w-[26rem]"
           : "fixed z-50 inset-x-0 bottom-0"

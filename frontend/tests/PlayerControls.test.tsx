@@ -332,6 +332,16 @@ describe.each([
     ).not.toHaveClass("bg-brand")
   })
 
+  // Without it, a tap waits to see if it starts a double tap zoom, and two
+  // quick taps on the options button reach it together: open, then close
+  it("answers taps right away, without double tap zoom", () => {
+    renderControls()
+
+    expect(
+      document.querySelector("[data-player-controls]")
+    ).toHaveClass("touch-manipulation")
+  })
+
   it("fills the options button with the brand color when open", async () => {
     renderControls()
     await openOptions()
