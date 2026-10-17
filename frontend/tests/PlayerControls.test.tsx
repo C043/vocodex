@@ -299,6 +299,9 @@ describe.each([
       screen.queryByRole("combobox", { name: "Select Voice" })
     ).not.toBeInTheDocument()
     expect(
+      screen.queryByRole("button", { name: /^Voice: / })
+    ).not.toBeInTheDocument()
+    expect(
       screen.queryByRole("button", { name: "Text view" })
     ).not.toBeInTheDocument()
     expect(
@@ -364,8 +367,11 @@ describe.each([
     expect(
       screen.getByRole("button", { name: "Player options" })
     ).toHaveAttribute("aria-expanded", "true")
+    // Phones pick the voice from a full screen list, opened by a button
     expect(
-      screen.getByRole("combobox", { name: "Select Voice" })
+      width < 768
+        ? screen.getByRole("button", { name: /^Voice: / })
+        : screen.getByRole("combobox", { name: "Select Voice" })
     ).toBeInTheDocument()
     expect(screen.getByLabelText("Select Speed")).toBeInTheDocument()
     await userEvent.click(screen.getByRole("button", { name: "Zoom in" }))
